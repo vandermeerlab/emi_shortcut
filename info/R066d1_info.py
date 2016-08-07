@@ -39,7 +39,7 @@ task_times['pauseA'] = [16465.0, 18860.0]
 task_times['phase2'] = [19589.0, 22292.0]
 task_times['pauseB'] = [22353.0, 24156.0]
 task_times['phase3'] = [24219.0, 26922.0]
-task_times['postrecord'] = [2.6960, 27263]
+task_times['postrecord'] = [26960, 27263]
 
 pxl_to_cm = (7.6286, 7.1722)
 

@@ -18,6 +18,8 @@ import info.R066d2_info as r066d2
 import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
 
+import info.R068d1_info as r068d1
+
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -27,7 +29,7 @@ sns.set_style('white')
 sns.set_style('ticks')
 
 
-infos = [r063d4]
+infos = [r068d1]
 # infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
@@ -90,26 +92,33 @@ for info in infos:
         odd_firing_idx = get_odd_firing_idx(tc[trajectory])
 
 
-        all_fields = vdm.find_fields(tc[trajectory])
-
-        fields_size = vdm.sized_fields(all_fields, max_length=15)
-
-        with_fields = vdm.get_single_field(fields_size)
+        # all_fields = vdm.find_fields(tc[trajectory])
+        #
+        # fields_size = vdm.sized_fields(all_fields, max_length=15)
+        #
+        # with_fields = vdm.get_single_field(fields_size)
 
         sequence = info.sequence[trajectory]
         this_linear = linear[trajectory]
 
-        these_fields = []
-        for key in with_fields:
-            these_fields.append(key)
+        # these_fields = []
+        # for key in with_fields:
+        #     these_fields.append(key)
+
+        # field_spikes = []
+        # field_tc = []
+        # for idx in sort_idx:
+        #     if idx not in odd_firing_idx:
+        #         if idx in these_fields:
+        #             field_spikes.append(spikes['time'][idx])
+        #             field_tc.append(tc[trajectory][idx])
 
         field_spikes = []
         field_tc = []
         for idx in sort_idx:
             if idx not in odd_firing_idx:
-                if idx in these_fields:
-                    field_spikes.append(spikes['time'][idx])
-                    field_tc.append(tc[trajectory][idx])
+                field_spikes.append(spikes['time'][idx])
+                field_tc.append(tc[trajectory][idx])
 
         for i, (start_time, stop_time, start_time_swr, stop_time_swr) in enumerate(zip(sequence['run_start'],
                                                                                        sequence['run_stop'],

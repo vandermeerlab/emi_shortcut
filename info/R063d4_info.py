@@ -46,7 +46,7 @@ pxl_to_cm = (7.9628, 7.2755)
 
 fs = 2000
 
-run_threshold = 0.5
+run_threshold = 0
 
 good_lfp = ['R063-2015-03-23-CSC04a.ncs']
 good_swr = ['R063-2015-03-23-CSC04.mat']
