@@ -1,6 +1,7 @@
 import os
+import numpy as np
 import vdmlab as vdm
-
+import matplotlib.pyplot as plt
 from tuning_curves_functions import get_tc, get_odd_firing_idx
 from plotting_functions import plot_sorted_tc
 
@@ -11,14 +12,15 @@ import info.R063d5_info as r063d5
 import info.R063d6_info as r063d6
 import info.R066d1_info as r066d1
 import info.R066d2_info as r066d2
+import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
 
-# infos = [r063d2]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d4]
+# infos = [r066d4]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'tuning')
@@ -44,3 +46,7 @@ for info in infos:
         filename = info.session_id + '-sorted_tc-' + key + '.png'
         savepath = os.path.join(output_filepath, filename)
         plot_sorted_tc(sorted_tc[key], savepath)
+
+        # for neuron_tc in sorted_tc[key]:
+        #     plt.plot(neuron_tc)
+        # plt.show()

@@ -8,7 +8,7 @@ import vdmlab as vdm
 from maze_functions import spikes_by_position
 
 
-def linearize(info, pos, expand_by=6):
+def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
     """Finds linear and zones for ideal trajectories.
 
         Parameters
@@ -32,9 +32,12 @@ def linearize(info, pos, expand_by=6):
             Each value is a unique Shapely Polygon object.
 
         """
-    # Slicing position to only Phase 3
-    t_start = info.task_times['phase3'][0]
-    t_stop = info.task_times['phase3'][1]
+    if t_start == None and t_stop == None:
+        # Slicing position to only Phase 3
+        t_start = info.task_times['phase3'][0]
+        t_stop = info.task_times['phase3'][1]
+    elif t_start == None or t_stop == None:
+        print('Start and Stop time are both needed.')
 
     t_start_idx = vdm.find_nearest_idx(pos['time'], t_start)
     t_end_idx = vdm.find_nearest_idx(pos['time'], t_stop)
@@ -93,14 +96,23 @@ def linearize(info, pos, expand_by=6):
     other_pos = vdm.idx_in_pos(sliced_pos, other_idx)
 
     linear = dict()
-    linear['u'] = vdm.linear_trajectory(u_pos, u_line, t_start, t_stop)
-    linear['shortcut'] = vdm.linear_trajectory(shortcut_pos, shortcut_line, t_start, t_stop)
-    linear['novel'] = vdm.linear_trajectory(novel_pos, novel_line, t_start, t_stop)
+    if len(u_pos) > 0:
+        linear['u'] = vdm.linear_trajectory(u_pos, u_line, t_start, t_stop)
+    else:
+        linear['u'] = dict(position=[], time=[])
+    if len(shortcut_pos) > 0:
+        linear['shortcut'] = vdm.linear_trajectory(shortcut_pos, shortcut_line, t_start, t_stop)
+    else:
+        linear['shortcut'] = dict(position=[], time=[])
+    if len(novel_pos) > 0:
+        linear['novel'] = vdm.linear_trajectory(novel_pos, novel_line, t_start, t_stop)
+    else:
+        linear['novel'] = dict(position=[], time=[])
 
     return linear, zone
 
 
-def get_tc(info, pos, pickle_filepath):
+def get_tc(info, pos, pickle_filepath, expand_by=6):
     """Loads saved tuning curve if it exists, otherwise computes tuning curve.
 
         Parameters
@@ -118,7 +130,20 @@ def get_tc(info, pos, pickle_filepath):
             With u, shortcut, novel keys. Each value is a list of list, where
             each inner list represents an individual neuron's tuning curve.
 
-        """
+    """
+    speed = vdm.get_speed(pos)
+
+    t_run = speed['time'][speed['smoothed'] >= info.run_threshold]
+
+    run_idx = np.zeros(pos['time'].shape, dtype=bool)
+    for idx in t_run:
+        run_idx |= (pos['time'] == idx)
+
+    run_pos = dict()
+    run_pos['x'] = pos['x'][run_idx]
+    run_pos['y'] = pos['y'][run_idx]
+    run_pos['time'] = pos['time'][run_idx]
+
     tc_filename = info.session_id + '_tuning_curves_phase3.pkl'
     pickled_tc = os.path.join(pickle_filepath, tc_filename)
     if os.path.isfile(pickled_tc):
@@ -130,7 +155,7 @@ def get_tc(info, pos, pickle_filepath):
 
         spikes = info.get_spikes()
 
-        linear, zone = linearize(info, pos)
+        linear, zone = linearize(info, run_pos, t_start, t_stop, expand_by=expand_by)
 
         spike_pos_filename = info.session_id + '_spike_position_phase3.pkl'
         pickled_spike_pos = os.path.join(pickle_filepath, spike_pos_filename)
@@ -139,21 +164,31 @@ def get_tc(info, pos, pickle_filepath):
                 spike_position = pickle.load(fileobj)
         else:
             sliced_spikes = vdm.time_slice(spikes['time'], t_start, t_stop)
-            spike_position = spikes_by_position(sliced_spikes, zone, pos['time'], pos['x'], pos['y'])
+            spike_position = spikes_by_position(sliced_spikes, zone, run_pos['time'], run_pos['x'], run_pos['y'])
             with open(pickled_spike_pos, 'wb') as fileobj:
                 pickle.dump(spike_position, fileobj)
 
         tc = dict()
-        tc['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], num_bins=47)
-        tc['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], num_bins=47)
-        tc['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], num_bins=47)
-        with open(pickled_tc, 'wb') as fileobj:
-            pickle.dump(tc, fileobj)
+        if len(linear['u']['position']) > 0:
+            tc['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], num_bins=47)
+        else:
+            tc['u'] = []
+        if len(linear['shortcut']['position']) > 0:
+            tc['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], num_bins=47)
+        else:
+            tc['shortcut'] = []
+        if len(linear['novel']['position']) > 0:
+            tc['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], num_bins=47)
+        else:
+            tc['novel'] = []
+
+        # with open(pickled_tc, 'wb') as fileobj:
+        #     pickle.dump(tc, fileobj)
 
     return tc
 
 
-def get_odd_firing_idx(tuning_curve, max_mean_firing=8):
+def get_odd_firing_idx(tuning_curve, max_mean_firing=6):
     """Find indices where neuron is firing too much to be considered a place cell
 
     Parameters

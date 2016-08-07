@@ -63,7 +63,10 @@ def plot_sorted_tc(sorted_tc, savepath, savefig=True):
     plt.xlim(0, len(sorted_tc[0]))
     plt.ylabel('Neuron number')
     plt.xlabel('Location (cm)')
+    plt.colorbar(heatmap)
+    ax.tick_params(labelsize='small')
     sns.despine()
+    plt.tight_layout()
 
     if savefig:
         plt.savefig(savepath, dpi=300, bbox_inches='tight')
@@ -356,7 +359,7 @@ def plot_cooccur(probs, savepath, savefig=True):
     # plt.tight_layout()
 
     if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+        plt.savefig(savepath, dpi=300)
         plt.close()
     else:
         plt.show()

@@ -1,26 +1,39 @@
 % Change this filepath to where this data is located on your computer.
+path = 'R066-2014-12-01_recording';
+
 % Below works only on Emily's laptop.
-path = 'R042-2013-08-18';
-filepath = 'C:\Users\Emily\Desktop';
-savepath = 'C:\Users\Emily\Desktop\R042-2013-08-18\analysis';
+% filepath = 'C:\Users\Emily\Desktop';
+% savepath = 'C:\Users\Emily\Code\python-vdmlab\projects\emily_shortcut\cache\data\';
+
 % savepath = 'C:\Users\Emily\Code\Shortcut\analysis';
 % cd('C:\Users\Emily\Code\Shortcut\analysis\expkeys');
 % LoadExpKeys;
 
+% Below works on Emily's work computer
+filepath = 'E:\data-shortcut\data-working\Shortcut-20150727\';
+% savepath = 'E:\code\python-vdmlab\projects\emily_shortcut\cache\data\';
+savepath = 'C:\Users\EmilyWork\Desktop\lfps\';
+
+
 %% input_csc
-cd([filepath, '\', path]);
+cd([filepath, path(1:4), '_EI\', path]);
 cfg_csc = [];
-cfg_csc.fc = {'R042-2013-08-18-CSC11a.ncs'};
-csc = LoadCSC(cfg_csc);
+% tetrodes = {'01', '02', '03', '04', '05', '06', '07', '08', ...
+%             '09', '10', '11', '12', '13', '14', '15', '16'};
+tetrodes = {'01', '02', '03', '05', '06', '07', '08', ...
+            '09', '10', '11', '12', '13', '15'};
+for this_tt = 1:length(tetrodes)
+    cfg_csc.fc = {[path(1:15), '-CSC', tetrodes{this_tt}, 'c.ncs']};
+    csc = LoadCSC(cfg_csc);
 
-csc_type = csc.type;
-csc_tvec = csc.tvec;
-csc_data = csc.data;
-csc_label = csc.label;
+    csc_type = csc.type;
+    csc_tvec = csc.tvec;
+    csc_data = csc.data;
+    csc_label = csc.label;
 
-save([savepath,'\cscs\', path(1:15), '-csc'], ...
-    'csc_data', 'csc_tvec', 'csc_type', 'csc_label');
-
+    save([savepath, path(1:15), '-csc', tetrodes{this_tt}], ...
+        'csc_data', 'csc_tvec', 'csc_type', 'csc_label');
+end
 
 %% input_positions
 cd([filepath, '\', path]);
@@ -76,7 +89,7 @@ evt_feeder2id = evt.t{8};
 evt_feederoff = evt.t{9};
 evt_label = evt.label;
 
-save([savepath,'\events\', path(1:15), '-event'], ...
+save([savepath, path(1:15), '-event'], ...
      'evt_led1id', 'evt_led2id', 'evt_ledoff', 'evt_pb1id', 'evt_pb2id', ...
      'evt_pboff', 'evt_feeder1id', 'evt_feeder2id', 'evt_feederoff', ...
      'evt_type', 'evt_label');
@@ -95,5 +108,5 @@ spikes_type = spikes.type;
 spikes_times = spikes.t;
 spikes_label = spikes.label;
 
-save([savepath,'\spikes\', path(1:15), '-spike'], ...
+save([savepath, path(1:15), '-spike'], ...
     'spikes_times', 'spikes_label', 'spikes_type');

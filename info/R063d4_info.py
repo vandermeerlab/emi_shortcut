@@ -13,8 +13,8 @@ target = 'dCA1'
 experimenter = 'Emily Irvine'
 
 
-def get_csc():
-    return load_csc(os.path.join(dataloc, 'R063-2015-03-23-csc.mat'))
+def get_csc(lfp_mat):
+    return load_csc(os.path.join(dataloc, lfp_mat))
 
 
 def get_pos(pxl_to_cm):
@@ -46,73 +46,64 @@ pxl_to_cm = (7.9628, 7.2755)
 
 fs = 2000
 
-good_lfp = ['R063-2015-03-23-CSC11b.ncs']
-good_swr = ['']
-good_theta = ['']
+run_threshold = 0.5
+
+good_lfp = ['R063-2015-03-23-CSC04a.ncs']
+good_swr = ['R063-2015-03-23-CSC04.mat']
+good_theta = ['R063-2015-03-23-CSC10.mat']
 
 # Session-specific path trajectory points
 path_pts = dict()
 path_pts['feeder1'] = [552, 461]
 path_pts['point1'] = [551, 409]
-path_pts['point2'] = [547, 388]
-path_pts['point3'] = [535, 383]
-path_pts['point4'] = [479, 381]
-path_pts['point5'] = [370, 400]
-path_pts['point6'] = [249, 371]
-path_pts['point7'] = [206, 378]
-path_pts['point8'] = [219, 325]
-path_pts['point9'] = [234, 98]
-path_pts['point10'] = [244, 66]
-path_pts['point11'] = [275, 51]
-path_pts['point12'] = [334, 46]
+path_pts['turn1'] = [547, 388]
+path_pts['point2'] = [535, 383]
+path_pts['point3'] = [479, 381]
+path_pts['point4'] = [370, 400]
+path_pts['point5'] = [274, 384]
+path_pts['turn2'] = [230, 370]
+path_pts['point6'] = [219, 325]
+path_pts['point7'] = [234, 98]
+path_pts['turn3'] = [244, 66]
+path_pts['point8'] = [275, 51]
+path_pts['point9'] = [334, 46]
 path_pts['feeder2'] = [662, 55]
 path_pts['shortcut1'] = [546, 387]
-path_pts['point13'] = [620, 373]
-path_pts['point14'] = [648, 390]
-path_pts['point15'] = [659, 355]
-path_pts['point16'] = [661, 150]
+path_pts['spt1'] = [620, 373]
+path_pts['spt2'] = [652, 358]
+path_pts['spt3'] = [662, 313]
+path_pts['spt4'] = [661, 150]
 path_pts['shortcut2'] = [662, 55]
 path_pts['novel1'] = [331, 392]
-path_pts['point17'] = [324, 460]
-path_pts['point18'] = [316, 471]
-path_pts['point19'] = [289, 478]
+path_pts['npt1'] = [324, 460]
+path_pts['npt2'] = [316, 471]
+path_pts['npt3'] = [289, 478]
 path_pts['novel2'] = [113, 470]
 path_pts['pedestal'] = [412, 203]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
-u_trajectory = [path_pts['feeder1'], path_pts['point1'], path_pts['point2'],
-                path_pts['point3'], path_pts['point4'], path_pts['point5'],
-                path_pts['point6'], path_pts['point7'], path_pts['point8'],
-                path_pts['point9'], path_pts['point10'], path_pts['point11'],
-                path_pts['point12'], path_pts['feeder2']]
+u_trajectory = [path_pts['feeder1'], path_pts['point1'], path_pts['turn1'], path_pts['point2'],
+                path_pts['point3'], path_pts['point4'], path_pts['point5'], path_pts['turn2'],
+                path_pts['point6'], path_pts['point7'], path_pts['turn3'], path_pts['point8'],
+                path_pts['point9'], path_pts['feeder2']]
 
-shortcut_trajectory = [path_pts['shortcut1'], path_pts['point13'], path_pts['point14'],
-                       path_pts['point15'], path_pts['point16'], path_pts['shortcut2']]
+shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'],
+                       path_pts['spt3'], path_pts['spt4'], path_pts['shortcut2']]
 
-novel_trajectory = [path_pts['novel1'], path_pts['point17'], path_pts['point18'],
-                    path_pts['point19'], path_pts['novel2']]
+novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
+                    path_pts['npt3'], path_pts['novel2']]
 
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr_start'] = [8876.4, 8855.0]
-sequence['u']['swr_stop'] = [8876.7, 8855.4]
-sequence['u']['run_start'] = [2577, 2668]
-sequence['u']['run_stop'] = [2607, 2698]
+sequence['u']['swr_start'] = [8876.4, 8855.0, 8965.4]
+sequence['u']['swr_stop'] = [8876.7, 8855.4, 8966.0]
+sequence['u']['run_start'] = [2577, 2668.0, 3632.0]
+sequence['u']['run_stop'] = [2607, 2698.0, 3667.0]
 sequence['u']['ms'] = 10
-sequence['u']['loc'] = 1
-sequence['u']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                            '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                            '#1d91c0', '#8c6bb1', '#225ea8', '#88419d', '#ae017e',
-                            '#dd3497', '#f768a1', '#fcbba1', '#fc9272', '#fb6a4a',
-                            '#e31a1c', '#fb6a4a', '#993404', '#b30000']
 
-sequence['shortcut']['swr_start'] = [8872.65, 8578.9]
-sequence['shortcut']['swr_stop'] = [8873.15, 8579.5]
-sequence['shortcut']['run_start'] = [5760, 6214]
-sequence['shortcut']['run_stop'] = [5790, 6244]
-sequence['shortcut']['ms'] = 15
-sequence['shortcut']['loc'] = 2
-sequence['shortcut']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                                   '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                                   '#1d91c0']
+sequence['shortcut']['swr_start'] = [8872.65, 8578.9, 8575.37, 8119.5, 8206.82]
+sequence['shortcut']['swr_stop'] = [8873.15, 8579.5, 8575.55, 8119.8, 8207.38]
+sequence['shortcut']['run_start'] = [5760.0, 6214.0, 5900.0, 6460.0, 6510.0]
+sequence['shortcut']['run_stop'] = [5790.0, 6244.0, 5945.0, 6490.0, 6550.0]
+sequence['shortcut']['ms'] = 10
