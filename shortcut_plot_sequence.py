@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
 import seaborn as sns
 import vdmlab as vdm
 
+from load_data import get_pos, get_csc, get_spikes
 from tuning_curves_functions import get_tc, get_odd_firing_idx, linearize
 
 import info.R063d2_info as r063d2
@@ -29,7 +29,7 @@ sns.set_style('white')
 sns.set_style('ticks')
 
 
-infos = [r068d1]
+infos = [r063d4]
 # infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
@@ -49,9 +49,9 @@ for info in infos:
     for trajectory in ['u', 'shortcut']:
 
         print(info.session_id, trajectory)
-        pos = info.get_pos(info.pxl_to_cm)
-        csc = info.get_csc(info.good_swr[0])
-        spikes = info.get_spikes()
+        pos = get_pos(info.pos_mat, info.pxl_to_cm)
+        csc = get_csc(info.good_swr[0])
+        spikes = get_spikes(info.spike_mat)
 
         speed = vdm.get_speed(pos)
 
@@ -138,7 +138,7 @@ for info in infos:
             for ax_loc in range(len(field_spikes)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 1), colspan=4, sharex=ax1)
                 ax.plot(field_spikes[ax_loc], np.ones(len(field_spikes[ax_loc])), '|',
-                        color=colours[ax_loc], ms=sequence['ms'], mew=1.1)
+                        color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
                 ax.set_xlim([start_time, stop_time])
                 if ax_loc == 0:
                     vdm.add_scalebar(ax, matchy=False, bbox_transform=ax.transAxes, bbox_to_anchor=(0.9, 1.1))
@@ -157,7 +157,7 @@ for info in infos:
             for ax_loc in range(len(field_spikes)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 5), colspan=2, sharex=ax2)
                 ax.plot(field_spikes[ax_loc], np.ones(len(field_spikes[ax_loc])), '|',
-                        color=colours[ax_loc], ms=sequence['ms'], mew=1.1)
+                        color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
                 ax.set_xlim([start_time_swr, stop_time_swr])
                 if ax_loc == 0:
                     vdm.add_scalebar(ax, matchy=False, bbox_transform=ax.transAxes, bbox_to_anchor=(0.9, 1.1))
@@ -171,12 +171,13 @@ for info in infos:
 
             for ax_loc in range(len(field_spikes)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 0))
-                ax.plot(field_tc[ax_loc], color=colours[ax_loc])
-                ax.fill_between(x, 0, field_tc[ax_loc], facecolor=colours[ax_loc])
+                ax.plot(field_tc[ax_loc], color=colours[ax_loc % len(colours)])
+                ax.fill_between(x, 0, field_tc[ax_loc], facecolor=colours[ax_loc % len(colours)])
                 max_loc = np.where(field_tc[ax_loc] == np.max(field_tc[ax_loc]))[0][0]
-                ax.text(max_loc, 1, str(int(np.ceil(np.max(field_tc[ax_loc])))), fontsize=8)
+                ax.text(max_loc, np.max(field_tc[ax_loc])*0.2,
+                        str(int(np.ceil(np.max(field_tc[ax_loc])))), fontsize=8)
                 plt.setp(ax, xticks=[], xticklabels=[], yticks=[])
-                sns.despine(ax=ax)
+                sns.despine(ax=ax, bottom=True, left=True)
 
             plt.tight_layout()
             fig.subplots_adjust(hspace=0, wspace=0.1)

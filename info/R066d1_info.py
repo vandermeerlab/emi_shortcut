@@ -47,9 +47,9 @@ fs = 2000
 
 run_threshold = 0.4
 
-good_lfp = ['R066-2014-11-27-CSC11c.ncs']
-good_swr = ['R066-2014-11-27-CSC11.mat']
-good_theta = ['R066-2014-11-27-CSC02.mat']
+good_lfp = ['R066-2014-11-27-csc11c.ncs']
+good_swr = ['R066-2014-11-27-csc11.mat']
+good_theta = ['R066-2014-11-27-csc02.mat']
 
 # Session-specific path trajectory points
 path_pts = dict()

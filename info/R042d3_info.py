@@ -31,5 +31,5 @@ pxl_to_cm = (2.9176, 2.3794)
 
 fs = 2000
 
-good_lfp = ['R042-2013-08-18-CSC11a.ncs']
+good_lfp = ['R042-2013-08-18-csc11a.ncs']
 

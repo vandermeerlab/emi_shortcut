@@ -1,11 +1,6 @@
-import os
-
-from startup import load_csc, load_videotrack, load_events, load_spikes, convert_to_cm
+from startup import convert_to_cm
 
 session_id = 'R066d3'
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-dataloc = os.path.abspath(os.path.join(thisdir, '..', 'cache', 'data'))
 
 species = 'rat'
 behavior = 'shortcut'
@@ -13,29 +8,15 @@ target = 'dCA1'
 experimenter = 'Emily Irvine'
 
 
-def get_csc(lfp_mat):
-    return load_csc(os.path.join(dataloc, lfp_mat))
+pos_mat = 'R066-2014-11-29-vt.mat'
+event_mat = 'R066-2014-11-29-event.mat'
+spike_mat = 'R066-2014-11-29-spike.mat'
+
+good_lfp = ['R066-2014-11-29-csc12c.ncs']
+good_swr = ['R066-2014-11-29-csc12.mat']
+good_theta = ['R066-2014-11-29-csc07.mat']
 
 
-def get_pos(pxl_to_cm):
-    pos = load_videotrack(os.path.join(dataloc, 'R066-2014-11-29-vt.mat'))
-    pos['x'] = pos['x'] / pxl_to_cm[0]
-    pos['y'] = pos['y'] / pxl_to_cm[1]
-    return pos
-
-
-def get_events():
-    return load_events(os.path.join(dataloc, 'R066-2014-11-29-event.mat'))
-
-
-def get_spikes():
-    return load_spikes(os.path.join(dataloc, 'R066-2014-11-29-spike.mat'))
-
-
-# plt.plot(pos['x'], pos['y'], 'b.', ms=1)
-# plt.show()
-
-# Experimental session-specific task times for R066 day 2
 task_times = dict()
 task_times['prerecord'] = [20258.0, 20593.0]
 task_times['phase1'] = [20688.0, 21165.0]
@@ -50,10 +31,6 @@ pxl_to_cm = (7.2599, 7.2286)
 fs = 2000
 
 run_threshold = 0.35
-
-good_lfp = ['R066-2014-11-29-CSC12c.ncs']
-good_swr = ['R066-2014-11-29-CSC12.mat']
-good_theta = ['R066-2014-11-29-CSC07.mat']
 
 # Session-specific path trajectory points
 path_pts = dict()
@@ -112,18 +89,9 @@ sequence['u']['swr_stop'] = [27888.6, 27924.85]
 sequence['u']['run_start'] = [25360, 25320]
 sequence['u']['run_stop'] = [25390, 25350]
 sequence['u']['ms'] = 15
-sequence['u']['loc'] = 1
-sequence['u']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                            '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                            '#1d91c0', '#8c6bb1', '#225ea8']
 
 sequence['shortcut']['swr_start'] = [27791.2, 27833.7]
 sequence['shortcut']['swr_stop'] = [27791.8, 27834.7]
 sequence['shortcut']['run_start'] = [25170, 25265]
 sequence['shortcut']['run_stop'] = [25210, 25305]
 sequence['shortcut']['ms'] = 10
-sequence['shortcut']['loc'] = 2
-sequence['shortcut']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                                   '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                                   '#1d91c0', '#8c6bb1', '#225ea8', '#88419d', '#ae017e',
-                                   '#dd3497', '#f768a1', '#fcbba1']

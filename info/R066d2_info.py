@@ -1,11 +1,6 @@
-import os
-
-from startup import load_csc, load_videotrack, load_events, load_spikes, convert_to_cm
+from startup import convert_to_cm
 
 session_id = 'R066d2'
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-dataloc = os.path.abspath(os.path.join(thisdir, '..', 'cache', 'data'))
 
 species = 'rat'
 behavior = 'shortcut'
@@ -13,27 +8,14 @@ target = 'dCA1'
 experimenter = 'Emily Irvine'
 
 
-def get_csc(lfp_mat):
-    return load_csc(os.path.join(dataloc, lfp_mat))
+pos_mat = 'R066-2014-11-28-vt.mat'
+event_mat = 'R066-2014-11-28-event.mat'
+spike_mat = 'R066-2014-11-28-spike.mat'
 
+good_lfp = ['R066-2014-11-28-csc02c.ncs']
+good_swr = ['R066-2014-11-28-csc02.mat']
+good_theta = ['R066-2014-11-28-csc07.mat']
 
-def get_pos(pxl_to_cm):
-    pos = load_videotrack(os.path.join(dataloc, 'R066-2014-11-28-vt.mat'))
-    pos['x'] = pos['x'] / pxl_to_cm[0]
-    pos['y'] = pos['y'] / pxl_to_cm[1]
-    return pos
-
-
-def get_events():
-    return load_events(os.path.join(dataloc, 'R066-2014-11-28-event.mat'))
-
-
-def get_spikes():
-    return load_spikes(os.path.join(dataloc, 'R066-2014-11-28-spike.mat'))
-
-
-# plt.plot(pos['x'], pos['y'], 'b.', ms=1)
-# plt.show()
 
 # Experimental session-specific task times for R066 day 2
 task_times = dict()
@@ -50,10 +32,6 @@ pxl_to_cm = (7.5460, 7.2192)
 fs = 2000
 
 run_threshold = 0.35
-
-good_lfp = ['R066-2014-11-28-CSC02c.ncs']
-good_swr = ['R066-2014-11-28-CSC02.mat']
-good_theta = ['R066-2014-11-28-CSC07.mat']
 
 # Session-specific path trajectory points
 path_pts = dict()
