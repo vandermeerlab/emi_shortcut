@@ -112,7 +112,7 @@ def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
     return linear, zone
 
 
-def get_tc(info, pos, pickle_filepath, expand_by=6):
+def get_tc(info, pos, pickle_filepath, expand_by=2):
     """Loads saved tuning curve if it exists, otherwise computes tuning curve.
 
         Parameters
@@ -170,15 +170,15 @@ def get_tc(info, pos, pickle_filepath, expand_by=6):
 
         tc = dict()
         if len(linear['u']['position']) > 0:
-            tc['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], num_bins=47)
+            tc['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], binsize=3)
         else:
             tc['u'] = []
         if len(linear['shortcut']['position']) > 0:
-            tc['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], num_bins=47)
+            tc['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize=3)
         else:
             tc['shortcut'] = []
         if len(linear['novel']['position']) > 0:
-            tc['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], num_bins=47)
+            tc['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], binsize=3)
         else:
             tc['novel'] = []
 

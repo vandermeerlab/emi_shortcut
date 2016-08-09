@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import vdmlab as vdm
 
+from field_functions import unique_fields
 from tuning_curves_functions import get_tc
 from plotting_functions import plot_fields
 
@@ -23,8 +24,8 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'fields')
 
 
-infos = [r066d3]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d4]
+# infos = [r063d4]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 for info in infos:
     print(info.session_id)
@@ -45,34 +46,33 @@ for info in infos:
         with open(pickled_spike_heatmaps, 'wb') as fileobj:
             pickle.dump(spike_heatmaps, fileobj)
 
-    all_u_fields = vdm.find_fields(tc['u'])
-    all_shortcut_fields = vdm.find_fields(tc['shortcut'])
-    all_novel_fields = vdm.find_fields(tc['novel'])
+    u_fields = vdm.find_fields(tc['u'], hz_thresh=0.1, min_length=1, max_length=len(tc['u']))
+    shortcut_fields = vdm.find_fields(tc['shortcut'])
+    novel_fields = vdm.find_fields(tc['novel'])
 
-    u_compare = vdm.find_fields(tc['u'], hz_thres=3)
-    shortcut_compare = vdm.find_fields(tc['shortcut'], hz_thres=3)
-    novel_compare = vdm.find_fields(tc['novel'], hz_thres=3)
+    u_compare = vdm.find_fields(tc['u'], hz_thresh=3, min_length=1, max_length=len(tc['u']),
+                                max_mean_firing=10)
+    shortcut_compare = vdm.find_fields(tc['shortcut'], hz_thresh=3, min_length=1, max_length=len(tc['shortcut']),
+                                       max_mean_firing=10)
+    novel_compare = vdm.find_fields(tc['novel'], hz_thresh=3, min_length=1, max_length=len(tc['novel']),
+                                    max_mean_firing=10)
 
-    u_fields_unique = vdm.unique_fields(all_u_fields, shortcut_compare, novel_compare)
-    shortcut_fields_unique = vdm.unique_fields(all_shortcut_fields, u_compare, novel_compare)
-    novel_fields_unique = vdm.unique_fields(all_novel_fields, u_compare, shortcut_compare)
+    u_fields_unique = unique_fields(u_fields, shortcut_compare, novel_compare)
+    shortcut_fields_unique = unique_fields(shortcut_fields, u_compare, novel_compare)
+    novel_fields_unique = unique_fields(novel_fields, u_compare, shortcut_compare)
 
-    u_fields = vdm.sized_fields(u_fields_unique)
-    shortcut_fields = vdm.sized_fields(shortcut_fields_unique)
-    novel_fields = vdm.sized_fields(novel_fields_unique)
+    u_fields_single = vdm.get_single_field(u_fields_unique)
+    shortcut_fields_single = vdm.get_single_field(shortcut_fields_unique)
+    novel_fields_single = vdm.get_single_field(novel_fields_unique)
 
-    u_fields_single = vdm.get_single_field(u_fields)
-    shortcut_fields_single = vdm.get_single_field(shortcut_fields)
-    novel_fields_single = vdm.get_single_field(novel_fields)
-
-    print('U: Of', str(len(all_u_fields)), 'fields,',
-          str(len(u_fields)), 'are unique, with',
+    print('U: Of', str(len(u_fields)), 'fields,',
+          str(len(u_fields_unique)), 'are unique, with',
           str(len(u_fields_single)), 'with single peaks.')
-    print('Shortcut: Of', str(len(all_shortcut_fields)), 'fields,',
-          str(len(shortcut_fields)), 'are unique, with',
+    print('Shortcut: Of', str(len(shortcut_fields)), 'fields,',
+          str(len(shortcut_fields_unique)), 'are unique, with',
           str(len(shortcut_fields_single)), 'with single peaks.')
-    print('Novel: Of', str(len(all_novel_fields)), 'fields,',
-          str(len(novel_fields)), 'are unique, with',
+    print('Novel: Of', str(len(novel_fields)), 'fields,',
+          str(len(novel_fields_unique)), 'are unique, with',
           str(len(novel_fields_single)), 'with single peaks.')
 
     num_bins = 100
