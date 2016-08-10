@@ -170,15 +170,15 @@ def get_tc(info, pos, pickle_filepath, expand_by=2):
 
         tc = dict()
         if len(linear['u']['position']) > 0:
-            tc['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], binsize=3)
+            tc['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], sampling_rate=1/30., binsize=3)
         else:
             tc['u'] = []
         if len(linear['shortcut']['position']) > 0:
-            tc['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize=3)
+            tc['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], sampling_rate=1/30., binsize=3)
         else:
             tc['shortcut'] = []
         if len(linear['novel']['position']) > 0:
-            tc['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], binsize=3)
+            tc['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], sampling_rate=1/30., binsize=3)
         else:
             tc['novel'] = []
 

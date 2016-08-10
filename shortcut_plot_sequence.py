@@ -42,7 +42,7 @@ colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
            '#41b6c4', '#1d91c0', '#8c6bb1', '#225ea8', '#88419d',
            '#ae017e', '#dd3497', '#f768a1', '#fcbba1', '#fc9272',
            '#fb6a4a', '#e31a1c', '#fb6a4a', '#993404', '#b30000',
-           '#800026', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k', 'k']
+           '#800026']
 
 for info in infos:
 
@@ -92,33 +92,26 @@ for info in infos:
         odd_firing_idx = get_odd_firing_idx(tc[trajectory])
 
 
-        # all_fields = vdm.find_fields(tc[trajectory])
-        #
-        # fields_size = vdm.sized_fields(all_fields, max_length=15)
-        #
-        # with_fields = vdm.get_single_field(fields_size)
+        all_fields = vdm.find_fields(tc[trajectory], hz_thres=1.2)
+
+        fields_size = vdm.sized_fields(all_fields, min_length=2, max_length=25)
+
+        with_fields = vdm.get_single_field(fields_size)
 
         sequence = info.sequence[trajectory]
         this_linear = linear[trajectory]
 
-        # these_fields = []
-        # for key in with_fields:
-        #     these_fields.append(key)
-
-        # field_spikes = []
-        # field_tc = []
-        # for idx in sort_idx:
-        #     if idx not in odd_firing_idx:
-        #         if idx in these_fields:
-        #             field_spikes.append(spikes['time'][idx])
-        #             field_tc.append(tc[trajectory][idx])
+        these_fields = []
+        for key in with_fields:
+            these_fields.append(key)
 
         field_spikes = []
         field_tc = []
         for idx in sort_idx:
             if idx not in odd_firing_idx:
-                field_spikes.append(spikes['time'][idx])
-                field_tc.append(tc[trajectory][idx])
+                if idx in these_fields:
+                    field_spikes.append(spikes['time'][idx])
+                    field_tc.append(tc[trajectory][idx])
 
         for i, (start_time, stop_time, start_time_swr, stop_time_swr) in enumerate(zip(sequence['run_start'],
                                                                                        sequence['run_stop'],
