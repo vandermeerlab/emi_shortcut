@@ -2,6 +2,7 @@ import os
 import numpy as np
 import vdmlab as vdm
 
+from load_data import get_pos, get_events
 from maze_functions import get_trial_idx, get_zones
 from plotting_functions import plot_proportions, plot_bydurations, plot_bytrial
 
@@ -35,7 +36,7 @@ for info in infos:
     t_start = info.task_times['phase3'][0]
     t_stop = info.task_times['phase3'][1]
 
-    pos = info.get_pos(info.pxl_to_cm)
+    pos = get_pos(info.pos_mat, info.pxl_to_cm)
     # Slicing position to only Phase 3
     t_start_idx = vdm.find_nearest_idx(np.array(pos['time']), t_start)
     t_end_idx = vdm.find_nearest_idx(np.array(pos['time']), t_stop)
@@ -46,7 +47,7 @@ for info in infos:
     sliced_pos['time'] = pos['time'][t_start_idx:t_end_idx]
 
     # Slicing events to only Phase 3
-    events = info.get_events()
+    events = get_events(info.event_mat)
 
     feeder1_times = []
     for feeder1 in events['feeder1']:

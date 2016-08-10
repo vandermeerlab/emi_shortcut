@@ -1,8 +1,9 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
+
 import vdmlab as vdm
 
+from load_data import get_pos, get_csc, get_spikes
 from tuning_curves_functions import get_tc, linearize
 
 import info.R063d2_info as r063d2
@@ -12,7 +13,7 @@ import info.R063d5_info as r063d5
 import info.R063d6_info as r063d6
 import info.R066d1_info as r066d1
 import info.R066d2_info as r066d2
-# import info.R066d3_info as r066d3
+import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
 
 
@@ -23,12 +24,12 @@ output_filepath = os.path.join(thisdir, 'plots', 'decode')
 
 
 # infos = [r063d3]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d4]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 
 for info in infos:
     print(info.session_id)
-    pos = info.get_pos(info.pxl_to_cm)
+    pos = get_pos(info.pos_mat, info.pxl_to_cm)
 
     t_start = info.task_times['phase2'][0]
     t_stop = info.task_times['phase2'][1]
@@ -43,7 +44,7 @@ for info in infos:
 
     linear, zone = linearize(info, pos)
 
-    spikes = info.get_spikes()
+    spikes = get_spikes(info.spike_mat)
 
     tc = get_tc(info, sliced_pos, pickle_filepath)
 

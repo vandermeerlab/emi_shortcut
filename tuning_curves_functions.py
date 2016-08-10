@@ -5,6 +5,7 @@ from shapely.geometry import Point, LineString
 
 import vdmlab as vdm
 
+from load_data import get_spikes
 from maze_functions import spikes_by_position
 
 
@@ -153,7 +154,7 @@ def get_tc(info, pos, pickle_filepath, expand_by=2):
         t_start = info.task_times['phase3'][0]
         t_stop = info.task_times['phase3'][1]
 
-        spikes = info.get_spikes()
+        spikes = get_spikes(info.spike_mat)
 
         linear, zone = linearize(info, run_pos, t_start, t_stop, expand_by=expand_by)
 
@@ -188,7 +189,7 @@ def get_tc(info, pos, pickle_filepath, expand_by=2):
     return tc
 
 
-def get_odd_firing_idx(tuning_curve, max_mean_firing=6):
+def get_odd_firing_idx(tuning_curve, max_mean_firing):
     """Find indices where neuron is firing too much to be considered a place cell
 
     Parameters

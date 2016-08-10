@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import vdmlab as vdm
 
+from load_data import get_pos, get_spikes
 from field_functions import unique_fields
 from tuning_curves_functions import get_tc
 from plotting_functions import plot_fields
@@ -29,7 +30,7 @@ infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 for info in infos:
     print(info.session_id)
-    pos = info.get_pos(info.pxl_to_cm)
+    pos = get_pos(info.pos_mat, info.pxl_to_cm)
 
     tc = get_tc(info, pos, pickle_filepath)
 
@@ -39,7 +40,7 @@ for info in infos:
         with open(pickled_spike_heatmaps, 'rb') as fileobj:
             spike_heatmaps = pickle.load(fileobj)
     else:
-        spikes = info.get_spikes()
+        spikes = get_spikes(info.spike_mat)
 
         all_neurons = list(range(0, len(spikes['time'])))
         spike_heatmaps = vdm.get_heatmaps(all_neurons, spikes, pos)

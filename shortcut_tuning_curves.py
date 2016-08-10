@@ -1,7 +1,8 @@
 import os
-import numpy as np
+
 import vdmlab as vdm
-import matplotlib.pyplot as plt
+
+from load_data import get_pos
 from tuning_curves_functions import get_tc, get_odd_firing_idx
 from plotting_functions import plot_sorted_tc
 
@@ -27,7 +28,7 @@ output_filepath = os.path.join(thisdir, 'plots', 'tuning')
 
 for info in infos:
     print(info.session_id)
-    pos = info.get_pos(info.pxl_to_cm)
+    pos = get_pos(info.pos_mat, info.pxl_to_cm)
 
     tc = get_tc(info, pos, pickle_filepath)
 

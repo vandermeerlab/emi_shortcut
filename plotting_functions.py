@@ -289,22 +289,13 @@ def plot_cooccur(probs, savepath, savefig=True):
         Parameters
         ----------
         probs : dict
-            Where the keys are p0, p1, p2, p3, p4, p5. P1 through p4 are
-            np.arrays of length num_neurons
+            Where the keys are active (dict), expected (dict), observed (dict), zscore (dict).
+            Each dictionary contains trajectories (u, shortcut, novel).
         savepath : str
             Location and filename for the saved plot.
         savefig : boolean
             Default is True and will save the plot to the specified location.
             False shows with plot without saving it.
-
-        Notes
-        -----
-        p0 : probability (fraction of time bins) each neuron is active.
-        p2 : Observed conditional probability
-            .. math:: p(x|y)
-        p3 : Observed co-occurrence (joint) probability
-            .. math:: p(x,y)
-        p4 : z-score of p3 against shuffled data
 
         """
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
@@ -312,10 +303,10 @@ def plot_cooccur(probs, savepath, savefig=True):
     width = 0.8
     colours = ['#5975a4', '#5f9e6e', '#b55d5f']
 
-    ax1.bar(ind, [np.nanmean(probs['u']['p0']), np.nanmean(probs['shortcut']['p0']), np.nanmean(probs['novel']['p0'])],
-            width, color=colours)
+    ax1.bar(ind, [np.nanmean(probs['active']['u']), np.nanmean(probs['active']['shortcut']),
+                  np.nanmean(probs['active']['novel'])], width, color=colours)
     ax1.set_ylabel('Proportion of SWRs active')
-    ax1.set_title('Probability that a given neuron is active (p0)')
+    ax1.set_title('Probability that a given neuron is active')
     ax1.set_xticks(ind + width*0.5)
     ax1.set_xticklabels(('U', 'Shortcut', 'Novel'))
     ax1.spines['top'].set_visible(False)
@@ -323,10 +314,10 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax1.get_xaxis().tick_bottom()
     ax1.get_yaxis().tick_left()
 
-    ax2.bar(ind, [np.nanmean(probs['u']['p2']), np.nanmean(probs['shortcut']['p2']), np.nanmean(probs['novel']['p2'])],
-            width, color=colours)
-    ax2.set_ylabel('??? Some sort of probability')
-    ax2.set_title('Observed conditional probabilities (p2)')
+    ax2.bar(ind, [np.nanmean(probs['expected']['u']), np.nanmean(probs['expected']['shortcut']),
+                  np.nanmean(probs['expected']['novel'])], width, color=colours)
+    ax2.set_ylabel('Expected conditional probability')
+    ax2.set_title('Observed conditional probabilities, given independence')
     ax2.set_xticks(ind + width*0.5)
     ax2.set_xticklabels(('U', 'Shortcut', 'Novel'))
     ax2.spines['top'].set_visible(False)
@@ -334,10 +325,10 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax2.get_xaxis().tick_bottom()
     ax2.get_yaxis().tick_left()
 
-    ax3.bar(ind, [np.nanmean(probs['u']['p3']), np.nanmean(probs['shortcut']['p3']), np.nanmean(probs['novel']['p3'])],
-            width, color=colours)
+    ax3.bar(ind, [np.nanmean(probs['observed']['u']), np.nanmean(probs['observed']['shortcut']),
+                  np.nanmean(probs['observed']['novel'])], width, color=colours)
     ax3.set_ylabel('Cell pair joint probability')
-    ax3.set_title('Observed co-activity (p3)')
+    ax3.set_title('Observed co-activity')
     ax3.set_xticks(ind + width*0.5)
     ax3.set_xticklabels(('U', 'Shortcut', 'Novel'))
     ax3.spines['top'].set_visible(False)
@@ -345,10 +336,10 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax3.get_xaxis().tick_bottom()
     ax3.get_yaxis().tick_left()
 
-    ax4.bar(ind, [np.nanmean(probs['u']['p4']), np.nanmean(probs['shortcut']['p4']), np.nanmean(probs['novel']['p4'])],
-            width, color=colours)
+    ax4.bar(ind, [np.nanmean(probs['zscore']['u']), np.nanmean(probs['zscore']['shortcut']),
+                  np.nanmean(probs['zscore']['novel'])], width, color=colours)
     ax4.set_ylabel('SWR co-activation z-scored')
-    ax4.set_title('Co-activation above chance levels (p4)')
+    ax4.set_title('Co-activation above chance levels')
     ax4.set_xticks(ind + width*0.5)
     ax4.set_xticklabels(('U', 'Shortcut', 'Novel'))
     ax4.spines['top'].set_visible(False)
@@ -360,63 +351,6 @@ def plot_cooccur(probs, savepath, savefig=True):
 
     if savefig:
         plt.savefig(savepath, dpi=300)
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_solo_coprob(probs, savepath, metric, title, ylabel, savefig=False):
-    """Plots co-occurrence probabilities from p0, p2, p3, p4.
-
-        Parameters
-        ----------
-        probs : dict
-            Where the keys are p0, p1, p2, p3, p4, p5. P1 through p4 are
-            np.arrays of length num_neurons
-        savepath : str
-            Location and filename for the saved plot.
-        metric : str
-            One of the keys in probs.
-        title : str
-        ylabel : str
-        savefig : boolean
-            Default is False and will show the plot without saving it.
-            True will save the plot to the specified location.
-
-        Notes
-        -----
-        p0 : probability (fraction of time bins) each neuron is active.
-        p1 : expected co-occurrence under independence assumption
-            .. math:: p(x,y) = p(x) * p(y)
-        p2 : Observed conditional probability
-            .. math:: p(x|y)
-        p3 : Observed co-occurrence (joint) probability
-            .. math:: p(x,y)
-        p4 : z-score of p3 against shuffled data
-        p5 : Observed co-occurrence (joint) probability of shuffled data
-            .. math:: p(x,y)
-
-        """
-    ind = np.arange(3)
-    width = 0.8
-    colours = ['#5975a4', '#5f9e6e', '#b55d5f']
-    fig, ax = plt.subplots()
-    ax.bar(ind, [np.nanmean(probs['u'][metric]),
-                 np.nanmean(probs['shortcut'][metric]),
-                 np.nanmean(probs['novel'][metric])],
-           width, color=colours)
-
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.set_xticks(ind + width * 0.5)
-    ax.set_xticklabels(('U', 'Shortcut', 'Novel'))
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-
-    if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
