@@ -23,17 +23,20 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
 infos = [r066d3]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d4]
+# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
-exp_times = ['pauseA', 'pauseB']
+# exp_times = ['pauseA', 'pauseB']
+exp_times = ['pauseA']
 for info in infos:
+
     for exp_time in exp_times:
+        print(exp_time)
         csc = get_csc(info.good_swr[0])
         pos = get_pos(info.pos_mat, info.pxl_to_cm)
         spikes = get_spikes(info.spike_mat)
 
         t_start = info.task_times[exp_time][0]
-        t_stop = info.task_times[exp_time][1]
+        t_stop = info.task_times[exp_time][0]+800
 
         t_start_idx = vdm.find_nearest_idx(csc['time'], t_start)
         t_end_idx = vdm.find_nearest_idx(csc['time'], t_stop)
@@ -103,4 +106,4 @@ for info in infos:
 
         filename = info.session_id + '_cooccur-' + exp_time + '.png'
         savepath = os.path.join(output_filepath, filename)
-        plot_cooccur(probs, savepath, savefig=False)
+        plot_cooccur(probs, savepath)
