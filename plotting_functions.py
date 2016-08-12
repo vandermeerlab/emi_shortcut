@@ -303,8 +303,13 @@ def plot_cooccur(probs, savepath, savefig=True):
     width = 0.8
     colours = ['#5975a4', '#5f9e6e', '#b55d5f']
 
-    ax1.bar(ind, [np.nanmean(probs['active']['u']), np.nanmean(probs['active']['shortcut']),
-                  np.nanmean(probs['active']['novel'])], width, color=colours)
+    active_means = [np.nanmean(probs['active']['u']),
+                    np.nanmean(probs['active']['shortcut']),
+                    np.nanmean(probs['active']['novel'])]
+    active_sems = [stats.sem(probs['active']['u'], nan_policy='omit'),
+                   stats.sem(probs['active']['shortcut'], nan_policy='omit'),
+                   stats.sem(probs['active']['novel'], nan_policy='omit')]
+    ax1.bar(ind, active_means, width, color=colours, yerr=active_sems, ecolor='k')
     ax1.set_ylabel('Proportion of SWRs active')
     ax1.set_title('Probability that a given neuron is active')
     ax1.set_xticks(ind + width*0.5)
@@ -314,8 +319,13 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax1.get_xaxis().tick_bottom()
     ax1.get_yaxis().tick_left()
 
-    ax2.bar(ind, [np.nanmean(probs['expected']['u']), np.nanmean(probs['expected']['shortcut']),
-                  np.nanmean(probs['expected']['novel'])], width, color=colours)
+    expected_means = [np.nanmean(probs['expected']['u']),
+                      np.nanmean(probs['expected']['shortcut']),
+                      np.nanmean(probs['expected']['novel'])]
+    expected_sems = [stats.sem(probs['expected']['u'], nan_policy='omit'),
+                     stats.sem(probs['expected']['shortcut'], nan_policy='omit'),
+                     stats.sem(probs['expected']['novel'], nan_policy='omit')]
+    ax2.bar(ind, expected_means, width, color=colours, yerr=expected_sems, ecolor='k')
     ax2.set_ylabel('Expected conditional probability')
     ax2.set_title('Observed conditional probabilities, given independence')
     ax2.set_xticks(ind + width*0.5)
@@ -325,8 +335,13 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax2.get_xaxis().tick_bottom()
     ax2.get_yaxis().tick_left()
 
-    ax3.bar(ind, [np.nanmean(probs['observed']['u']), np.nanmean(probs['observed']['shortcut']),
-                  np.nanmean(probs['observed']['novel'])], width, color=colours)
+    observed_means = [np.nanmean(probs['observed']['u']),
+                      np.nanmean(probs['observed']['shortcut']),
+                      np.nanmean(probs['observed']['novel'])]
+    observed_sems = [stats.sem(probs['observed']['u'], nan_policy='omit'),
+                     stats.sem(probs['observed']['shortcut'], nan_policy='omit'),
+                     stats.sem(probs['observed']['novel'], nan_policy='omit')]
+    ax3.bar(ind, observed_means, width, color=colours, yerr=observed_sems, ecolor='k')
     ax3.set_ylabel('Cell pair joint probability')
     ax3.set_title('Observed co-activity')
     ax3.set_xticks(ind + width*0.5)
@@ -336,8 +351,13 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax3.get_xaxis().tick_bottom()
     ax3.get_yaxis().tick_left()
 
-    ax4.bar(ind, [np.nanmean(probs['zscore']['u']), np.nanmean(probs['zscore']['shortcut']),
-                  np.nanmean(probs['zscore']['novel'])], width, color=colours)
+    zscore_means = [np.nanmean(probs['zscore']['u']),
+                      np.nanmean(probs['zscore']['shortcut']),
+                      np.nanmean(probs['zscore']['novel'])]
+    zscore_sems = [stats.sem(probs['zscore']['u'], nan_policy='omit'),
+                     stats.sem(probs['zscore']['shortcut'], nan_policy='omit'),
+                     stats.sem(probs['zscore']['novel'], nan_policy='omit')]
+    ax4.bar(ind, zscore_means, width, color=colours, yerr=zscore_sems, ecolor='k')
     ax4.set_ylabel('SWR co-activation z-scored')
     ax4.set_title('Co-activation above chance levels')
     ax4.set_xticks(ind + width*0.5)
@@ -347,7 +367,7 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax4.get_xaxis().tick_bottom()
     ax4.get_yaxis().tick_left()
 
-    # plt.tight_layout()
+    plt.tight_layout()
 
     if savefig:
         plt.savefig(savepath, dpi=300)

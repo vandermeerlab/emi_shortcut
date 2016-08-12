@@ -14,6 +14,7 @@ import info.R063d6_info as r063d6
 import info.R066d1_info as r066d1
 import info.R066d3_info as r066d3
 import info.R066d2_info as r066d2
+import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
 
 
@@ -22,21 +23,26 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
-infos = [r066d3]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
+# infos = [r066d3, r066d4]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
-# exp_times = ['pauseA', 'pauseB']
-exp_times = ['pauseA']
+exp_times = ['pauseA', 'pauseB']
+# exp_times = ['pauseA']
+
+
+# all_probs = dict(active=dict(u=[], shortcut=[], novel=[]), expected=dict(u=[], shortcut=[], novel=[]),
+#                  observed=dict(u=[], shortcut=[], novel=[]), zscore=dict(u=[], shortcut=[], novel=[]))
 for info in infos:
-
+    print(info.session_id)
     for exp_time in exp_times:
         print(exp_time)
+
         csc = get_csc(info.good_swr[0])
         pos = get_pos(info.pos_mat, info.pxl_to_cm)
         spikes = get_spikes(info.spike_mat)
 
         t_start = info.task_times[exp_time][0]
-        t_stop = info.task_times[exp_time][0]+800
+        t_stop = info.task_times[exp_time][1]
 
         t_start_idx = vdm.find_nearest_idx(csc['time'], t_start)
         t_end_idx = vdm.find_nearest_idx(csc['time'], t_stop)
@@ -105,5 +111,22 @@ for info in infos:
         probs['zscore']['novel'] = vdm.compute_cooccur(count_matrix['novel'], num_shuffles=10000)
 
         filename = info.session_id + '_cooccur-' + exp_time + '.png'
+        savepath = os.path.join(output_filepath, filename)
+        plot_cooccur(probs, savepath)
+
+        # all_probs['active']['u'].append(probs['active']['u'])
+        # all_probs['expected']['u'].append(probs['expected']['u'])
+        # all_probs['observed']['u'].append(probs['observed']['u'])
+        # all_probs['zscore']['u'].append(probs['zscore']['u'])
+        # all_probs['active']['shortcut'].append(probs['active']['shortcut'])
+        # all_probs['expected']['shortcut'].append(probs['expected']['shortcut'])
+        # all_probs['observed']['shortcut'].append(probs['observed']['shortcut'])
+        # all_probs['zscore']['shortcut'].append(probs['zscore']['shortcut'])
+        # all_probs['active']['novel'].append(probs['active']['novel'])
+        # all_probs['expected']['novel'].append(probs['expected']['novel'])
+        # all_probs['observed']['novel'].append(probs['observed']['novel'])
+        # all_probs['zscore']['novel'].append(probs['zscore']['novel'])
+
+        filename = 'combined_cooccur-' + exp_time + '.png'
         savepath = os.path.join(output_filepath, filename)
         plot_cooccur(probs, savepath)
