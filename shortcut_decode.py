@@ -16,15 +16,14 @@ import info.R066d2_info as r066d2
 import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
 
-
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'decode')
 
 
-# infos = [r063d3]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
+infos = [r063d3]
+# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 
 for info in infos:
@@ -46,13 +45,13 @@ for info in infos:
 
     spikes = get_spikes(info.spike_mat)
 
-    tc = get_tc(info, sliced_pos, pickle_filepath)
+    tc = get_tc(info, pos, pickle_filepath)
 
     linear = linear['u']
     tc = np.array(tc['u'])
 
-    dt = np.median(np.diff(linear['time']))
-    edges = np.hstack((linear['time']-(dt/2), linear['time'][-1]))
+    binsize = np.median(np.diff(linear['time']))
+    edges = np.hstack((linear['time']-(binsize/2), linear['time'][-1]))
     subsample = 6
     edges = edges[::subsample]
     counts = vdm.get_counts(spikes['time'], edges)
@@ -61,8 +60,7 @@ for info in infos:
     # plt.colorbar()
     # plt.show()
 
-    centers = edges[:-1] + np.median(np.diff(edges))/2
-    prob = vdm.bayesian_prob(counts, tc, centers)
+    prob = vdm.bayesian_prob(counts, tc, binsize)
 
     # plt.pcolormesh(prob[200::-1])
     # plt.colorbar()
@@ -71,10 +69,10 @@ for info in infos:
     decoded_position = vdm.decode_location(prob, linear)
 
     decoded = dict()
-    decoded['time'] = centers
+    decoded['time'] = edges[:-1] + np.median(np.diff(edges))/2
     decoded['position'] = decoded_position
 
-    actual_idx = vdm.find_nearest_indices(linear['time'], centers)
+    actual_idx = vdm.find_nearest_indices(linear['time'], decoded['time'])
     actual_location = linear['position'][actual_idx]
 
     # decoded[np.isnan(decoded)] = 0

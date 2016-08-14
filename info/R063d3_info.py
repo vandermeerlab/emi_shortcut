@@ -31,7 +31,7 @@ pxl_to_cm = (7.3452, 7.2286)
 
 fs = 2000
 
-run_threshold = 0.5
+run_threshold = 0.0
 
 # Session-specific path trajectory points
 path_pts = dict()

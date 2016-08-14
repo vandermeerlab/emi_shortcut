@@ -132,10 +132,9 @@ def get_tc(info, pos, pickle_filepath, expand_by=2):
             each inner list represents an individual neuron's tuning curve.
 
     """
+
     speed = vdm.get_speed(pos)
-
     t_run = speed['time'][speed['smoothed'] >= info.run_threshold]
-
     run_idx = np.zeros(pos['time'].shape, dtype=bool)
     for idx in t_run:
         run_idx |= (pos['time'] == idx)
