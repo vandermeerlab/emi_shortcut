@@ -35,7 +35,7 @@ pxl_to_cm = (7.6286, 7.1722)
 
 fs = 2000
 
-run_threshold = 0.4
+run_threshold = 0.0
 
 # Session-specific path trajectory points
 path_pts = dict()
@@ -86,20 +86,10 @@ sequence['u']['swr_stop'] = [27230, 27082.5]
 sequence['u']['run_start'] = [20480, 20588.5]
 sequence['u']['run_stop'] = [20510, 20618.5]
 sequence['u']['ms'] = 10
-sequence['u']['loc'] = 2
-sequence['u']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                            '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                            '#1d91c0', '#8c6bb1', '#225ea8', '#88419d', '#ae017e',
-                            '#dd3497', '#f768a1', '#fcbba1', '#fc9272', '#fb6a4a',
-                            '#bd0026', '#fc4e2a', '#fb6a4a', '#ef3b2c', '#ec7014',
-                            '#fe9929']
 
 sequence['shortcut']['swr_start'] = [26988.75, 27019]
 sequence['shortcut']['swr_stop'] = [26989, 27019.6]
 sequence['shortcut']['run_start'] = [24700, 24755]
 sequence['shortcut']['run_stop'] = [24730, 24785]
 sequence['shortcut']['ms'] = 10
-sequence['shortcut']['loc'] = 2
-sequence['shortcut']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                                   '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                                   '#1d91c0', '#8c6bb1']
+
