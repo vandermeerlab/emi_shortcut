@@ -17,6 +17,7 @@ import info.R066d1_info as r066d1
 import info.R066d2_info as r066d2
 import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
+import info.R067d1_info as r067d1
 
 import info.R068d1_info as r068d1
 
@@ -29,7 +30,7 @@ sns.set_style('white')
 sns.set_style('ticks')
 
 
-infos = [r063d4]
+infos = [r067d1]
 # infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',

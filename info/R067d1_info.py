@@ -76,14 +76,14 @@ novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
                     path_pts['novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr_start'] = [27229.75, 27082.1]
-sequence['u']['swr_stop'] = [27230, 27082.5]
-sequence['u']['run_start'] = [20480, 20588.5]
-sequence['u']['run_stop'] = [20510, 20618.5]
+sequence['u']['swr_start'] = [16744.2]
+sequence['u']['swr_stop'] = [16745.0]
+sequence['u']['run_start'] = [16056.0]
+sequence['u']['run_stop'] = [16100.0]
 sequence['u']['ms'] = 10
 
-sequence['shortcut']['swr_start'] = [26988.75, 27019]
-sequence['shortcut']['swr_stop'] = [26989, 27019.6]
-sequence['shortcut']['run_start'] = [24700, 24755]
-sequence['shortcut']['run_stop'] = [24730, 24785]
+sequence['shortcut']['swr_start'] = [16843.9]
+sequence['shortcut']['swr_stop'] = [16844.2]
+sequence['shortcut']['run_start'] = [15529.0]
+sequence['shortcut']['run_stop'] = [15573.0]
 sequence['shortcut']['ms'] = 10

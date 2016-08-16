@@ -97,15 +97,15 @@ def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
     other_pos = vdm.idx_in_pos(sliced_pos, other_idx)
 
     linear = dict()
-    if len(u_pos) > 0:
+    if len(u_pos['time']) > 0:
         linear['u'] = vdm.linear_trajectory(u_pos, u_line, t_start, t_stop)
     else:
         linear['u'] = dict(position=[], time=[])
-    if len(shortcut_pos) > 0:
+    if len(shortcut_pos['time']) > 0:
         linear['shortcut'] = vdm.linear_trajectory(shortcut_pos, shortcut_line, t_start, t_stop)
     else:
         linear['shortcut'] = dict(position=[], time=[])
-    if len(novel_pos) > 0:
+    if len(novel_pos['time']) > 0:
         linear['novel'] = vdm.linear_trajectory(novel_pos, novel_line, t_start, t_stop)
     else:
         linear['novel'] = dict(position=[], time=[])

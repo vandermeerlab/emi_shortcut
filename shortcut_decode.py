@@ -3,8 +3,9 @@ import numpy as np
 
 import vdmlab as vdm
 
-from load_data import get_pos, get_csc, get_spikes
+from load_data import get_pos, get_spikes
 from tuning_curves_functions import get_tc, linearize
+from decode_functions import get_edges
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3
@@ -15,6 +16,7 @@ import info.R066d1_info as r066d1
 import info.R066d2_info as r066d2
 import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
+import info.R067d1_info as r067d1
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -23,15 +25,15 @@ output_filepath = os.path.join(thisdir, 'plots', 'decode')
 
 
 infos = [r063d3]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
+# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
 
 
 for info in infos:
     print(info.session_id)
     pos = get_pos(info.pos_mat, info.pxl_to_cm)
 
-    t_start = info.task_times['phase2'][0]
-    t_stop = info.task_times['phase2'][1]
+    t_start = info.task_times['phase1'][0]
+    t_stop = info.task_times['phase1'][1]
 
     t_start_idx = vdm.find_nearest_idx(pos['time'], t_start)
     t_end_idx = vdm.find_nearest_idx(pos['time'], t_stop)
@@ -41,7 +43,7 @@ for info in infos:
     sliced_pos['y'] = pos['y'][t_start_idx:t_end_idx]
     sliced_pos['time'] = pos['time'][t_start_idx:t_end_idx]
 
-    linear, zone = linearize(info, pos)
+    linear, zone = linearize(info, sliced_pos, t_start, t_stop)
 
     spikes = get_spikes(info.spike_mat)
 
@@ -50,26 +52,24 @@ for info in infos:
     linear = linear['u']
     tc = np.array(tc['u'])
 
-    binsize = np.median(np.diff(linear['time']))
-    edges = np.hstack((linear['time']-(binsize/2), linear['time'][-1]))
-    subsample = 6
-    edges = edges[::subsample]
+    binsize = 0.025
+    edges = get_edges(linear, binsize, lastbin=True)
     counts = vdm.get_counts(spikes['time'], edges)
 
     # plt.pcolormesh(counts[:,:100])
     # plt.colorbar()
     # plt.show()
 
-    prob = vdm.bayesian_prob(counts, tc, binsize)
+    likelihood = vdm.bayesian_prob(counts, tc, binsize)
 
     # plt.pcolormesh(prob[200::-1])
     # plt.colorbar()
     # plt.show()
 
-    decoded_position = vdm.decode_location(prob, linear)
+    decoded_position = vdm.decode_location(likelihood, linear)
 
     decoded = dict()
-    decoded['time'] = edges[:-1] + np.median(np.diff(edges))/2
+    decoded['time'] = edges[:-1] + binsize/2
     decoded['position'] = decoded_position
 
     actual_idx = vdm.find_nearest_indices(linear['time'], decoded['time'])
@@ -83,16 +83,18 @@ for info in infos:
     # plt.plot(linear['time'], linear['position'], 'r.')
     # plt.show()
 
-    sequences = vdm.decoded_sequences(decoded)
+    sequences = vdm.decode_sequences(decoded)
 
-    avg_error = []
+    combined_error = []
     decoded['position'][np.isnan(decoded['position'])] = 0
-    for seq in sequences['index']:
-        decode_error = np.abs(actual_location[seq[0]:seq[1]] - decoded['position'][seq[0]:seq[1]])
-        avg_error.append(np.mean(decode_error))
-    print(np.mean(avg_error))
+    for sequence_time, sequence_position in zip(sequences['time'], sequences['position']):
+        actual_idx = vdm.find_nearest_indices(linear['time'], sequence_time)
+        decode_error = np.abs(linear['position'][actual_idx] - sequence_position)
+        combined_error.append(np.mean(decode_error))
+    print(np.mean(combined_error), np.median(combined_error), np.min(combined_error), np.max(combined_error))
 
-    # plt.plot(linear['time'], linear['position'], 'r.')
-    # for seq in sequences['index']:
-    #     plt.plot(decoded['time'][seq[0]:seq[1]], decoded['position'][seq[0]:seq[1]], 'b.')
-    # plt.show()
+    import matplotlib.pyplot as plt
+    plt.plot(linear['time'], linear['position'], 'r.')
+    for sequence_time, sequence_position in zip(sequences['time'], sequences['position']):
+        plt.plot(sequence_time, sequence_position, 'b.')
+    plt.show()
