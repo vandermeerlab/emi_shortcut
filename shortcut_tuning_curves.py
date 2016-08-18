@@ -5,7 +5,7 @@ import pickle
 import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
-from tuning_curves_functions import get_tc, get_odd_firing_idx, tuning_curve_2d
+from tuning_curves_functions import get_tc, get_odd_firing_idx
 from plotting_functions import plot_sorted_tc
 
 import info.R063d2_info as r063d2
@@ -72,7 +72,7 @@ if lets_2d:
             sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
             sliced_spikes['label'] = spikes['label']
 
-            tuning_curves = tuning_curve_2d(sliced_spikes, sliced_pos, xedges, yedges, gaussian_sigma=0.5)
+            tuning_curves = vdm.tuning_curve_2d(sliced_spikes, sliced_pos, xedges, yedges, gaussian_sigma=0.2)
 
             with open(pickled_tc, 'wb') as fileobj:
                 pickle.dump(tuning_curves, fileobj)
