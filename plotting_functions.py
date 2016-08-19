@@ -232,7 +232,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
 
 
 # Place fields
-def plot_fields(heatmaps, pos, num_neurons, savepath, savefig=True, plot_log=True, num_bins=100, vmax=None):
+def plot_fields(heatmaps, position, num_neurons, savepath, savefig=True, plot_log=True, num_bins=100, vmax=None):
     """Plots spiking in 2D position space.
 
         Parameters
@@ -240,8 +240,7 @@ def plot_fields(heatmaps, pos, num_neurons, savepath, savefig=True, plot_log=Tru
         heatmaps : dict of lists
             Where the key is the neuron number and the value is the heatmap for
             that individual neuron.
-        pos : dict
-            With time(float), x(float), y(float) as keys
+        position : vdmlab.Position
         savepath : str
             Location and filename for the saved plot.
         num_neurons = int
@@ -261,9 +260,9 @@ def plot_fields(heatmaps, pos, num_neurons, savepath, savefig=True, plot_log=Tru
 
         """
     plt.figure()
-    plt.plot(pos['x'], pos['y'], 'k.', ms=0.2)
-    xedges = np.linspace(np.min(pos['x'])-2, np.max(pos['x'])+2, num_bins+1)
-    yedges = np.linspace(np.min(pos['y'])-2, np.max(pos['y'])+2, num_bins+1)
+    plt.plot(position.x, position.y, 'k.', ms=0.2)
+    xedges = np.linspace(np.min(position.x)-2, np.max(position.x)+2, num_bins+1)
+    yedges = np.linspace(np.min(position.y)-2, np.max(position.y)+2, num_bins+1)
     xx, yy = np.meshgrid(xedges, yedges)
 
     if plot_log:

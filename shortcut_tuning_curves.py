@@ -6,7 +6,7 @@ import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
 from maze_functions import spikes_by_position
-from tuning_curves_functions import get_tc_1d, get_tc_2d, get_odd_firing_idx, find_ideal
+from tuning_curves_functions import get_tc_1d, get_odd_firing_idx
 from plotting_functions import plot_sorted_tc
 
 import info.R063d2_info as r063d2
@@ -44,11 +44,30 @@ if lets_2d:
             position = get_pos(info.pos_mat, info.pxl_to_cm)
             spikes = get_spikes(info.spike_mat)
 
-            speed = position.speed(speed_smooth=0.5)
+            speed = position.speed(t_smooth=0.5)
             run_idx = np.squeeze(speed.data) >= info.run_threshold
             run_pos = position[run_idx]
 
-            tuning_curves = get_tc_2d(info, pickled_tc, run_pos, spikes)
+            t_start = info.task_times['phase3'][0]
+            t_stop = info.task_times['phase3'][1]
+
+            t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
+            t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
+
+            sliced_pos = run_pos[t_start_idx:t_stop_idx]
+
+            sliced_spikes = dict()
+            sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
+            sliced_spikes['label'] = spikes['label']
+
+            binsize = 3
+            xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
+            yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
+
+            tuning_curves = vdm.tuning_curve_2d(sliced_pos, sliced_spikes, xedges, yedges, gaussian_sigma=0.2)
+
+            # with open(pickled_tc, 'wb') as fileobj:
+            #     pickle.dump(tuning_curves, fileobj)
 
         import matplotlib.pyplot as plt
         position = get_pos(info.pos_mat, info.pxl_to_cm)
@@ -74,11 +93,19 @@ else:
             position = get_pos(info.pos_mat, info.pxl_to_cm)
             spikes = get_spikes(info.spike_mat)
 
-            speed = position.speed(speed_smooth=0.5)
+            speed = position.speed(t_smooth=0.5)
             run_idx = np.squeeze(speed.data) >= info.run_threshold
             run_pos = position[run_idx]
 
-            tuning_curves = get_tc_1d(info, pickled_tc, run_pos, spikes)
+            t_start = info.task_times['phase3'][0]
+            t_stop = info.task_times['phase3'][1]
+
+            t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
+            t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
+
+            sliced_pos = run_pos[t_start_idx:t_stop_idx]
+
+            tuning_curves = get_tc_1d(info, sliced_pos, spikes, pickled_tc)
 
             sort_idx = dict()
             odd_firing_idx = dict()

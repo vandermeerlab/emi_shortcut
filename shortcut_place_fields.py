@@ -5,7 +5,7 @@ import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
 from field_functions import unique_fields
-from tuning_curves_functions import get_tc
+from tuning_curves_functions import get_tc_1d
 from plotting_functions import plot_fields
 
 import info.R063d2_info as r063d2
@@ -25,14 +25,23 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'fields')
 
 
-# infos = [r063d4]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
+infos = [r063d4]
+# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 for info in infos:
     print(info.session_id)
-    pos = get_pos(info.pos_mat, info.pxl_to_cm)
 
-    tc = get_tc(info, pos, pickle_filepath)
+    tc_filename = info.session_id + '_tuning_1d.pkl'
+    pickled_tc = os.path.join(pickle_filepath, tc_filename)
+
+    position = get_pos(info.pos_mat, info.pxl_to_cm)
+    spikes = get_spikes(info.spike_mat)
+
+    speed = position.speed(t_smooth=0.5)
+    run_idx = np.squeeze(speed.data) >= info.run_threshold
+    run_pos = position[run_idx]
+
+    tuning_curves = get_tc_1d(info, run_pos, spikes, pickled_tc)
 
     heatmap_filename = info.session_id + '_spike_heatmaps.pkl'
     pickled_spike_heatmaps = os.path.join(pickle_filepath, heatmap_filename)
@@ -43,20 +52,20 @@ for info in infos:
         spikes = get_spikes(info.spike_mat)
 
         all_neurons = list(range(0, len(spikes['time'])))
-        spike_heatmaps = vdm.get_heatmaps(all_neurons, spikes, pos)
+        spike_heatmaps = vdm.get_heatmaps(all_neurons, spikes, position)
         with open(pickled_spike_heatmaps, 'wb') as fileobj:
             pickle.dump(spike_heatmaps, fileobj)
 
-    u_fields = vdm.find_fields(tc['u'], hz_thresh=0.1, min_length=1, max_length=len(tc['u']))
-    shortcut_fields = vdm.find_fields(tc['shortcut'])
-    novel_fields = vdm.find_fields(tc['novel'])
+    u_fields = vdm.find_fields(tuning_curves['u'])
+    shortcut_fields = vdm.find_fields(tuning_curves['shortcut'])
+    novel_fields = vdm.find_fields(tuning_curves['novel'])
 
-    u_compare = vdm.find_fields(tc['u'], hz_thresh=3, min_length=1, max_length=len(tc['u']),
+    u_compare = vdm.find_fields(tuning_curves['u'], hz_thresh=3, min_length=1, max_length=len(tuning_curves['u']),
                                 max_mean_firing=10)
-    shortcut_compare = vdm.find_fields(tc['shortcut'], hz_thresh=3, min_length=1, max_length=len(tc['shortcut']),
-                                       max_mean_firing=10)
-    novel_compare = vdm.find_fields(tc['novel'], hz_thresh=3, min_length=1, max_length=len(tc['novel']),
-                                    max_mean_firing=10)
+    shortcut_compare = vdm.find_fields(tuning_curves['shortcut'], hz_thresh=3, min_length=1,
+                                       max_length=len(tuning_curves['shortcut']), max_mean_firing=10)
+    novel_compare = vdm.find_fields(tuning_curves['novel'], hz_thresh=3, min_length=1,
+                                    max_length=len(tuning_curves['novel']), max_mean_firing=10)
 
     u_fields_unique = unique_fields(u_fields, shortcut_compare, novel_compare)
     shortcut_fields_unique = unique_fields(shortcut_fields, u_compare, novel_compare)
@@ -88,7 +97,7 @@ for info in infos:
 
         filename = info.session_id + '-fields_' + str(trajectory) + '.png'
         savepath = os.path.join(output_filepath, filename)
-        plot_fields(all_heatmaps, pos, num_neurons, savepath)
+        plot_fields(all_heatmaps, position, num_neurons, savepath)
 
 # for key in novel_fields_unique:
 #     print('plotting neuron ' + str(key))

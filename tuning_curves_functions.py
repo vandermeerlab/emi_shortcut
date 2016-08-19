@@ -171,48 +171,6 @@ def get_tc_1d(info, position, spikes, pickled_tc, binsize=3, expand_by=2, sampli
     return tuning_curves
 
 
-def get_tc_2d(info, position, spikes, pickled_tc, speed_smooth=0.5, binsize=3):
-    """Calls 2D tuning curve.
-
-        Parameters
-        ----------
-        info : module
-            Contains session-specific information.
-        pickled_tc: str
-            Absolute location of where tuning_curve.pkl files are saved.
-
-        Returns
-        -------
-        tc : np.array
-            Where each inner array represents an individual neuron's tuning curve.
-    """
-    speed = position.speed(speed_smooth)
-    run_idx = np.squeeze(speed.data) >= info.run_threshold
-    run_pos = position[run_idx]
-
-    t_start = info.task_times['phase3'][0]
-    t_stop = info.task_times['phase3'][1]
-
-    t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
-    t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
-
-    sliced_pos = run_pos[t_start_idx:t_stop_idx]
-
-    sliced_spikes = dict()
-    sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
-    sliced_spikes['label'] = spikes['label']
-
-    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
-    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
-
-    tuning_curves = vdm.tuning_curve_2d(sliced_pos, sliced_spikes, xedges, yedges, gaussian_sigma=0.2)
-
-    with open(pickled_tc, 'wb') as fileobj:
-        pickle.dump(tuning_curves, fileobj)
-
-    return tuning_curves
-
-
 def get_odd_firing_idx(tuning_curve, max_mean_firing):
     """Find indices where neuron is firing too much to be considered a place cell
 

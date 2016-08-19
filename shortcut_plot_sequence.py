@@ -6,7 +6,7 @@ import seaborn as sns
 import vdmlab as vdm
 
 from load_data import get_pos, get_csc, get_spikes
-from tuning_curves_functions import get_tc, get_odd_firing_idx, linearize
+from tuning_curves_functions import get_tc_1d, find_ideal, get_odd_firing_idx
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3
@@ -30,7 +30,7 @@ sns.set_style('white')
 sns.set_style('ticks')
 
 
-infos = [r067d1]
+infos = [r063d3]
 # infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
 
 colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
@@ -50,24 +50,30 @@ for info in infos:
     for trajectory in ['u', 'shortcut']:
 
         print(info.session_id, trajectory)
-        pos = get_pos(info.pos_mat, info.pxl_to_cm)
+
+        tc_filename = info.session_id + '_tuning_1d.pkl'
+        pickled_tc = os.path.join(pickle_filepath, tc_filename)
+
+        position = get_pos(info.pos_mat, info.pxl_to_cm)
         csc = get_csc(info.good_swr[0])
         spikes = get_spikes(info.spike_mat)
 
-        speed = vdm.get_speed(pos)
+        speed = position.speed(t_smooth=0.5)
+        run_idx = np.squeeze(speed.data) >= info.run_threshold
+        run_pos = position[run_idx]
 
-        t_run = speed['time'][speed['smoothed'] >= info.run_threshold]
+        t_start = info.task_times['phase3'][0]
+        t_stop = info.task_times['phase3'][1]
 
-        run_idx = np.zeros(pos['time'].shape, dtype=bool)
-        for idx in t_run:
-            run_idx |= (pos['time'] == idx)
+        t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
+        t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
 
-        run_pos = dict()
-        run_pos['x'] = pos['x'][run_idx]
-        run_pos['y'] = pos['y'][run_idx]
-        run_pos['time'] = pos['time'][run_idx]
+        sliced_pos = run_pos[t_start_idx:t_stop_idx]
 
-        tc = get_tc(info, pos, pickle_filepath, expand_by=2)
+        sliced_spikes = dict()
+        sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
+
+        tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
 
         # filename = info.session_id + '_spike_heatmaps.pkl'
         # pickled_spike_heatmaps = os.path.join(pickle_filepath, filename)
@@ -84,20 +90,23 @@ for info in infos:
 
         t_start = info.task_times['prerecord'][0]
         t_stop = info.task_times['postrecord'][1]
-        linear, zone = linearize(info, run_pos, t_start, t_stop, expand_by=2)
+
+        t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
+        t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
+
+        sliced_pos = run_pos[t_start_idx:t_stop_idx]
+        linear, zone = find_ideal(info, sliced_pos, expand_by=2)
 
         # swr_times, swr_idx, filtered_butter = vdm.detect_swr_hilbert(csc, fs=info.fs)
 
-        sort_idx = vdm.get_sort_idx(tc[trajectory])
+        sort_idx = vdm.get_sort_idx(tuning_curves[trajectory])
 
-        odd_firing_idx = get_odd_firing_idx(tc[trajectory])
+        odd_firing_idx = get_odd_firing_idx(tuning_curves[trajectory], max_mean_firing=10)
 
 
-        all_fields = vdm.find_fields(tc[trajectory], hz_thres=1.2)
+        fields = vdm.find_fields(tuning_curves[trajectory])
 
-        fields_size = vdm.sized_fields(all_fields, min_length=2, max_length=25)
-
-        with_fields = vdm.get_single_field(fields_size)
+        with_fields = vdm.get_single_field(fields)
 
         sequence = info.sequence[trajectory]
         this_linear = linear[trajectory]
@@ -112,7 +121,7 @@ for info in infos:
             if idx not in odd_firing_idx:
                 if idx in these_fields:
                     field_spikes.append(spikes['time'][idx])
-                    field_tc.append(tc[trajectory][idx])
+                    field_tc.append(tuning_curves[trajectory][idx])
 
         for i, (start_time, stop_time, start_time_swr, stop_time_swr) in enumerate(zip(sequence['run_start'],
                                                                                        sequence['run_stop'],
@@ -123,8 +132,8 @@ for info in infos:
             fig = plt.figure()
 
             ax1 = plt.subplot2grid((rows, cols), (rows-2, 1), rowspan=2, colspan=4)
-            ax1.plot(this_linear['time'], np.zeros(len(this_linear['time'])), color='#bdbdbd', lw=1)
-            ax1.plot(this_linear['time'], -this_linear['position'], 'b.', ms=3)
+            ax1.plot(this_linear.time, np.zeros(len(this_linear.time)), color='#bdbdbd', lw=1)
+            ax1.plot(this_linear.time, -this_linear.x, 'b.', ms=3)
             ax1.set_xlim([start_time, stop_time])
             plt.setp(ax1, xticks=[], xticklabels=[], yticks=[])
             sns.despine(ax=ax1)
@@ -175,8 +184,8 @@ for info in infos:
 
             plt.tight_layout()
             fig.subplots_adjust(hspace=0, wspace=0.1)
-            # plt.show()
-            filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
-            savepath = os.path.join(output_filepath, filename)
-            plt.savefig(savepath, dpi=300, bbox_inches='tight')
-            plt.close()
+            plt.show()
+            # filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
+            # savepath = os.path.join(output_filepath, filename)
+            # plt.savefig(savepath, dpi=300, bbox_inches='tight')
+            # plt.close()
