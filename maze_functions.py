@@ -92,7 +92,7 @@ def get_trial_idx(low_priority, mid_priority, high_priority, feeder1_times, feed
     return trials_idx
 
 
-def spikes_by_position(spikes, zone, pos_time, pos_x, pos_y):
+def spikes_by_position(spikes, zone, position):
     """Finds the spikes that occur while the animal is in certain positions.
 
     Parameters
@@ -103,9 +103,7 @@ def spikes_by_position(spikes, zone, pos_time, pos_x, pos_y):
         With 'ushort', 'u', 'novel', 'uped', 'unovel', 'pedestal',
         'novelped', 'shortcut', 'shortped' keys.
         Each value is a unique Shapely Polygon object.
-    pos_time : np.array
-    pos_x : np.array
-    pos_y : np.array
+    position : vdmlab.Position
 
     Returns
     -------
@@ -119,8 +117,8 @@ def spikes_by_position(spikes, zone, pos_time, pos_x, pos_y):
     for neuron in spikes:
         neuron_spikes = dict(pedestal=[], u=[], shortcut=[], novel=[], other=[])
         for spike in neuron:
-            pos_idx = vdm.find_nearest_idx(pos_time, spike)
-            point = Point([pos_x[pos_idx], pos_y[pos_idx]])
+            pos_idx = vdm.find_nearest_idx(position.time, spike)
+            point = Point([position.x[pos_idx], position.y[pos_idx]])
             if zone['pedestal'].contains(point) or zone['uped'].contains(point) or zone['shortped'].contains(point) or zone['novelped'].contains(point):
                 neuron_spikes['pedestal'].append(np.asscalar(spike))
                 continue
@@ -144,15 +142,15 @@ def spikes_by_position(spikes, zone, pos_time, pos_x, pos_y):
     return spike_position
 
 
-def get_zones(info, pos):
+def get_zones(info, position):
     """Finds the spikes that occur while the animal is in certain positions.
 
     Parameters
     ----------
     info : module
         Module with session-specific information
-    pos : dict
-        Has x, y, time keys that are each lists of floats.
+    position : vdmlab.Position
+        Must be a 2D position.
 
     Returns
     -------
@@ -184,8 +182,8 @@ def get_zones(info, pos):
     shortcut_idx = []
     novel_idx = []
     other_idx = []
-    for pos_idx in list(range(len(pos['time']))):
-        point = Point([pos['x'][pos_idx], pos['y'][pos_idx]])
+    for pos_idx in list(range(len(position.time))):
+        point = Point([position.x[pos_idx], position.y[pos_idx]])
         if zones['u'].contains(point) or zones['ushort'].contains(point) or zones['unovel'].contains(point):
             u_idx.append(pos_idx)
         elif zones['shortcut'].contains(point):
@@ -195,10 +193,10 @@ def get_zones(info, pos):
         else:
             other_idx.append(pos_idx)
 
-    spike_pos = dict()
-    spike_pos['u'] = vdm.idx_in_pos(pos, u_idx)
-    spike_pos['shortcut'] = vdm.idx_in_pos(pos, shortcut_idx)
-    spike_pos['novel'] = vdm.idx_in_pos(pos, novel_idx)
-    spike_pos['other'] = vdm.idx_in_pos(pos, other_idx)
+    path_pos = dict()
+    path_pos['u'] = position[u_idx]
+    path_pos['shortcut'] = position[shortcut_idx]
+    path_pos['novel'] = position[novel_idx]
+    path_pos['other'] = position[other_idx]
 
-    return spike_pos
+    return path_pos

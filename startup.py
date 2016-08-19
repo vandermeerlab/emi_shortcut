@@ -1,6 +1,8 @@
 import scipy.io as sio
 import numpy as np
 
+import vdmlab as vdm
+
 # Loading functions from *.mat files
 def load_csc(matfile):
     loading_csc = sio.loadmat(matfile)
@@ -14,31 +16,20 @@ def load_csc(matfile):
 
 def load_position(matfile):
     loading_pos = sio.loadmat(matfile)
-    pos = dict()
-    pos['x'] = loading_pos['pos_datax'][0]
-    pos['y'] = loading_pos['pos_datay'][0]
-    pos['time'] = loading_pos['pos_tvec'][0]
-    pos['type'] = loading_pos['pos_type'][0]
-    pos['label'] = loading_pos['pos_label'][0][0][0]
-    return pos
+    position = vdm.Position([loading_pos['pos_datax'][0], loading_pos['pos_datay'][0]], loading_pos['pos_tvec'][0])
+
+    return position
 
 # This data had issues with the feeder lights contaminating the position tracking, so those contaminating
 # signals were removed.
-
-
 def load_videotrack(matfile):
     loading_vt = sio.loadmat(matfile)
-    vt = dict()
-    vt['time'] = loading_vt['pos_tsd'][0][0][1][0]
-    # vt['x'] = loading_vt['pos_tsd'][0][0][1][0]
-    # vt['y'] = loading_vt['pos_tsd'][0][0][1][1]
-    vt['x'] = loading_vt['pos_tsd'][0][0][2][0]
-    vt['y'] = loading_vt['pos_tsd'][0][0][2][1]
+    pos = np.array([loading_vt['pos_tsd'][0][0][2][0], loading_vt['pos_tsd'][0][0][2][1]])
+    vt = vdm.Position(pos.T, loading_vt['pos_tsd'][0][0][1][0])
 
-    nan_idx = np.isnan(vt['x']) | np.isnan(vt['y'])
-    vt['time'] = vt['time'][~nan_idx]
-    vt['x'] = vt['x'][~nan_idx]
-    vt['y'] = vt['y'][~nan_idx]
+    nan_idx = np.isnan(vt.x) | np.isnan(vt.y)
+    vt = vt[~nan_idx]
+
     return vt
 
 

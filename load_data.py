@@ -13,8 +13,8 @@ def get_csc(lfp_mat):
 
 def get_pos(pos_mat, pxl_to_cm):
     pos = load_videotrack(os.path.join(dataloc, pos_mat))
-    pos['x'] = pos['x'] / pxl_to_cm[0]
-    pos['y'] = pos['y'] / pxl_to_cm[1]
+    pos.x = pos.x / pxl_to_cm[0]
+    pos.y = pos.y / pxl_to_cm[1]
     return pos
 
 

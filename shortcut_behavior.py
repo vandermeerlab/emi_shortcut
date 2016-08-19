@@ -39,13 +39,10 @@ for info in infos:
 
     pos = get_pos(info.pos_mat, info.pxl_to_cm)
     # Slicing position to only Phase 3
-    t_start_idx = vdm.find_nearest_idx(np.array(pos['time']), t_start)
-    t_end_idx = vdm.find_nearest_idx(np.array(pos['time']), t_stop)
+    t_start_idx = vdm.find_nearest_idx(np.array(pos.time), t_start)
+    t_end_idx = vdm.find_nearest_idx(np.array(pos.time), t_stop)
 
-    sliced_pos = dict()
-    sliced_pos['x'] = pos['x'][t_start_idx:t_end_idx]
-    sliced_pos['y'] = pos['y'][t_start_idx:t_end_idx]
-    sliced_pos['time'] = pos['time'][t_start_idx:t_end_idx]
+    sliced_pos = pos[t_start_idx:t_end_idx]
 
     # Slicing events to only Phase 3
     events = get_events(info.event_mat)
@@ -60,9 +57,9 @@ for info in infos:
         if t_start < feeder2 < t_stop:
             feeder2_times.append(feeder2)
 
-    spike_pos = get_zones(info, sliced_pos)
+    path_pos = get_zones(info, sliced_pos)
 
-    trials_idx = get_trial_idx(spike_pos['u']['time'], spike_pos['shortcut']['time'], spike_pos['novel']['time'],
+    trials_idx = get_trial_idx(path_pos['u'].time, path_pos['shortcut'].time, path_pos['novel'].time,
                                feeder1_times, feeder2_times, t_stop)
 
     trials.append(trials_idx)

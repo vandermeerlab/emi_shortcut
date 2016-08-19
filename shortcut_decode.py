@@ -1,10 +1,11 @@
 import os
 import numpy as np
+import pickle
 
 import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
-from tuning_curves_functions import get_tc, linearize
+from tuning_curves_functions import get_tc_1d, find_ideal
 from decode_functions import get_edges
 
 import info.R063d2_info as r063d2
@@ -30,71 +31,57 @@ infos = [r063d3]
 
 for info in infos:
     print(info.session_id)
-    pos = get_pos(info.pos_mat, info.pxl_to_cm)
-
-    t_start = info.task_times['phase1'][0]
-    t_stop = info.task_times['phase1'][1]
-
-    t_start_idx = vdm.find_nearest_idx(pos['time'], t_start)
-    t_end_idx = vdm.find_nearest_idx(pos['time'], t_stop)
-
-    sliced_pos = dict()
-    sliced_pos['x'] = pos['x'][t_start_idx:t_end_idx]
-    sliced_pos['y'] = pos['y'][t_start_idx:t_end_idx]
-    sliced_pos['time'] = pos['time'][t_start_idx:t_end_idx]
-
-    linear, zone = linearize(info, sliced_pos, t_start, t_stop)
-
+    position = get_pos(info.pos_mat, info.pxl_to_cm)
     spikes = get_spikes(info.spike_mat)
 
-    tc = get_tc(info, pos, pickle_filepath)
+    speed = position.speed(t_smooth=0.5)
+    run_idx = np.squeeze(speed.data) >= info.run_threshold
+    run_pos = position[run_idx]
+
+    t_start = info.task_times['phase3'][0]
+    t_stop = info.task_times['phase3'][1]
+
+    t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
+    t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
+
+    sliced_pos = run_pos[t_start_idx:t_stop_idx]
+
+    sliced_spikes = dict()
+    sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
+
+    linear, zone = find_ideal(info, sliced_pos, expand_by=2)
+
+    tc_filename = info.session_id + '_tuning_1d.pkl'
+    pickled_tc = os.path.join(pickle_filepath, tc_filename)
+    # if os.path.isfile(pickled_tc):
+    #     with open(pickled_tc, 'rb') as fileobj:
+    #         tuning_curves = pickle.load(fileobj)
+    # else:
+    tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
 
     linear = linear['u']
-    tc = np.array(tc['u'])
+    tuning_curves = tuning_curves['u']
 
-    binsize = 0.025
-    edges = get_edges(linear, binsize, lastbin=True)
+    counts_binsize = 0.025
+
+    edges = get_edges(linear, counts_binsize, lastbin=True)
     counts = vdm.get_counts(spikes['time'], edges)
 
-    # plt.pcolormesh(counts[:,:100])
-    # plt.colorbar()
-    # plt.show()
+    likelihood = vdm.bayesian_prob(counts, tuning_curves, counts_binsize)
 
-    likelihood = vdm.bayesian_prob(counts, tc, binsize)
+    decoded_pos = vdm.decode_location(likelihood, linear)
 
-    # plt.pcolormesh(prob[200::-1])
-    # plt.colorbar()
-    # plt.show()
+    decoded_time = edges[:-1] + (counts_binsize/2)
+    decoded = vdm.Position(decoded_pos, decoded_time)
 
-    decoded_position = vdm.decode_location(likelihood, linear)
+    decoded_sequence = vdm.filter_jumps(decoded)
 
-    decoded = dict()
-    decoded['time'] = edges[:-1] + binsize/2
-    decoded['position'] = decoded_position
+    actual_idx = vdm.find_nearest_indices(linear.time, decoded_sequence.time)
+    decode_error = np.abs(linear.x[actual_idx] - decoded_sequence.x)
 
-    actual_idx = vdm.find_nearest_indices(linear['time'], decoded['time'])
-    actual_location = linear['position'][actual_idx]
-
-    # decoded[np.isnan(decoded)] = 0
-    # decode_error = np.abs(actual_location - decoded)
-    # print(np.mean(decode_error))
-    #
-    # plt.plot(centers, decoded)
-    # plt.plot(linear['time'], linear['position'], 'r.')
-    # plt.show()
-
-    sequences = vdm.decode_sequences(decoded)
-
-    combined_error = []
-    decoded['position'][np.isnan(decoded['position'])] = 0
-    for sequence_time, sequence_position in zip(sequences['time'], sequences['position']):
-        actual_idx = vdm.find_nearest_indices(linear['time'], sequence_time)
-        decode_error = np.abs(linear['position'][actual_idx] - sequence_position)
-        combined_error.append(np.mean(decode_error))
-    print(np.mean(combined_error), np.median(combined_error), np.min(combined_error), np.max(combined_error))
+    print(np.mean(decode_error), np.median(decode_error), np.min(decode_error), np.max(decode_error))
 
     import matplotlib.pyplot as plt
-    plt.plot(linear['time'], linear['position'], 'r.')
-    for sequence_time, sequence_position in zip(sequences['time'], sequences['position']):
-        plt.plot(sequence_time, sequence_position, 'b.')
+    plt.plot(linear.time[actual_idx], linear.x[actual_idx], 'r.')
+    plt.plot(decoded_sequence.time, decoded_sequence.x, 'b.')
     plt.show()

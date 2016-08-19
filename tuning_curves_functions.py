@@ -6,19 +6,38 @@ from shapely.geometry import Point, LineString
 
 import vdmlab as vdm
 
-from load_data import get_spikes
+from load_data import get_spikes, get_pos
 from maze_functions import spikes_by_position
 
 
-def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
+def expand_line(start_pt, stop_pt, line, expand_by):
+    """Expands shapely Linestring.
+
+    Parameters
+    ----------
+    start_pt : shapely.Point
+    stop_pt : shapely.Point
+    line : shapely.LineString
+    expand_by : float
+        Amount to expand the line.
+
+    Returns
+    -------
+    zone : shapely object
+    """
+    line_expanded = line.buffer(expand_by)
+    zone = start_pt.union(line_expanded).union(stop_pt)
+    return zone
+
+
+def find_ideal(info, position, expand_by=6):
     """Finds linear and zones for ideal trajectories.
 
         Parameters
         ----------
         info : module
             Contains session-specific information.
-        pos : dict
-            With x, y, time as keys. Each value is a np.array.
+        position : vdmlab.Position
         expand_by : int or float
             This is how much you wish to expand the line to fit
             the animal's actual movements. Default is set to 6.
@@ -27,27 +46,13 @@ def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
         -------
         linear : dict
             With u, shortcut, novel keys. Each value is a unique
-            Shapely LineString object.
+            shapely.LineString object.
         zone : dict
             With 'ushort', 'u', 'novel', 'uped', 'unovel', 'pedestal',
             'novelped', 'shortcut', 'shortped' keys.
-            Each value is a unique Shapely Polygon object.
+            Each value is a unique shapely.Polygon object.
 
         """
-    if t_start == None and t_stop == None:
-        # Slicing position to only Phase 3
-        t_start = info.task_times['phase3'][0]
-        t_stop = info.task_times['phase3'][1]
-    elif t_start == None or t_stop == None:
-        print('Start and Stop time are both needed.')
-
-    t_start_idx = vdm.find_nearest_idx(pos['time'], t_start)
-    t_end_idx = vdm.find_nearest_idx(pos['time'], t_stop)
-    sliced_pos = dict()
-    sliced_pos['x'] = pos['x'][t_start_idx:t_end_idx]
-    sliced_pos['y'] = pos['y'][t_start_idx:t_end_idx]
-    sliced_pos['time'] = pos['time'][t_start_idx:t_end_idx]
-
     u_line = LineString(info.u_trajectory)
     shortcut_line = LineString(info.shortcut_trajectory)
     novel_line = LineString(info.novel_trajectory)
@@ -60,11 +65,6 @@ def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
     novel_stop = Point(info.novel_trajectory[-1])
     pedestal_center = Point(info.path_pts['pedestal'][0], info.path_pts['pedestal'][1])
     pedestal = pedestal_center.buffer(expand_by*2.2)
-
-    def expand_line(start_pt, stop_pt, line, expand_by):
-        line_expanded = line.buffer(expand_by)
-        zone = start_pt.union(line_expanded).union(stop_pt)
-        return zone
 
     zone = dict()
     zone['u'] = expand_line(u_start, u_stop, u_line, expand_by)
@@ -81,8 +81,8 @@ def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
     shortcut_idx = []
     novel_idx = []
     other_idx = []
-    for pos_idx in range(len(sliced_pos['time'])):
-        point = Point([sliced_pos['x'][pos_idx], sliced_pos['y'][pos_idx]])
+    for pos_idx in range(len(position.time)):
+        point = Point([position.x[pos_idx], position.y[pos_idx]])
         if zone['u'].contains(point) or zone['ushort'].contains(point) or zone['unovel'].contains(point):
             u_idx.append(pos_idx)
         elif zone['shortcut'].contains(point) or zone['shortped'].contains(point):
@@ -92,101 +92,125 @@ def linearize(info, pos, t_start=None, t_stop=None, expand_by=6):
         else:
             other_idx.append(pos_idx)
 
-    u_pos = vdm.idx_in_pos(sliced_pos, u_idx)
-    shortcut_pos = vdm.idx_in_pos(sliced_pos, shortcut_idx)
-    novel_pos = vdm.idx_in_pos(sliced_pos, novel_idx)
-    other_pos = vdm.idx_in_pos(sliced_pos, other_idx)
+    u_pos = position[u_idx]
+    shortcut_pos = position[shortcut_idx]
+    novel_pos = position[novel_idx]
+    other_pos = position[other_idx]
 
     linear = dict()
-    if len(u_pos['time']) > 0:
-        linear['u'] = vdm.linear_trajectory(u_pos, u_line, t_start, t_stop)
+    if len(u_pos.time) > 0:
+        linear['u'] = u_pos.linearize(u_line)
     else:
-        linear['u'] = dict(position=[], time=[])
-    if len(shortcut_pos['time']) > 0:
-        linear['shortcut'] = vdm.linear_trajectory(shortcut_pos, shortcut_line, t_start, t_stop)
+        linear['u'] = None
+    if len(shortcut_pos.time) > 0:
+        linear['shortcut'] = shortcut_pos.linearize(shortcut_line)
     else:
-        linear['shortcut'] = dict(position=[], time=[])
-    if len(novel_pos['time']) > 0:
-        linear['novel'] = vdm.linear_trajectory(novel_pos, novel_line, t_start, t_stop)
+        linear['shortcut'] = None
+    if len(novel_pos.time) > 0:
+        linear['novel'] = novel_pos.linearize(novel_line)
     else:
-        linear['novel'] = dict(position=[], time=[])
+        linear['novel'] = None
 
     return linear, zone
 
 
-def get_tc(info, pos, pickle_filepath, expand_by=2):
-    """Loads saved tuning curve if it exists, otherwise computes tuning curve.
+def get_tc_1d(info, position, spikes, pickled_tc, binsize=3, expand_by=2, sampling_rate=1/30.):
+    """Calls 1D tuning curve.
 
         Parameters
         ----------
         info : module
             Contains session-specific information.
-        pos : dict
-            With x, y, time as keys. Each value is a np.array.
-        pickle_filepath: str
-            Absolute (or relative) location of where tuning_curve.pkl files are saved.
+        position : vdmlab.Position
+        spikes : dict
+            With time (float), label (str) as keys.
+        pickled_tc: str
+            Absolute location of where tuning_curve.pkl files are saved.
 
         Returns
         -------
-        tc : dict
+        tc : dict (1D)
             With u, shortcut, novel keys. Each value is a list of list, where
-            each inner list represents an individual neuron's tuning curve.
-
+            each inner array represents an individual neuron's tuning curve.
     """
+    linear, zone = find_ideal(info, position, expand_by)
 
-    speed = vdm.get_speed(pos)
-    t_run = speed['time'][speed['smoothed'] >= info.run_threshold]
-    run_idx = np.zeros(pos['time'].shape, dtype=bool)
-    for idx in t_run:
-        run_idx |= (pos['time'] == idx)
-
-    run_pos = dict()
-    run_pos['x'] = pos['x'][run_idx]
-    run_pos['y'] = pos['y'][run_idx]
-    run_pos['time'] = pos['time'][run_idx]
-
-    tc_filename = info.session_id + '_tuning_curves_phase3.pkl'
-    pickled_tc = os.path.join(pickle_filepath, tc_filename)
-    if os.path.isfile(pickled_tc):
-        with open(pickled_tc, 'rb') as fileobj:
-            tc = pickle.load(fileobj)
+    thisdir = os.path.dirname(os.path.realpath(__file__))
+    pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
+    spike_pos_filename = info.session_id + '_spike_position_phase3.pkl'
+    pickled_spike_pos = os.path.join(pickle_filepath, spike_pos_filename)
+    if os.path.isfile(pickled_spike_pos):
+        with open(pickled_spike_pos, 'rb') as fileobj:
+            spike_position = pickle.load(fileobj)
     else:
-        t_start = info.task_times['phase3'][0]
-        t_stop = info.task_times['phase3'][1]
+        spike_position = spikes_by_position(spikes, zone, position)
+        with open(pickled_spike_pos, 'wb') as fileobj:
+            pickle.dump(spike_position, fileobj)
 
-        spikes = get_spikes(info.spike_mat)
+    tuning_curves = dict()
+    if len(linear['u'].x) > 0:
+        u_spikes = dict(time=spike_position['u'])
+        tuning_curves['u'] = vdm.tuning_curve(linear['u'], u_spikes, binsize, sampling_rate=sampling_rate)
+    else:
+        tuning_curves['u'] = None
+    if len(linear['shortcut'].x) > 0:
+        shortcut_spikes = dict(time=spike_position['shortcut'])
+        tuning_curves['shortcut'] = vdm.tuning_curve(linear['shortcut'], shortcut_spikes, binsize,
+                                                     sampling_rate=sampling_rate)
+    else:
+        tuning_curves['shortcut'] = None
+    if len(linear['novel'].x) > 0:
+        novel_spikes = dict(time=spike_position['novel'])
+        tuning_curves['novel'] = vdm.tuning_curve(linear['novel'], novel_spikes, binsize, sampling_rate=sampling_rate)
+    else:
+        tuning_curves['novel'] = None
 
-        linear, zone = linearize(info, run_pos, t_start, t_stop, expand_by=expand_by)
+    with open(pickled_tc, 'wb') as fileobj:
+        pickle.dump(tuning_curves, fileobj)
 
-        spike_pos_filename = info.session_id + '_spike_position_phase3.pkl'
-        pickled_spike_pos = os.path.join(pickle_filepath, spike_pos_filename)
-        if os.path.isfile(pickled_spike_pos):
-            with open(pickled_spike_pos, 'rb') as fileobj:
-                spike_position = pickle.load(fileobj)
-        else:
-            sliced_spikes = vdm.time_slice(spikes['time'], t_start, t_stop)
-            spike_position = spikes_by_position(sliced_spikes, zone, run_pos['time'], run_pos['x'], run_pos['y'])
-            with open(pickled_spike_pos, 'wb') as fileobj:
-                pickle.dump(spike_position, fileobj)
+    return tuning_curves
 
-        tc = dict()
-        if len(linear['u']['position']) > 0:
-            tc['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], sampling_rate=1/30., binsize=3)
-        else:
-            tc['u'] = []
-        if len(linear['shortcut']['position']) > 0:
-            tc['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], sampling_rate=1/30., binsize=3)
-        else:
-            tc['shortcut'] = []
-        if len(linear['novel']['position']) > 0:
-            tc['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], sampling_rate=1/30., binsize=3)
-        else:
-            tc['novel'] = []
 
-        # with open(pickled_tc, 'wb') as fileobj:
-        #     pickle.dump(tc, fileobj)
+def get_tc_2d(info, position, spikes, pickled_tc, speed_smooth=0.5, binsize=3):
+    """Calls 2D tuning curve.
 
-    return tc
+        Parameters
+        ----------
+        info : module
+            Contains session-specific information.
+        pickled_tc: str
+            Absolute location of where tuning_curve.pkl files are saved.
+
+        Returns
+        -------
+        tc : np.array
+            Where each inner array represents an individual neuron's tuning curve.
+    """
+    speed = position.speed(speed_smooth)
+    run_idx = np.squeeze(speed.data) >= info.run_threshold
+    run_pos = position[run_idx]
+
+    t_start = info.task_times['phase3'][0]
+    t_stop = info.task_times['phase3'][1]
+
+    t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
+    t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
+
+    sliced_pos = run_pos[t_start_idx:t_stop_idx]
+
+    sliced_spikes = dict()
+    sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
+    sliced_spikes['label'] = spikes['label']
+
+    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
+    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
+
+    tuning_curves = vdm.tuning_curve_2d(sliced_pos, sliced_spikes, xedges, yedges, gaussian_sigma=0.2)
+
+    with open(pickled_tc, 'wb') as fileobj:
+        pickle.dump(tuning_curves, fileobj)
+
+    return tuning_curves
 
 
 def get_odd_firing_idx(tuning_curve, max_mean_firing):
