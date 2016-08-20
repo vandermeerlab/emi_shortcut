@@ -17,7 +17,6 @@ good_swr = ['R063-2015-03-22-csc13.mat']
 good_theta = ['R063-2015-03-22-csc15.mat']
 
 
-
 task_times = dict()
 task_times['prerecord'] = [837.4714, 1143.1]
 task_times['phase1'] = [1207.9, 2087.5]

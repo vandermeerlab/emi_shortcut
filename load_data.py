@@ -1,14 +1,14 @@
 import os
 
-from startup import load_csc, load_videotrack, load_events, load_spikes
+from startup import load_lfp, load_videotrack, load_events, load_spikes
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 dataloc = os.path.abspath(os.path.join(thisdir, 'cache', 'data'))
 
 
-def get_csc(lfp_mat):
-    return load_csc(os.path.join(dataloc, lfp_mat))
+def get_lfp(lfp_mat):
+    return load_lfp(os.path.join(dataloc, lfp_mat))
 
 
 def get_pos(pos_mat, pxl_to_cm):

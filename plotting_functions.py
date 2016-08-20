@@ -375,14 +375,13 @@ def plot_cooccur(probs, savepath, savefig=True):
         plt.show()
 
 
-def plot_swrs(csc, swr_idx, saveloc, row=10, col=8, buffer=20, savefig=True):
+def plot_swrs(lfp, swr_idx, saveloc, row=10, col=8, buffer=20, savefig=True):
     """Plots all local field potentials (LFP) around sharp-wave ripple (SWR) times
         for each given SWR.
 
         Parameters
         ----------
-        csc : dict
-            With time(np.array), data(np.array) as keys
+        lfp : vdmlab.LFP
         swr_idx : dict
             With start(int), stop(int) as keys
         saveloc : str
@@ -415,8 +414,8 @@ def plot_swrs(csc, swr_idx, saveloc, row=10, col=8, buffer=20, savefig=True):
                 zip(swr_idx['start'][start_idx:stop_idx], swr_idx['stop'][start_idx:stop_idx])):
             plt.subplot(row, col, i + 1)
 
-            plt.plot(csc['time'][start - buffer:stop + buffer], csc['data'][start - buffer:stop + buffer], 'k')
-            plt.plot(csc['time'][start:stop], csc['data'][start:stop], 'r')
+            plt.plot(lfp.time[start - buffer:stop + buffer], lfp.data[start - buffer:stop + buffer], 'k')
+            plt.plot(lfp.time[start:stop], lfp.data[start:stop], 'r')
 
             plt.axis('off')
 

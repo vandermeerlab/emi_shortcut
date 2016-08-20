@@ -4,21 +4,16 @@ import numpy as np
 import vdmlab as vdm
 
 # Loading functions from *.mat files
-def load_csc(matfile):
-    loading_csc = sio.loadmat(matfile)
-    csc = dict(time=[])
-    csc['data'] = loading_csc['csc_data'][0]
-    csc['time'] = loading_csc['csc_tvec']
-    csc['type'] = loading_csc['csc_type'][0]
-    csc['label'] = loading_csc['csc_label'][0][0][0]
-    return csc
+def load_lfp(matfile):
+    loading_lfp = sio.loadmat(matfile)
+
+    return vdm.LFP(loading_lfp['csc_data'][0], loading_lfp['csc_tvec'])
 
 
 def load_position(matfile):
     loading_pos = sio.loadmat(matfile)
-    position = vdm.Position([loading_pos['pos_datax'][0], loading_pos['pos_datay'][0]], loading_pos['pos_tvec'][0])
 
-    return position
+    return vdm.Position([loading_pos['pos_datax'][0], loading_pos['pos_datay'][0]], loading_pos['pos_tvec'][0])
 
 # This data had issues with the feeder lights contaminating the position tracking, so those contaminating
 # signals were removed.

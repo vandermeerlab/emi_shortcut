@@ -1,7 +1,7 @@
 import os
 import vdmlab as vdm
 
-from load_data import get_csc
+from load_data import get_lfp
 from plotting_functions import plot_swrs
 
 import info.R063d2_info as r063d2
@@ -28,10 +28,11 @@ infos = [r068d1]
 
 for info in infos:
     print('Working on ' + info.session_id)
-    csc = get_csc(info.good_swr[0])
+    lfp = get_lfp(info.good_swr[0])
 
-    swr_times, swr_idx, filtered_butter = vdm.detect_swr_hilbert(csc, fs=info.fs)
+    thresh = (140.0, 250.0)
+    swr_times, swr_idx, filtered_butter = vdm.detect_swr_hilbert(lfp, fs=info.fs, thresh=thresh)
 
     filename = info.session_id + '-swr_'
     saveloc = os.path.join(output_filepath, filename)
-    plot_swrs(csc, swr_idx, saveloc)
+    plot_swrs(lfp, swr_idx, saveloc)

@@ -1,11 +1,6 @@
-import os
-
 from startup import convert_to_cm
 
 session_id = 'R067d1'
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-dataloc = os.path.abspath(os.path.join(thisdir, '..', 'cache', 'data'))
 
 species = 'rat'
 behavior = 'shortcut'
