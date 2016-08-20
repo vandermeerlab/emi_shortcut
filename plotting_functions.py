@@ -4,6 +4,8 @@ from matplotlib.colors import SymLogNorm
 import scipy.stats as stats
 import seaborn as sns
 
+import vdmlab as vdm
+
 from behavior_functions import bytrial_counts, summary_bytrial
 
 sns.set_style('white')
@@ -375,15 +377,15 @@ def plot_cooccur(probs, savepath, savefig=True):
         plt.show()
 
 
-def plot_swrs(lfp, swr_idx, saveloc, row=10, col=8, buffer=20, savefig=True):
+def plot_swrs(lfp, swrs, saveloc, row=10, col=8, buffer=20, savefig=True):
     """Plots all local field potentials (LFP) around sharp-wave ripple (SWR) times
         for each given SWR.
 
         Parameters
         ----------
         lfp : vdmlab.LFP
-        swr_idx : dict
-            With start(int), stop(int) as keys
+        swrs : list
+            Contains vdmlab.LFP objects
         saveloc : str
             Location and filename for the saved plot. Do not add '.png', it is
             added here to include the multiple figures into the filename.
@@ -399,7 +401,7 @@ def plot_swrs(lfp, swr_idx, saveloc, row=10, col=8, buffer=20, savefig=True):
 
         """
     plots_per_fig = row * col
-    num_figures = range(int(np.ceil(len(swr_idx['start']) / plots_per_fig)))
+    num_figures = range(int(np.ceil(len(swrs) / plots_per_fig)))
 
     for fig in num_figures:
         print('figure', fig, 'of', np.max(list(num_figures)))
@@ -407,15 +409,16 @@ def plot_swrs(lfp, swr_idx, saveloc, row=10, col=8, buffer=20, savefig=True):
 
         stop_idx = plots_per_fig * (fig + 1)
         start_idx = stop_idx - plots_per_fig
-        if stop_idx > len(swr_idx['start']):
-            stop_idx = len(swr_idx['start']) + 1
+        if stop_idx > len(swrs):
+            stop_idx = len(swrs) + 1
 
-        for i, (start, stop) in enumerate(
-                zip(swr_idx['start'][start_idx:stop_idx], swr_idx['stop'][start_idx:stop_idx])):
+        for i, swr in enumerate(swrs[start_idx:stop_idx]):
+            start = vdm.find_nearest_idx(lfp.time, swr.time[0])
+            stop = vdm.find_nearest_idx(lfp.time, swr.time[-1])
             plt.subplot(row, col, i + 1)
 
-            plt.plot(lfp.time[start - buffer:stop + buffer], lfp.data[start - buffer:stop + buffer], 'k')
-            plt.plot(lfp.time[start:stop], lfp.data[start:stop], 'r')
+            plt.plot(lfp.time[start-buffer:stop+buffer], lfp.data[start-buffer:stop+buffer], 'k')
+            plt.plot(swr.time, swr.data, 'r')
 
             plt.axis('off')
 

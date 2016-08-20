@@ -31,8 +31,8 @@ for info in infos:
     lfp = get_lfp(info.good_swr[0])
 
     thresh = (140.0, 250.0)
-    swr_times, swr_idx, filtered_butter = vdm.detect_swr_hilbert(lfp, fs=info.fs, thresh=thresh)
+    swrs = vdm.detect_swr_hilbert(lfp, fs=info.fs, thresh=thresh)
 
     filename = info.session_id + '-swr_'
     saveloc = os.path.join(output_filepath, filename)
-    plot_swrs(lfp, swr_idx, saveloc)
+    plot_swrs(lfp, swrs, saveloc)
