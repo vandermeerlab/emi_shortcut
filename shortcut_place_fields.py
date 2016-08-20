@@ -49,9 +49,7 @@ for info in infos:
         with open(pickled_spike_heatmaps, 'rb') as fileobj:
             spike_heatmaps = pickle.load(fileobj)
     else:
-        spikes = get_spikes(info.spike_mat)
-
-        all_neurons = list(range(0, len(spikes['time'])))
+        all_neurons = list(range(0, len(spikes)))
         spike_heatmaps = vdm.get_heatmaps(all_neurons, spikes, position)
         with open(pickled_spike_heatmaps, 'wb') as fileobj:
             pickle.dump(spike_heatmaps, fileobj)

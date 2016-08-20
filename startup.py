@@ -7,7 +7,7 @@ import vdmlab as vdm
 def load_lfp(matfile):
     loading_lfp = sio.loadmat(matfile)
 
-    return vdm.LFP(loading_lfp['csc_data'][0], loading_lfp['csc_tvec'])
+    return vdm.LocalFieldPotential(loading_lfp['csc_data'][0], loading_lfp['csc_tvec'])
 
 
 def load_position(matfile):
@@ -47,10 +47,13 @@ def load_events(matfile):
 
 def load_spikes(matfile):
     loading_spikes = sio.loadmat(matfile)
-    spikes = dict()
-    spikes['time'] = loading_spikes['spikes_times'][0]
-    spikes['type'] = loading_spikes['spikes_type'][0]
-    spikes['label'] = loading_spikes['spikes_label'][0]
+    times = loading_spikes['spikes_times'][0]
+    labels = loading_spikes['spikes_label'][0]
+
+    spikes = []
+    for time, label in zip(times, labels):
+        spikes.append(vdm.SpikeTrain(time, label[0]))
+
     return spikes
 
 

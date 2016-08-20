@@ -5,7 +5,6 @@ import pickle
 import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
-from maze_functions import spikes_by_position
 from tuning_curves_functions import get_tc_1d, get_odd_firing_idx
 from plotting_functions import plot_sorted_tc
 
@@ -56,9 +55,7 @@ if lets_2d:
 
             sliced_pos = run_pos[t_start_idx:t_stop_idx]
 
-            sliced_spikes = dict()
-            sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
-            sliced_spikes['label'] = spikes['label']
+            sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
             binsize = 3
             xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
@@ -105,7 +102,9 @@ else:
 
             sliced_pos = run_pos[t_start_idx:t_stop_idx]
 
-            tuning_curves = get_tc_1d(info, sliced_pos, spikes, pickled_tc)
+            sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
+
+            tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
 
             sort_idx = dict()
             odd_firing_idx = dict()

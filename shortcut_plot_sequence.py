@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import vdmlab as vdm
 
-from load_data import get_pos, get_csc, get_spikes
+from load_data import get_pos, get_lfp, get_spikes
 from tuning_curves_functions import get_tc_1d, find_ideal, get_odd_firing_idx
 
 import info.R063d2_info as r063d2
@@ -55,7 +55,7 @@ for info in infos:
         pickled_tc = os.path.join(pickle_filepath, tc_filename)
 
         position = get_pos(info.pos_mat, info.pxl_to_cm)
-        csc = get_csc(info.good_swr[0])
+        lfp = get_lfp(info.good_swr[0])
         spikes = get_spikes(info.spike_mat)
 
         speed = position.speed(t_smooth=0.5)
@@ -70,8 +70,7 @@ for info in infos:
 
         sliced_pos = run_pos[t_start_idx:t_stop_idx]
 
-        sliced_spikes = dict()
-        sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
+        sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
         tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
 
@@ -103,7 +102,6 @@ for info in infos:
 
         odd_firing_idx = get_odd_firing_idx(tuning_curves[trajectory], max_mean_firing=10)
 
-
         fields = vdm.find_fields(tuning_curves[trajectory])
 
         with_fields = vdm.get_single_field(fields)
@@ -120,7 +118,7 @@ for info in infos:
         for idx in sort_idx:
             if idx not in odd_firing_idx:
                 if idx in these_fields:
-                    field_spikes.append(spikes['time'][idx])
+                    field_spikes.append(spikes[idx])
                     field_tc.append(tuning_curves[trajectory][idx])
 
         for i, (start_time, stop_time, start_time_swr, stop_time_swr) in enumerate(zip(sequence['run_start'],
@@ -140,7 +138,7 @@ for info in infos:
 
             for ax_loc in range(len(field_spikes)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 1), colspan=4, sharex=ax1)
-                ax.plot(field_spikes[ax_loc], np.ones(len(field_spikes[ax_loc])), '|',
+                ax.plot(field_spikes[ax_loc].time, np.ones(len(field_spikes[ax_loc].time)), '|',
                         color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
                 ax.set_xlim([start_time, stop_time])
                 if ax_loc == 0:
@@ -152,14 +150,14 @@ for info in infos:
                 plt.setp(ax, xticks=[], xticklabels=[], yticks=[])
 
             ax2 = plt.subplot2grid((rows, cols), (rows-2, 5), rowspan=2, colspan=2)
-            ax2.plot(csc['time'], csc['data'], 'k', lw=1)
+            ax2.plot(lfp.time, lfp.data, 'k', lw=1)
             ax2.set_xlim([start_time_swr, stop_time_swr])
             plt.setp(ax2, xticks=[], xticklabels=[], yticks=[])
             sns.despine(ax=ax2)
 
             for ax_loc in range(len(field_spikes)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 5), colspan=2, sharex=ax2)
-                ax.plot(field_spikes[ax_loc], np.ones(len(field_spikes[ax_loc])), '|',
+                ax.plot(field_spikes[ax_loc].time, np.ones(len(field_spikes[ax_loc].time)), '|',
                         color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
                 ax.set_xlim([start_time_swr, stop_time_swr])
                 if ax_loc == 0:

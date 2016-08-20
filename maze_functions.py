@@ -97,8 +97,8 @@ def spikes_by_position(spikes, zone, position):
 
     Parameters
     ----------
-    spikes : list of np.arrays
-        Where each inner array is an individual neuron's spike times (floats)
+    spikes : list
+        Contains vdmlab.SpikeTrain for each neuron
     zone : dict
         With 'ushort', 'u', 'novel', 'uped', 'unovel', 'pedestal',
         'novelped', 'shortcut', 'shortped' keys.
@@ -107,16 +107,16 @@ def spikes_by_position(spikes, zone, position):
 
     Returns
     -------
-    spike_position : dict
-        With u, shortcut, novel, other keys. Each value is a list of np.arrays,
-        where each inner np.array represents an individual neuron's spike times (floats).
+    path_spikes : dict
+        With u, shortcut, novel, other keys. Each value is a list of vdmlab.SpikeTrain.
 
     """
-    spike_position = dict(u=[], shortcut=[], novel=[], other=[])
     counter = 0
-    for neuron in spikes:
+    path_spikes = dict(pedestal=[], u=[], shortcut=[], novel=[], other=[])
+
+    for spiketrain in spikes:
         neuron_spikes = dict(pedestal=[], u=[], shortcut=[], novel=[], other=[])
-        for spike in neuron:
+        for spike in spiketrain.time:
             pos_idx = vdm.find_nearest_idx(position.time, spike)
             point = Point([position.x[pos_idx], position.y[pos_idx]])
             if zone['pedestal'].contains(point) or zone['uped'].contains(point) or zone['shortped'].contains(point) or zone['novelped'].contains(point):
@@ -133,13 +133,20 @@ def spikes_by_position(spikes, zone, position):
                 continue
             else:
                 neuron_spikes['other'].append(np.asscalar(spike))
-        spike_position['u'].append(np.array(neuron_spikes['u']))
-        spike_position['shortcut'].append(np.array(neuron_spikes['shortcut']))
-        spike_position['novel'].append(np.array(neuron_spikes['novel']))
-        spike_position['other'].append(np.array(neuron_spikes['other']))
+
+        if len(neuron_spikes['u']) > 1:
+            path_spikes['u'].append(vdm.SpikeTrain(np.array(neuron_spikes['u']), spiketrain.label))
+        if len(neuron_spikes['shortcut']) > 1:
+            path_spikes['shortcut'].append(vdm.SpikeTrain(np.array(neuron_spikes['shortcut']), spiketrain.label))
+        if len(neuron_spikes['novel']) > 1:
+            path_spikes['novel'].append(vdm.SpikeTrain(np.array(neuron_spikes['novel']), spiketrain.label))
+        if len(neuron_spikes['other']) > 1:
+            path_spikes['other'].append(vdm.SpikeTrain(np.array(neuron_spikes['other']), spiketrain.label))
+
         counter += 1
         print(str(counter) + ' of ' + str(len(spikes)) + ' neurons completed!')
-    return spike_position
+
+    return path_spikes
 
 
 def get_zones(info, position):

@@ -122,8 +122,8 @@ def get_tc_1d(info, position, spikes, pickled_tc, binsize=3, expand_by=2, sampli
         info : module
             Contains session-specific information.
         position : vdmlab.Position
-        spikes : dict
-            With time (float), label (str) as keys.
+        spikes : list
+            Contains vdmlab.SpikeTrain for each neuron.
         pickled_tc: str
             Absolute location of where tuning_curve.pkl files are saved.
 
@@ -149,19 +149,16 @@ def get_tc_1d(info, position, spikes, pickled_tc, binsize=3, expand_by=2, sampli
 
     tuning_curves = dict()
     if len(linear['u'].x) > 0:
-        u_spikes = dict(time=spike_position['u'])
-        tuning_curves['u'] = vdm.tuning_curve(linear['u'], u_spikes, binsize, sampling_rate=sampling_rate)
+        tuning_curves['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], binsize, sampling_rate=sampling_rate)
     else:
         tuning_curves['u'] = None
     if len(linear['shortcut'].x) > 0:
-        shortcut_spikes = dict(time=spike_position['shortcut'])
-        tuning_curves['shortcut'] = vdm.tuning_curve(linear['shortcut'], shortcut_spikes, binsize,
+        tuning_curves['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize,
                                                      sampling_rate=sampling_rate)
     else:
         tuning_curves['shortcut'] = None
     if len(linear['novel'].x) > 0:
-        novel_spikes = dict(time=spike_position['novel'])
-        tuning_curves['novel'] = vdm.tuning_curve(linear['novel'], novel_spikes, binsize, sampling_rate=sampling_rate)
+        tuning_curves['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], binsize, sampling_rate=sampling_rate)
     else:
         tuning_curves['novel'] = None
 

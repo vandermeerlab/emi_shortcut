@@ -46,8 +46,7 @@ for info in infos:
 
     sliced_pos = run_pos[t_start_idx:t_stop_idx]
 
-    sliced_spikes = dict()
-    sliced_spikes['time'] = vdm.time_slice(spikes['time'], t_start, t_stop)
+    sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
     linear, zone = find_ideal(info, sliced_pos, expand_by=2)
 
@@ -65,7 +64,7 @@ for info in infos:
     counts_binsize = 0.025
 
     edges = get_edges(linear, counts_binsize, lastbin=True)
-    counts = vdm.get_counts(spikes['time'], edges)
+    counts = vdm.get_counts(spikes, edges)
 
     likelihood = vdm.bayesian_prob(counts, tuning_curves, counts_binsize)
 
