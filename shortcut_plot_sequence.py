@@ -65,10 +65,7 @@ for info in infos:
         t_start = info.task_times['phase3'][0]
         t_stop = info.task_times['phase3'][1]
 
-        t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
-        t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
-
-        sliced_pos = run_pos[t_start_idx:t_stop_idx]
+        sliced_pos = run_pos.time_slice(t_start, t_stop)
 
         sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 

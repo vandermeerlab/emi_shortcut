@@ -38,11 +38,7 @@ for info in infos:
     t_stop = info.task_times['phase3'][1]
 
     pos = get_pos(info.pos_mat, info.pxl_to_cm)
-    # Slicing position to only Phase 3
-    t_start_idx = vdm.find_nearest_idx(np.array(pos.time), t_start)
-    t_end_idx = vdm.find_nearest_idx(np.array(pos.time), t_stop)
-
-    sliced_pos = pos[t_start_idx:t_end_idx]
+    sliced_pos = pos.time_slice(t_start, t_stop)
 
     # Slicing events to only Phase 3
     events = get_events(info.event_mat)
