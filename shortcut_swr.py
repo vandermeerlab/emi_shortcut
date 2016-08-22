@@ -23,8 +23,8 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 output_filepath = os.path.join(thisdir, 'plots', 'swr')
 
 
-infos = [r068d1]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
+# infos = [r068d1]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
 
 for info in infos:
     print('Working on ' + info.session_id)

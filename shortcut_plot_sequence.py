@@ -30,8 +30,8 @@ sns.set_style('white')
 sns.set_style('ticks')
 
 
-infos = [r063d3]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4]
+# infos = [r063d3]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
 
 colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
            '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
@@ -179,8 +179,8 @@ for info in infos:
 
             plt.tight_layout()
             fig.subplots_adjust(hspace=0, wspace=0.1)
-            plt.show()
-            # filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
-            # savepath = os.path.join(output_filepath, filename)
-            # plt.savefig(savepath, dpi=300, bbox_inches='tight')
-            # plt.close()
+            # plt.show()
+            filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
+            savepath = os.path.join(output_filepath, filename)
+            plt.savefig(savepath, dpi=300, bbox_inches='tight')
+            plt.close()
