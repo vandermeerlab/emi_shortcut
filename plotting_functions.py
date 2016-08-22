@@ -304,12 +304,12 @@ def plot_cooccur(probs, savepath, savefig=True):
     width = 0.8
     colours = ['#5975a4', '#5f9e6e', '#b55d5f']
 
-    active_means = [np.nanmean(probs['active']['u']),
-                    np.nanmean(probs['active']['shortcut']),
-                    np.nanmean(probs['active']['novel'])]
-    active_sems = [stats.sem(probs['active']['u'], nan_policy='omit'),
-                   stats.sem(probs['active']['shortcut'], nan_policy='omit'),
-                   stats.sem(probs['active']['novel'], nan_policy='omit')]
+    active_means = [np.nanmean(probs['u']['active']),
+                    np.nanmean(probs['shortcut']['active']),
+                    np.nanmean(probs['novel']['active'])]
+    active_sems = [stats.sem(probs['u']['active'], nan_policy='omit'),
+                   stats.sem(probs['shortcut']['active'], nan_policy='omit'),
+                   stats.sem(probs['novel']['active'], nan_policy='omit')]
     ax1.bar(ind, active_means, width, color=colours, yerr=active_sems, ecolor='k')
     ax1.set_ylabel('Proportion of SWRs active')
     ax1.set_title('Probability that a given neuron is active')
@@ -320,12 +320,12 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax1.get_xaxis().tick_bottom()
     ax1.get_yaxis().tick_left()
 
-    expected_means = [np.nanmean(probs['expected']['u']),
-                      np.nanmean(probs['expected']['shortcut']),
-                      np.nanmean(probs['expected']['novel'])]
-    expected_sems = [stats.sem(probs['expected']['u'], nan_policy='omit'),
-                     stats.sem(probs['expected']['shortcut'], nan_policy='omit'),
-                     stats.sem(probs['expected']['novel'], nan_policy='omit')]
+    expected_means = [np.nanmean(probs['u']['expected']),
+                      np.nanmean(probs['shortcut']['expected']),
+                      np.nanmean(probs['novel']['expected'])]
+    expected_sems = [stats.sem(probs['u']['expected'], nan_policy='omit'),
+                     stats.sem(probs['shortcut']['expected'], nan_policy='omit'),
+                     stats.sem(probs['novel']['expected'], nan_policy='omit')]
     ax2.bar(ind, expected_means, width, color=colours, yerr=expected_sems, ecolor='k')
     ax2.set_ylabel('Expected conditional probability')
     ax2.set_title('Observed conditional probabilities, given independence')
@@ -336,12 +336,12 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax2.get_xaxis().tick_bottom()
     ax2.get_yaxis().tick_left()
 
-    observed_means = [np.nanmean(probs['observed']['u']),
-                      np.nanmean(probs['observed']['shortcut']),
-                      np.nanmean(probs['observed']['novel'])]
-    observed_sems = [stats.sem(probs['observed']['u'], nan_policy='omit'),
-                     stats.sem(probs['observed']['shortcut'], nan_policy='omit'),
-                     stats.sem(probs['observed']['novel'], nan_policy='omit')]
+    observed_means = [np.nanmean(probs['u']['observed']),
+                      np.nanmean(probs['shortcut']['observed']),
+                      np.nanmean(probs['novel']['observed'])]
+    observed_sems = [stats.sem(probs['u']['observed'], nan_policy='omit'),
+                     stats.sem(probs['shortcut']['observed'], nan_policy='omit'),
+                     stats.sem(probs['novel']['observed'], nan_policy='omit')]
     ax3.bar(ind, observed_means, width, color=colours, yerr=observed_sems, ecolor='k')
     ax3.set_ylabel('Cell pair joint probability')
     ax3.set_title('Observed co-activity')
@@ -352,12 +352,12 @@ def plot_cooccur(probs, savepath, savefig=True):
     ax3.get_xaxis().tick_bottom()
     ax3.get_yaxis().tick_left()
 
-    zscore_means = [np.nanmean(probs['zscore']['u']),
-                      np.nanmean(probs['zscore']['shortcut']),
-                      np.nanmean(probs['zscore']['novel'])]
-    zscore_sems = [stats.sem(probs['zscore']['u'], nan_policy='omit'),
-                     stats.sem(probs['zscore']['shortcut'], nan_policy='omit'),
-                     stats.sem(probs['zscore']['novel'], nan_policy='omit')]
+    zscore_means = [np.nanmean(probs['u']['zscore']),
+                      np.nanmean(probs['shortcut']['zscore']),
+                      np.nanmean(probs['novel']['zscore'])]
+    zscore_sems = [stats.sem(probs['u']['zscore'], nan_policy='omit'),
+                     stats.sem(probs['shortcut']['zscore'], nan_policy='omit'),
+                     stats.sem(probs['novel']['zscore'], nan_policy='omit')]
     ax4.bar(ind, zscore_means, width, color=colours, yerr=zscore_sems, ecolor='k')
     ax4.set_ylabel('SWR co-activation z-scored')
     ax4.set_title('Co-activation above chance levels')

@@ -25,8 +25,8 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
-# infos = [r066d3, r066d4]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
+infos = [r066d3, r066d4]
+# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
 
 exp_times = ['pauseA', 'pauseB']
 # exp_times = ['pauseA']
@@ -111,21 +111,18 @@ for info in infos:
         count_matrix['shortcut'] = vdm.spike_counts(shortcut_spikes, swr_intervals, window=0.1)
         count_matrix['novel'] = vdm.spike_counts(novel_spikes, swr_intervals, window=0.1)
 
-        probs = dict(active=dict(), expected=dict(), observed=dict(), zscore=dict())
-        (probs['active']['u'],
-        probs['expected']['u'],
-        probs['observed']['u'],
-        probs['zscore']['u']) = vdm.compute_cooccur(count_matrix['u'], num_shuffles=10000)
+        u_tetrode_mask = vdm.get_tetrode_mask(u_spikes)
 
-        (probs['active']['shortcut'],
-        probs['expected']['shortcut'],
-        probs['observed']['shortcut'],
-        probs['zscore']['shortcut']) = vdm.compute_cooccur(count_matrix['shortcut'], num_shuffles=10000)
+        shortcut_tetrode_mask = vdm.get_tetrode_mask(shortcut_spikes)
 
-        (probs['active']['novel'],
-        probs['expected']['novel'],
-        probs['observed']['novel'],
-        probs['zscore']['novel']) = vdm.compute_cooccur(count_matrix['novel'], num_shuffles=10000)
+        novel_tetrode_mask = vdm.get_tetrode_mask(novel_spikes)
+
+        probs = dict()
+        probs['u'] = vdm.compute_cooccur(count_matrix['u'], u_tetrode_mask, num_shuffles=10000)
+
+        probs['shortcut'] = vdm.compute_cooccur(count_matrix['shortcut'], shortcut_tetrode_mask, num_shuffles=10000)
+
+        probs['novel'] = vdm.compute_cooccur(count_matrix['novel'], novel_tetrode_mask, num_shuffles=10000)
 
         filename = info.session_id + '_cooccur-' + exp_time + '.png'
         savepath = os.path.join(output_filepath, filename)
@@ -144,6 +141,6 @@ for info in infos:
         # all_probs['observed']['novel'].append(probs['observed']['novel'])
         # all_probs['zscore']['novel'].append(probs['zscore']['novel'])
 
-        filename = 'combined_cooccur-' + exp_time + '.png'
-        savepath = os.path.join(output_filepath, filename)
-        plot_cooccur(probs, savepath)
+        # filename = 'combined_cooccur-' + exp_time + '.png'
+        # savepath = os.path.join(output_filepath, filename)
+        # plot_cooccur(probs, savepath)
