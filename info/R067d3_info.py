@@ -1,6 +1,6 @@
 from startup import convert_to_cm
 
-session_id = 'R067d2'
+session_id = 'R067d3'
 
 species = 'rat'
 behavior = 'shortcut'
@@ -8,26 +8,26 @@ target = 'dCA1'
 experimenter = 'Emily Irvine'
 
 
-pos_mat = 'R067-2014-12-01-vt.mat'
-event_mat = 'R067-2014-12-01-event.mat'
-spike_mat = 'R067-2014-12-01-spike.mat'
+pos_mat = 'R067-2014-12-02-vt.mat'
+event_mat = 'R067-2014-12-02-event.mat'
+spike_mat = 'R067-2014-12-02-spike.mat'
 
-good_lfp = ['R067-2014-12-01-csc07d.ncs']
-good_swr = ['R067-2014-12-01-csc07.mat']
-good_theta = ['R067-2014-12-01-csc03.mat']
+good_lfp = ['R067-2014-12-02-csc08d.ncs']
+good_swr = ['R067-2014-12-02-csc08.mat']
+good_theta = ['R067-2014-12-02-csc03.mat']
 
 
 # Experimental session-specific task times for R066 day 2
 task_times = dict()
-task_times['prerecord'] = [33194.0, 33498.0]
-task_times['phase1'] = [33555.0, 34158.0]
-task_times['pauseA'] = [34210.0, 34813.0]
-task_times['phase2'] = [34852.0, 36074.0]
-task_times['pauseB'] = [36142.0, 37955.0]
-task_times['phase3'] = [37993.0, 40759.0]
-task_times['postrecord'] = [40817.0, 41135.0]
+task_times['prerecord'] = [1.4985e+04, 1.5291e+04]
+task_times['phase1'] = [1.5327e+04, 1.5808e+04]
+task_times['pauseA'] = [1.5864e+04, 1.6470e+04]
+task_times['phase2'] = [1.6521e+04, 1.7422e+04]
+task_times['pauseB'] = [1.7460e+04, 1.9270e+04]
+task_times['phase3'] = [1.9314e+04, 2.2017e+04]
+task_times['postrecord'] = [2.2077e+04, 2.2382e+04]
 
-pxl_to_cm = (7.2535, 7.2473)
+pxl_to_cm = (7.3680, 7.1535)
 
 fs = 2000
 
@@ -52,17 +52,19 @@ path_pts['pt10'] = [231, 56]
 path_pts['pt11'] = [322, 43]
 path_pts['pt12'] = [512, 46]
 path_pts['feeder2'] = [629, 60]
-path_pts['shortcut1'] = [525, 374]
-path_pts['spt1'] = [528, 198]
-path_pts['spt2'] = [532, 171]
-path_pts['spt3'] = [611, 171]
-path_pts['spt4'] = [628, 161]
+path_pts['shortcut1'] = [422, 375]
+path_pts['spt1'] = [417, 297]
+path_pts['spt2'] = [423, 271]
+path_pts['spt3'] = [450, 271]
+path_pts['spt4'] = [612, 274]
+path_pts['spt5'] = [630, 264]
+path_pts['spt6'] = [635, 229]
 path_pts['shortcut2'] = [629, 60]
-path_pts['novel1'] = [199, 356]
-path_pts['npt1'] = [93, 358]
-path_pts['npt2'] = [94, 322]
-path_pts['novel2'] = [107, 157]
-path_pts['pedestal'] = [366, 194]
+path_pts['novel1'] = [205, 58]
+path_pts['npt1'] = [119, 50]
+path_pts['npt2'] = [97, 61]
+path_pts['novel2'] = [95, 160]
+path_pts['pedestal'] = [339, 169]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
@@ -74,7 +76,8 @@ u_trajectory = [path_pts['feeder1'], path_pts['pt1'], path_pts['turn1'],
                 path_pts['pt12'], path_pts['feeder2']]
 
 shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'],
-                       path_pts['spt3'], path_pts['spt4'], path_pts['shortcut2']]
+                       path_pts['spt3'], path_pts['spt4'], path_pts['spt5'],
+                       path_pts['spt6'], path_pts['shortcut2']]
 
 novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
                     path_pts['novel2']]
