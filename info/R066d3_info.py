@@ -3,20 +3,20 @@ import vdmlab as vdm
 from startup import convert_to_cm
 
 session_id = 'R066d3'
+session = 'R066-2014-11-29'
 
 species = 'rat'
 behavior = 'shortcut'
 target = 'dCA1'
 experimenter = 'Emily Irvine'
 
+pos_mat = session + '-vt.mat'
+event_mat = session + '-event.mat'
+spike_mat = session + '-spike.mat'
 
-pos_mat = 'R066-2014-11-29-vt.mat'
-event_mat = 'R066-2014-11-29-event.mat'
-spike_mat = 'R066-2014-11-29-spike.mat'
-
-good_lfp = ['R066-2014-11-29-csc12c.ncs']
-good_swr = ['R066-2014-11-29-csc12.mat']
-good_theta = ['R066-2014-11-29-csc07.mat']
+good_lfp = [session + '-csc12c.ncs']
+good_swr = [session + '-csc12.mat']
+good_theta = [session + '-csc07.mat']
 
 
 task_times = dict()
@@ -32,9 +32,8 @@ pxl_to_cm = (7.2599, 7.2286)
 
 fs = 2000
 
-run_threshold = 0.35
+run_threshold = 0.0
 
-# Session-specific path trajectory points
 path_pts = dict()
 path_pts['feeder1'] = [525, 471]
 path_pts['pt1'] = [528, 399]

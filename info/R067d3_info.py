@@ -3,20 +3,20 @@ import vdmlab as vdm
 from startup import convert_to_cm
 
 session_id = 'R067d3'
+session = 'R067-2014-12-02'
 
 species = 'rat'
 behavior = 'shortcut'
 target = 'dCA1'
 experimenter = 'Emily Irvine'
 
+pos_mat = session + '-vt.mat'
+event_mat = session + '-event.mat'
+spike_mat = session + '-spike.mat'
 
-pos_mat = 'R067-2014-12-02-vt.mat'
-event_mat = 'R067-2014-12-02-event.mat'
-spike_mat = 'R067-2014-12-02-spike.mat'
-
-good_lfp = ['R067-2014-12-02-csc08d.ncs']
-good_swr = ['R067-2014-12-02-csc08.mat']
-good_theta = ['R067-2014-12-02-csc03.mat']
+good_lfp = [session + '-csc08d.ncs']
+good_swr = [session + '-csc08.mat']
+good_theta = [session + '-csc03.mat']
 
 task_times = dict()
 task_times['prerecord'] = vdm.Epoch(np.array([1.4985e+04, 1.5291e+04]))
@@ -33,7 +33,6 @@ fs = 2000
 
 run_threshold = 0.0
 
-# Session-specific path trajectory points
 path_pts = dict()
 path_pts['feeder1'] = [527, 460]
 path_pts['pt1'] = [527, 415]
@@ -81,12 +80,3 @@ shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2']
 
 novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
                     path_pts['novel2']]
-
-sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr'] = vdm.Epoch(np.array([[]]))
-sequence['u']['run'] = vdm.Epoch(np.array([[]]))
-sequence['u']['ms'] = 10
-
-sequence['shortcut']['swr'] = vdm.Epoch(np.array([[]]))
-sequence['shortcut']['run'] = vdm.Epoch(np.array([[]]))
-sequence['shortcut']['ms'] = 10
