@@ -1,3 +1,5 @@
+import numpy as np
+import vdmlab as vdm
 from startup import convert_to_cm
 
 session_id = 'R066d4'
@@ -18,13 +20,13 @@ good_theta = ['R066-2014-12-01-csc07.mat']
 
 
 task_times = dict()
-task_times['prerecord'] = [8.8210e+03, 9.1346e+03]
-task_times['phase1'] = [9.1677e+03, 9.6490e+03]
-task_times['pauseA'] = [9.7725e+03, 1.0374e+04]
-task_times['phase2'] = [1.0406e+04, 1.1606e+04]
-task_times['pauseB'] = [1.1675e+04, 1.3479e+04]
-task_times['phase3'] = [1.3514e+04, 1.5619e+04]
-task_times['postrecord'] = [1.5650e+04, 1.6257e+04]
+task_times['prerecord'] = vdm.Epoch(np.array([8.8210e+03, 9.1346e+03]))
+task_times['phase1'] = vdm.Epoch(np.array([9.1677e+03, 9.6490e+03]))
+task_times['pauseA'] = vdm.Epoch(np.array([9.7725e+03, 1.0374e+04]))
+task_times['phase2'] = vdm.Epoch(np.array([1.0406e+04, 1.1606e+04]))
+task_times['pauseB'] = vdm.Epoch(np.array([1.1675e+04, 1.3479e+04]))
+task_times['phase3'] = vdm.Epoch(np.array([1.3514e+04, 1.5619e+04]))
+task_times['postrecord'] = vdm.Epoch(np.array([1.5650e+04, 1.6257e+04]))
 
 pxl_to_cm = (7.6032, 7.1722)
 
@@ -82,24 +84,15 @@ novel_trajectory = [path_pts['novel1'], path_pts['point21'], path_pts['point22']
                     path_pts['point23'], path_pts['novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr_start'] = [16227.0, 15740.45]
-sequence['u']['swr_stop'] = [16230.0, 15740.6]
-sequence['u']['run_start'] = [9312.7, 10766.0]
-sequence['u']['run_stop'] = [9342.7, 10796.0]
+sequence['u']['swr'] = vdm.Epoch(np.array([[16227.0, 16230.0],
+                                           [15740.45, 15740.6]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[9312.7, 9342.7],
+                                           [10766.0, 10796.0]]))
 sequence['u']['ms'] = 10
-sequence['u']['loc'] = 2
-sequence['u']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                            '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                            '#1d91c0', '#8c6bb1', '#225ea8', '#88419d', '#ae017e',
-                            '#dd3497']
 
-sequence['shortcut']['swr_start'] = [15687.0, 15938.9]
-sequence['shortcut']['swr_stop'] = [15687.55, 15939.3]
-sequence['shortcut']['run_start'] = [13544.0, 14579.0]
-sequence['shortcut']['run_stop'] = [13574.0, 14609.0]
+sequence['shortcut']['swr'] = vdm.Epoch(np.array([[15687.0, 15687.55],
+                                                  [15938.9, 15939.3]]))
+sequence['shortcut']['run'] = vdm.Epoch(np.array([[13544.0, 13574.0],
+                                                  [14579.0, 14609.0]]))
 sequence['shortcut']['ms'] = 10
-sequence['shortcut']['loc'] = 2
-sequence['shortcut']['colours'] = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-                                   '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-                                   '#1d91c0', '#8c6bb1', '#225ea8', '#88419d', '#ae017e',
-                                   '#dd3497']
+

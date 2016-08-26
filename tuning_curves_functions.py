@@ -6,7 +6,6 @@ from shapely.geometry import Point, LineString
 
 import vdmlab as vdm
 
-from load_data import get_spikes, get_pos
 from maze_functions import spikes_by_position
 
 

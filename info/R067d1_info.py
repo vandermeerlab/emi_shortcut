@@ -1,3 +1,5 @@
+import numpy as np
+import vdmlab as vdm
 from startup import convert_to_cm
 
 session_id = 'R067d1'
@@ -17,13 +19,13 @@ good_theta = ['R067-2014-11-29-csc08.mat']
 
 
 task_times = dict()
-task_times['prerecord'] = [9479.9, 9783.7]
-task_times['phase1'] = [9858.4, 10463.0]
-task_times['pauseA'] = [1052.7, 11129.0]
-task_times['phase2'] = [11172.0, 12392.0]
-task_times['pauseB'] = [12445.0, 14249.0]
-task_times['phase3'] = [14339.0, 16560.0]
-task_times['postrecord'] = [16631.0, 17041.0]
+task_times['prerecord'] = vdm.Epoch(np.array([9479.9, 9783.7]))
+task_times['phase1'] = vdm.Epoch(np.array([9858.4, 10463.0]))
+task_times['pauseA'] = vdm.Epoch(np.array([1052.7, 11129.0]))
+task_times['phase2'] = vdm.Epoch(np.array([11172.0, 12392.0]))
+task_times['pauseB'] = vdm.Epoch(np.array([12445.0, 14249.0]))
+task_times['phase3'] = vdm.Epoch(np.array([14339.0, 16560.0]))
+task_times['postrecord'] = vdm.Epoch(np.array([16631.0, 17041.0]))
 
 pxl_to_cm = (7.3552, 7.1253)
 
@@ -71,14 +73,10 @@ novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
                     path_pts['novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr_start'] = [16744.2]
-sequence['u']['swr_stop'] = [16745.0]
-sequence['u']['run_start'] = [16056.0]
-sequence['u']['run_stop'] = [16100.0]
+sequence['u']['swr'] = vdm.Epoch(np.array([[16744.2, 16745.0]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[16056.0, 16100.0]]))
 sequence['u']['ms'] = 10
 
-sequence['shortcut']['swr_start'] = [16843.9]
-sequence['shortcut']['swr_stop'] = [16844.2]
-sequence['shortcut']['run_start'] = [15529.0]
-sequence['shortcut']['run_stop'] = [15573.0]
+sequence['shortcut']['swr'] = vdm.Epoch(np.array([[16843.9, 16844.2]]))
+sequence['shortcut']['run'] = vdm.Epoch(np.array([[15529.0, 15573.0]]))
 sequence['shortcut']['ms'] = 10

@@ -1,3 +1,5 @@
+import numpy as np
+import vdmlab as vdm
 from startup import convert_to_cm
 
 session_id = 'R063d5'
@@ -18,13 +20,13 @@ good_theta = ['R063-2015-03-24-csc15.mat']
 
 
 task_times = dict()
-task_times['prerecord'] = [2160.2, 2479.9]
-task_times['phase1'] = [2516.0, 3119.6]
-task_times['pauseA'] = [3136.2, 3768.3]
-task_times['phase2'] = [3797.6, 5066.1]
-task_times['pauseB'] = [5088.4, 7189.4]
-task_times['phase3'] = [7221.2, 10264.0]
-task_times['postrecord'] = [10285.0, 10591.0]
+task_times['prerecord'] = vdm.Epoch(np.array([2160.2, 2479.9]))
+task_times['phase1'] = vdm.Epoch(np.array([2516.0, 3119.6]))
+task_times['pauseA'] = vdm.Epoch(np.array([3136.2, 3768.3]))
+task_times['phase2'] = vdm.Epoch(np.array([3797.6, 5066.1]))
+task_times['pauseB'] = vdm.Epoch(np.array([5088.4, 7189.4]))
+task_times['phase3'] = vdm.Epoch(np.array([7221.2, 10264.0]))
+task_times['postrecord'] = vdm.Epoch(np.array([10285.0, 10591.0]))
 
 pxl_to_cm = (7.4906, 7.2379)
 
@@ -82,14 +84,14 @@ novel_trajectory = [path_pts['novel1'], path_pts['point19'], path_pts['point20']
 
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr_start'] = [10421.9, 10522.2]
-sequence['u']['swr_stop'] = [10422.4, 10523.2]
-sequence['u']['run_start'] = [7325, 4885]
-sequence['u']['run_stop'] = [7350, 4915]
+sequence['u']['swr'] = vdm.Epoch(np.array([[10421.9, 10422.4],
+                                           [10522.2, 10523.2]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[7325, 7350],
+                                           [4885, 4915]]))
 sequence['u']['ms'] = 7
 
-sequence['shortcut']['swr_start'] = [10255.65, 9859.7]
-sequence['shortcut']['swr_stop'] = [10256.3, 9860.5]
-sequence['shortcut']['run_start'] = [7303, 9165]
-sequence['shortcut']['run_stop'] = [7333, 9195]
+sequence['shortcut']['swr'] = vdm.Epoch(np.array([[10255.65, 10256.3],
+                                                  [9859.7, 9860.5]]))
+sequence['shortcut']['run'] = vdm.Epoch(np.array([[7303, 7333],
+                                                  [9165, 9195]]))
 sequence['shortcut']['ms'] = 10

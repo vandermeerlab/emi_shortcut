@@ -1,3 +1,5 @@
+import numpy as np
+import vdmlab as vdm
 from startup import convert_to_cm
 
 session_id = 'R063d4'
@@ -18,13 +20,13 @@ good_theta = ['R063-2015-03-23-csc10.mat']
 
 
 task_times = dict()
-task_times['prerecord'] = [1074.6, 1378.7]
-task_times['phase1'] = [1415.9, 1847.2]
-task_times['pauseA'] = [1860.6, 2486.0]
-task_times['phase2'] = [2504.6, 3704.5]
-task_times['pauseB'] = [3725.3, 5600.7]
-task_times['phase3'] = [5627.4, 8638.8]
-task_times['postrecord'] = [8656.4, 9000.0]
+task_times['prerecord'] = vdm.Epoch(np.array([1074.6, 1378.7]))
+task_times['phase1'] = vdm.Epoch(np.array([1415.9, 1847.2]))
+task_times['pauseA'] = vdm.Epoch(np.array([1860.6, 2486.0]))
+task_times['phase2'] = vdm.Epoch(np.array([2504.6, 3704.5]))
+task_times['pauseB'] = vdm.Epoch(np.array([3725.3, 5600.7]))
+task_times['phase3'] = vdm.Epoch(np.array([5627.4, 8638.8]))
+task_times['postrecord'] = vdm.Epoch(np.array([8656.4, 9000.0]))
 
 pxl_to_cm = (7.9628, 7.2755)
 
@@ -76,14 +78,22 @@ novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
 
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr_start'] = [8876.4, 8855.0, 8965.4]
-sequence['u']['swr_stop'] = [8876.7, 8855.4, 8966.0]
-sequence['u']['run_start'] = [2577, 2668.0, 3632.0]
-sequence['u']['run_stop'] = [2607, 2698.0, 3667.0]
+sequence['u']['swr'] = vdm.Epoch(np.array([[8876.4, 8876.7],
+                                           [8855.0, 8855.4],
+                                           [8965.4, 8966.0]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[2577, 2607],
+                                           [2668.0, 2698.0],
+                                           [3632.0, 3667.0]]))
 sequence['u']['ms'] = 10
 
-sequence['shortcut']['swr_start'] = [8872.65, 8578.9, 8575.37, 8119.5, 8206.82]
-sequence['shortcut']['swr_stop'] = [8873.15, 8579.5, 8575.55, 8119.8, 8207.38]
-sequence['shortcut']['run_start'] = [5760.0, 6214.0, 5900.0, 6460.0, 6510.0]
-sequence['shortcut']['run_stop'] = [5790.0, 6244.0, 5945.0, 6490.0, 6550.0]
+sequence['shortcut']['swr'] = vdm.Epoch(np.array([[8872.65, 8873.15],
+                                                  [8578.9, 8579.5],
+                                                  [8575.37, 8575.55],
+                                                  [8119.5, 8119.8],
+                                                  [8206.82, 8207.38]]))
+sequence['shortcut']['run'] = vdm.Epoch(np.array([[5760.0, 5790.0],
+                                                  [6214.0, 6244.0],
+                                                  [5900.0, 5945.0],
+                                                  [6460.0, 6490.0],
+                                                  [6510.0, 6550.0]]))
 sequence['shortcut']['ms'] = 10

@@ -1,3 +1,5 @@
+import numpy as np
+import vdmlab as vdm
 from startup import convert_to_cm
 
 session_id = 'R067d2'
@@ -16,16 +18,14 @@ good_lfp = ['R067-2014-12-01-csc07d.ncs']
 good_swr = ['R067-2014-12-01-csc07.mat']
 good_theta = ['R067-2014-12-01-csc03.mat']
 
-
-# Experimental session-specific task times for R066 day 2
 task_times = dict()
-task_times['prerecord'] = [33194.0, 33498.0]
-task_times['phase1'] = [33555.0, 34158.0]
-task_times['pauseA'] = [34210.0, 34813.0]
-task_times['phase2'] = [34852.0, 36074.0]
-task_times['pauseB'] = [36142.0, 37955.0]
-task_times['phase3'] = [37993.0, 40759.0]
-task_times['postrecord'] = [40817.0, 41135.0]
+task_times['prerecord'] = vdm.Epoch(np.array([33194.0, 33498.0]))
+task_times['phase1'] = vdm.Epoch(np.array([33555.0, 34158.0]))
+task_times['pauseA'] = vdm.Epoch(np.array([34210.0, 34813.0]))
+task_times['phase2'] = vdm.Epoch(np.array([34852.0, 36074.0]))
+task_times['pauseB'] = vdm.Epoch(np.array([36142.0, 37955.0]))
+task_times['phase3'] = vdm.Epoch(np.array([37993.0, 40759.0]))
+task_times['postrecord'] = vdm.Epoch(np.array([40817.0, 41135.0]))
 
 pxl_to_cm = (7.2535, 7.2473)
 
@@ -80,14 +80,10 @@ novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
                     path_pts['novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr_start'] = []
-sequence['u']['swr_stop'] = []
-sequence['u']['run_start'] = []
-sequence['u']['run_stop'] = []
+sequence['u']['swr'] = vdm.Epoch(np.array([[]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[]]))
 sequence['u']['ms'] = 10
 
-sequence['shortcut']['swr_start'] = []
-sequence['shortcut']['swr_stop'] = []
-sequence['shortcut']['run_start'] = []
-sequence['shortcut']['run_stop'] = []
+sequence['shortcut']['swr'] = vdm.Epoch(np.array([[]]))
+sequence['shortcut']['run'] = vdm.Epoch(np.array([[]]))
 sequence['shortcut']['ms'] = 10

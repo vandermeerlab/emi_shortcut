@@ -30,8 +30,8 @@ sns.set_style('white')
 sns.set_style('ticks')
 
 
-# infos = [r063d3]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
+infos = [r063d2]
+# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
 
 colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
            '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
@@ -62,8 +62,8 @@ for info in infos:
         run_idx = np.squeeze(speed.data) >= info.run_threshold
         run_pos = position[run_idx]
 
-        t_start = info.task_times['phase3'][0]
-        t_stop = info.task_times['phase3'][1]
+        t_start = info.task_times['phase3'].start
+        t_stop = info.task_times['phase3'].stop
 
         sliced_pos = run_pos.time_slice(t_start, t_stop)
 
@@ -84,8 +84,8 @@ for info in infos:
         #     with open(pickled_spike_heatmaps, 'wb') as fileobj:
         #         pickle.dump(spike_heatmaps, fileobj)
 
-        t_start = info.task_times['prerecord'][0]
-        t_stop = info.task_times['postrecord'][1]
+        t_start = info.task_times['prerecord'].start
+        t_stop = info.task_times['postrecord'].stop
 
         t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
         t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
@@ -118,26 +118,32 @@ for info in infos:
                     field_spikes.append(spikes[idx])
                     field_tc.append(tuning_curves[trajectory][idx])
 
-        for i, (start_time, stop_time, start_time_swr, stop_time_swr) in enumerate(zip(sequence['run_start'],
-                                                                                       sequence['run_stop'],
-                                                                                       sequence['swr_start'],
-                                                                                       sequence['swr_stop'])):
+        for i, (run_start, run_stop, swr_start, swr_stop) in enumerate(zip(sequence['run'].starts,
+                                                                               sequence['run'].stops,
+                                                                               sequence['swr'].starts,
+                                                                               sequence['swr'].stops)):
             rows = len(field_spikes) + 2
             cols = 7
             fig = plt.figure()
 
+            run_linear = this_linear.time_slice(run_start, run_stop)
+
             ax1 = plt.subplot2grid((rows, cols), (rows-2, 1), rowspan=2, colspan=4)
-            ax1.plot(this_linear.time, np.zeros(len(this_linear.time)), color='#bdbdbd', lw=1)
-            ax1.plot(this_linear.time, -this_linear.x, 'b.', ms=3)
-            ax1.set_xlim([start_time, stop_time])
+            ax1.plot(run_linear.time, np.zeros(len(run_linear.time)), color='#bdbdbd', lw=1)
+            ax1.plot(run_linear.time, -run_linear.x, 'b.', ms=3)
+            # ax1.set_xlim([run_start, run_stop])
             plt.setp(ax1, xticks=[], xticklabels=[], yticks=[])
             sns.despine(ax=ax1)
 
+            run_spikes = []
+            for spiketrain in field_spikes:
+                run_spikes.append(spiketrain.time_slice(run_start, run_stop))
+
             for ax_loc in range(len(field_spikes)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 1), colspan=4, sharex=ax1)
-                ax.plot(field_spikes[ax_loc].time, np.ones(len(field_spikes[ax_loc].time)), '|',
+                ax.plot(run_spikes[ax_loc].time, np.ones(len(run_spikes[ax_loc].time)), '|',
                         color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
-                ax.set_xlim([start_time, stop_time])
+                # ax.set_xlim([run_start, run_stop])
                 if ax_loc == 0:
                     vdm.add_scalebar(ax, matchy=False, bbox_transform=ax.transAxes, bbox_to_anchor=(0.9, 1.1))
                 if ax_loc == len(field_spikes)-1:
@@ -147,16 +153,20 @@ for info in infos:
                 plt.setp(ax, xticks=[], xticklabels=[], yticks=[])
 
             ax2 = plt.subplot2grid((rows, cols), (rows-2, 5), rowspan=2, colspan=2)
-            ax2.plot(lfp.time, lfp.data, 'k', lw=1)
-            ax2.set_xlim([start_time_swr, stop_time_swr])
+            ax2.plot(lfp.time_slice(swr_start, swr_stop).time, lfp.time_slice(swr_start, swr_stop).data, 'k', lw=1)
+            # ax2.set_xlim([swr_start, swr_stop])
             plt.setp(ax2, xticks=[], xticklabels=[], yticks=[])
             sns.despine(ax=ax2)
 
-            for ax_loc in range(len(field_spikes)):
+            swr_spikes = []
+            for spiketrain in field_spikes:
+                swr_spikes.append(spiketrain.time_slice(swr_start, swr_stop))
+
+            for ax_loc in range(len(swr_spikes)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 5), colspan=2, sharex=ax2)
-                ax.plot(field_spikes[ax_loc].time, np.ones(len(field_spikes[ax_loc].time)), '|',
+                ax.plot(swr_spikes[ax_loc].time, np.ones(len(swr_spikes[ax_loc].time)), '|',
                         color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
-                ax.set_xlim([start_time_swr, stop_time_swr])
+                # ax.set_xlim([swr_start, swr_stop])
                 if ax_loc == 0:
                     vdm.add_scalebar(ax, matchy=False, bbox_transform=ax.transAxes, bbox_to_anchor=(0.9, 1.1))
                 if ax_loc == len(field_spikes)-1:
@@ -167,7 +177,7 @@ for info in infos:
 
             x = list(range(0, np.shape(field_tc)[1]))
 
-            for ax_loc in range(len(field_spikes)):
+            for ax_loc in range(len(field_tc)):
                 ax = plt.subplot2grid((rows, cols), (ax_loc, 0))
                 ax.plot(field_tc[ax_loc], color=colours[ax_loc % len(colours)])
                 ax.fill_between(x, 0, field_tc[ax_loc], facecolor=colours[ax_loc % len(colours)])
@@ -179,8 +189,8 @@ for info in infos:
 
             plt.tight_layout()
             fig.subplots_adjust(hspace=0, wspace=0.1)
-            # plt.show()
-            filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
-            savepath = os.path.join(output_filepath, filename)
-            plt.savefig(savepath, dpi=300, bbox_inches='tight')
-            plt.close()
+            plt.show()
+            # filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
+            # savepath = os.path.join(output_filepath, filename)
+            # plt.savefig(savepath, dpi=300, bbox_inches='tight')
+            # plt.close()

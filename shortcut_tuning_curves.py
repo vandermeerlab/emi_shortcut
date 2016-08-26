@@ -49,8 +49,8 @@ if lets_2d:
             run_idx = np.squeeze(speed.data) >= info.run_threshold
             run_pos = position[run_idx]
 
-            t_start = info.task_times['phase3'][0]
-            t_stop = info.task_times['phase3'][1]
+            t_start = info.task_times['phase3'].start
+            t_stop = info.task_times['phase3'].stop
 
             sliced_pos = run_pos.time_slice(t_start, t_stop)
 
@@ -93,8 +93,8 @@ else:
             run_idx = np.squeeze(speed.data) >= info.run_threshold
             run_pos = position[run_idx]
 
-            t_start = info.task_times['phase3'][0]
-            t_stop = info.task_times['phase3'][1]
+            t_start = info.task_times['phase3'].start
+            t_stop = info.task_times['phase3'].stop
 
             sliced_pos = run_pos.time_slice(t_start, t_stop)
 

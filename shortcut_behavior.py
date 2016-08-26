@@ -38,8 +38,8 @@ trials = []
 
 for info in infos:
     print(info.session_id)
-    t_start = info.task_times['phase3'][0]
-    t_stop = info.task_times['phase3'][1]
+    t_start = info.task_times['phase3'].start
+    t_stop = info.task_times['phase3'].stop
 
     pos = get_pos(info.pos_mat, info.pxl_to_cm)
     sliced_pos = pos.time_slice(t_start, t_stop)
