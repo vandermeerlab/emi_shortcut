@@ -1,5 +1,6 @@
 import numpy as np
 from shapely.geometry import Point, LineString
+import itertools
 
 import vdmlab as vdm
 
@@ -207,3 +208,122 @@ def get_zones(info, position):
     path_pos['other'] = position[other_idx]
 
     return path_pos
+
+
+def expand_line(start_pt, stop_pt, line, expand_by):
+    """Expands shapely line into a zone.
+
+    Parameters
+    ----------
+    start_pt : shapely.Point
+    stop_pt : shapely.Point
+    line : shapely.LineString
+    expand_by : int or float
+
+    Returns
+    -------
+    zone : shapely.Polygon
+
+    """
+    line_expanded = line.buffer(expand_by)
+    zone = start_pt.union(line_expanded).union(stop_pt)
+
+    return zone
+
+
+def find_zones(info, expand_by=6):
+    """Finds zones from ideal trajectories.
+
+    Parameters
+    ----------
+    info : shortcut module
+    expand_by : int or float
+        Amount to expand the line.
+
+    Returns
+    -------
+    zone : dict
+        With shapely.Polygon as values.
+        Keys are u, shortcut, novel, ushort, unovel, uped, shortped,
+        novelped, pedestal.
+
+    """
+    u_line = LineString(info.u_trajectory)
+    shortcut_line = LineString(info.shortcut_trajectory)
+    novel_line = LineString(info.novel_trajectory)
+
+    u_start = Point(info.u_trajectory[0])
+    u_stop = Point(info.u_trajectory[-1])
+    shortcut_start = Point(info.shortcut_trajectory[0])
+    shortcut_stop = Point(info.shortcut_trajectory[-1])
+    novel_start = Point(info.novel_trajectory[0])
+    novel_stop = Point(info.novel_trajectory[-1])
+    pedestal_center = Point(info.path_pts['pedestal'][0], info.path_pts['pedestal'][1])
+    pedestal = pedestal_center.buffer(expand_by*2.2)
+
+    zone = dict()
+    zone['u'] = expand_line(u_start, u_stop, u_line, expand_by)
+    zone['shortcut'] = expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
+    zone['novel'] = expand_line(novel_start, novel_stop, novel_line, expand_by)
+    zone['ushort'] = zone['u'].intersection(zone['shortcut'])
+    zone['unovel'] = zone['u'].intersection(zone['novel'])
+    zone['uped'] = zone['u'].intersection(pedestal)
+    zone['shortped'] = zone['shortcut'].intersection(pedestal)
+    zone['novelped'] = zone['novel'].intersection(pedestal)
+    zone['pedestal'] = pedestal
+
+    return zone
+
+
+def trajectory_fields(tuning_curves, zone, xedges, yedges, field_thresh):
+    """Finds track tuning curves that have firing above field_thresh.
+
+    Parameters
+    ----------
+    tuning_curves : list of np.arrays
+    zone : shapely.Polygon
+    xedges : np.array
+    yedges : np.array
+    field_thresh : float
+        Threshold (in Hz) that determines whether the neuron has a field.
+
+    Returns
+    -------
+    fields_tc : dict
+        With u, shortcut, novel, pedestal as keys. Values are np.arrays.
+    """
+    xcenters = np.array((xedges[1:] + xedges[:-1]) / 2.)
+    ycenters = np.array((yedges[1:] + yedges[:-1]) / 2.)
+
+    tuning_points = []
+    for i in itertools.product(ycenters, xcenters):
+        tuning_points.append(i)
+    tuning_points = np.array(tuning_points)
+
+    this_neuron = 0
+    fields_tc = dict(u=[], shortcut=[], novel=[], pedestal=[])
+    fields_neuron = dict(u=[], shortcut=[], novel=[], pedestal=[])
+    for neuron_tc in tuning_curves:
+        this_neuron += 1
+        field_idx = neuron_tc.flatten() > field_thresh
+        field = tuning_points[field_idx]
+        for pt in field:
+            point = Point([pt[0], pt[1]])
+            if zone['u'].contains(point) or zone['ushort'].contains(point) or zone['unovel'].contains(point):
+                if this_neuron not in fields_neuron['u']:
+                    fields_tc['u'].append(neuron_tc)
+                    fields_neuron['u'].append(this_neuron)
+            if zone['shortcut'].contains(point) or zone['shortped'].contains(point):
+                if this_neuron not in fields_neuron['shortcut']:
+                    fields_tc['shortcut'].append(neuron_tc)
+                    fields_neuron['shortcut'].append(this_neuron)
+            if zone['novel'].contains(point) or zone['novelped'].contains(point):
+                if this_neuron not in fields_neuron['novel']:
+                    fields_tc['novel'].append(neuron_tc)
+                    fields_neuron['novel'].append(this_neuron)
+            if zone['pedestal'].contains(point):
+                if this_neuron not in fields_neuron['pedestal']:
+                    fields_tc['pedestal'].append(neuron_tc)
+                    fields_neuron['pedestal'].append(this_neuron)
+
+    return fields_tc
