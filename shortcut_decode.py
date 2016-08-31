@@ -1,6 +1,8 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import pickle
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 import vdmlab as vdm
 
@@ -8,16 +10,16 @@ from load_data import get_pos, get_spikes
 from tuning_curves_functions import get_tc_1d, find_ideal
 from decode_functions import get_edges
 
-import info.R063d2_info as r063d2
+# import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3
-import info.R063d4_info as r063d4
-import info.R063d5_info as r063d5
-import info.R063d6_info as r063d6
-import info.R066d1_info as r066d1
-import info.R066d2_info as r066d2
-import info.R066d3_info as r066d3
-import info.R066d4_info as r066d4
-import info.R067d1_info as r067d1
+# import info.R063d4_info as r063d4
+# import info.R063d5_info as r063d5
+# import info.R063d6_info as r063d6
+# import info.R066d1_info as r066d1
+# import info.R066d2_info as r066d2
+# import info.R066d3_info as r066d3
+# import info.R066d4_info as r066d4
+# import info.R067d1_info as r067d1
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -53,31 +55,40 @@ for info in infos:
     #     with open(pickled_tc, 'rb') as fileobj:
     #         tuning_curves = pickle.load(fileobj)
     # else:
-    tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
+    pos_binsize = 3
+    tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc, binsize=pos_binsize)
 
     linear = linear['u']
     tuning_curves = tuning_curves['u']
 
     counts_binsize = 0.025
 
-    edges = get_edges(linear, counts_binsize, lastbin=True)
-    counts = vdm.get_counts(spikes, edges)
+    time_edges = get_edges(linear, counts_binsize, lastbin=True)
+    counts = vdm.get_counts(spikes, time_edges)
 
     likelihood = vdm.bayesian_prob(counts, tuning_curves, counts_binsize)
 
-    decoded_pos = vdm.decode_location(likelihood, linear)
+    pos_edges = vdm.binned_position(linear, pos_binsize)
+    x_centers = (pos_edges[1:] + pos_edges[:-1]) / 2.
+    x_centers = x_centers[..., np.newaxis]
 
-    decoded_time = edges[:-1] + (counts_binsize/2)
-    decoded = vdm.Position(decoded_pos, decoded_time)
+    time_centers = (time_edges[1:] + time_edges[:-1]) / 2.
 
-    decoded_sequence = vdm.filter_jumps(decoded)
+    decoded_pos = vdm.decode_location(likelihood, x_centers, time_centers)
+    nan_idx = np.isnan(decoded_pos.x)
+    decoded_pos = decoded_pos[~nan_idx]
 
-    actual_idx = vdm.find_nearest_indices(linear.time, decoded_sequence.time)
-    decode_error = np.abs(linear.x[actual_idx] - decoded_sequence.x)
+    decoded = vdm.remove_teleports(decoded_pos, speed_thresh=5, min_length=2)
 
-    print(np.mean(decode_error), np.median(decode_error), np.min(decode_error), np.max(decode_error))
+    spline = InterpolatedUnivariateSpline(linear.time, linear.x)
+    actual_position = vdm.Position(np.clip(spline(decoded.time), pos_edges.min(), pos_edges.max()), decoded.time)
 
-    import matplotlib.pyplot as plt
-    plt.plot(linear.time[actual_idx], linear.x[actual_idx], 'r.')
-    plt.plot(decoded_sequence.time, decoded_sequence.x, 'b.')
+    error = np.abs(decoded.x - actual_position.x)
+
+    avg_error = np.mean(error)
+    print(avg_error)
+
+
+    plt.plot(actual_position.time, actual_position.x, 'r.')
+    plt.plot(decoded.time, decoded.x, 'b.')
     plt.show()

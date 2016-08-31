@@ -98,22 +98,22 @@ def find_ideal(info, position, expand_by=6):
 
     linear = dict()
     if len(u_pos.time) > 0:
-        linear['u'] = u_pos.linearize(u_line)
+        linear['u'] = u_pos.linearize(u_line, zone['u'])
     else:
         linear['u'] = None
     if len(shortcut_pos.time) > 0:
-        linear['shortcut'] = shortcut_pos.linearize(shortcut_line)
+        linear['shortcut'] = shortcut_pos.linearize(shortcut_line, zone['shortcut'])
     else:
         linear['shortcut'] = None
     if len(novel_pos.time) > 0:
-        linear['novel'] = novel_pos.linearize(novel_line)
+        linear['novel'] = novel_pos.linearize(novel_line, zone['novel'])
     else:
         linear['novel'] = None
 
     return linear, zone
 
 
-def get_tc_1d(info, position, spikes, pickled_tc, binsize=3, expand_by=2, sampling_rate=1/30.):
+def get_tc_1d(info, position, spikes, pickled_tc, binsize, expand_by=2, sampling_rate=1/30.):
     """Calls 1D tuning curve.
 
         Parameters
