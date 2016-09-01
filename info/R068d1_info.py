@@ -14,9 +14,9 @@ pos_mat = session + '-vt.mat'
 event_mat = session + '-event.mat'
 spike_mat = session + '-spike.mat'
 
-good_lfp = [session + '-csc08c.ncs']
-good_swr = [session + '-csc08.mat']
-good_theta = [session + '-csc02.mat']
+good_lfp = [session + '-csc09d.ncs']
+good_swr = [session + '-csc09.mat']
+good_theta = [session + '-csc15.mat']
 
 
 task_times = dict()
