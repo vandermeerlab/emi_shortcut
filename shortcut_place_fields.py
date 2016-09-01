@@ -40,7 +40,7 @@ for info in infos:
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= info.run_threshold
-    run_pos = position[run_idx]
+    run_pos = position[~run_idx]
 
     t_start = info.task_times['phase3'].start
     t_stop = info.task_times['phase3'].stop
@@ -49,7 +49,7 @@ for info in infos:
 
     sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
-    tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
+    tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc, binsize=3)
 
     heatmap_filename = info.session_id + '_spike_heatmaps.pkl'
     pickled_spike_heatmaps = os.path.join(pickle_filepath, heatmap_filename)

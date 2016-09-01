@@ -37,7 +37,7 @@ for info in infos:
     spikes = get_spikes(info.spike_mat)
 
     speed = position.speed(t_smooth=0.5)
-    run_idx = np.squeeze(speed.data) >= info.run_threshold
+    run_idx = np.squeeze(speed.data) <= info.run_threshold
     run_pos = position[run_idx]
 
     t_start = info.task_times['phase3'].start
@@ -83,11 +83,8 @@ for info in infos:
     spline = InterpolatedUnivariateSpline(linear.time, linear.x)
     actual_position = vdm.Position(np.clip(spline(decoded.time), pos_edges.min(), pos_edges.max()), decoded.time)
 
-    error = np.abs(decoded.x - actual_position.x)
-
-    avg_error = np.mean(error)
-    print(avg_error)
-
+    errors = actual_position.distance(decoded)
+    print('Average error distance:', np.mean(errors))
 
     plt.plot(actual_position.time, actual_position.x, 'r.')
     plt.plot(decoded.time, decoded.x, 'b.')

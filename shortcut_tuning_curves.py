@@ -47,7 +47,7 @@ if lets_2d:
 
             speed = position.speed(t_smooth=0.5)
             run_idx = np.squeeze(speed.data) >= info.run_threshold
-            run_pos = position[run_idx]
+            run_pos = position[~run_idx]
 
             t_start = info.task_times['phase3'].start
             t_stop = info.task_times['phase3'].stop
@@ -91,7 +91,7 @@ else:
 
             speed = position.speed(t_smooth=0.5)
             run_idx = np.squeeze(speed.data) >= info.run_threshold
-            run_pos = position[run_idx]
+            run_pos = position[~run_idx]
 
             t_start = info.task_times['phase3'].start
             t_stop = info.task_times['phase3'].stop
@@ -100,7 +100,7 @@ else:
 
             sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
-            tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
+            tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc, binsize=3)
 
             sort_idx = dict()
             odd_firing_idx = dict()

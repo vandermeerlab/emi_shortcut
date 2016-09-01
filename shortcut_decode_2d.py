@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import pickle
 from scipy.interpolate import InterpolatedUnivariateSpline
 
@@ -9,16 +10,16 @@ from load_data import get_pos, get_spikes
 from tuning_curves_functions import get_tc_1d, find_ideal
 from decode_functions import get_edges
 
-import info.R063d2_info as r063d2
+# import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3
-import info.R063d4_info as r063d4
-import info.R063d5_info as r063d5
-import info.R063d6_info as r063d6
-import info.R066d1_info as r066d1
-import info.R066d2_info as r066d2
-import info.R066d3_info as r066d3
-import info.R066d4_info as r066d4
-import info.R067d1_info as r067d1
+# import info.R063d4_info as r063d4
+# import info.R063d5_info as r063d5
+# import info.R063d6_info as r063d6
+# import info.R066d1_info as r066d1
+# import info.R066d2_info as r066d2
+# import info.R066d3_info as r066d3
+# import info.R066d4_info as r066d4
+# import info.R067d1_info as r067d1
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -46,14 +47,14 @@ for info in infos:
 
     sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
-    binsize = 3
-    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
-    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
+    binsize = 1
+    xedges = np.arange(sliced_pos.x.min(), sliced_pos.x.max() + binsize, binsize)
+    yedges = np.arange(sliced_pos.y.min(), sliced_pos.y.max() + binsize, binsize)
 
     tuning_curves = vdm.tuning_curve_2d(sliced_pos, sliced_spikes, xedges, yedges, gaussian_sigma=0.2)
 
     counts_binsize = 0.025
-    time_edges = get_edges(position, counts_binsize, lastbin=True)
+    time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
     counts = vdm.get_counts(spikes, time_edges, apply_filter=False)
 
     decoding_tc = []
@@ -75,12 +76,20 @@ for info in infos:
 
     decoded = vdm.remove_teleports(decoded_pos, speed_thresh=10, min_length=3)
 
-    x_spline = InterpolatedUnivariateSpline(position.time, position.x)
-    y_spline = InterpolatedUnivariateSpline(position.time, position.y)
+    x_spline = InterpolatedUnivariateSpline(run_pos.time, run_pos.x)
+    y_spline = InterpolatedUnivariateSpline(run_pos.time, run_pos.y)
     actual_position = vdm.Position(np.hstack((x_spline(decoded.time)[..., np.newaxis],
-                                              (y_spline(decoded.time)[..., np.newaxis]))), decoded.time)
+                                             (y_spline(decoded.time)[..., np.newaxis]))), decoded.time)
 
     error = np.abs(decoded.data - actual_position.data)
-    avg_error = np.nanmean(error)
+    avg_error = np.mean(error)
+    print('Manhattan distance:', avg_error)
 
-    print(avg_error)
+    errors = actual_position.distance(decoded)
+    print('Actual distance:', np.mean(errors))
+
+    print('n_samples:', decoded.n_samples)
+
+    plt.plot(actual_position.x, actual_position.y, 'r.', ms=0.7)
+    plt.plot(decoded.x, decoded.y, 'b.')
+    plt.show()

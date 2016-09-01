@@ -56,7 +56,7 @@ for info in infos:
 
         speed = position.speed(t_smooth=0.5)
         run_idx = np.squeeze(speed.data) >= info.run_threshold
-        run_pos = position[run_idx]
+        run_pos = position[~run_idx]
 
         t_start = info.task_times['phase3'].start
         t_stop = info.task_times['phase3'].stop
@@ -68,7 +68,7 @@ for info in infos:
         tc_filename = info.session_id + '_tuning_1d.pkl'
         pickled_tc = os.path.join(pickle_filepath, tc_filename)
 
-        tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc)
+        tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc, binsize=3)
 
         u_fields = vdm.find_fields(tuning_curves['u'], hz_thresh=0.1, min_length=1, max_length=len(tuning_curves['u']))
         shortcut_fields = vdm.find_fields(tuning_curves['shortcut'])
