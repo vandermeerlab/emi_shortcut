@@ -1,5 +1,5 @@
 % Change this filepath to where this data is located on your computer.
-path = 'R068-2014-12-01_recording';
+path = 'R068-2014-12-06_recording';
 
 % Below works only on Emily's laptop.
 % filepath = 'C:\Users\Emily\Desktop\';
@@ -26,7 +26,7 @@ tetrodes = {'01', '02', '03', '04', '05', '06', '07', '08', ...
 % tetrodes = {'14', '15', '16'};
 
 for this_tt = 1:length(tetrodes)
-    cfg_csc.fc = {[path(1:15), '-CSC', tetrodes{this_tt}, 'a.ncs']};
+    cfg_csc.fc = {[path(1:15), '-CSC', tetrodes{this_tt}, 'c.ncs']};
     csc = LoadCSC(cfg_csc);
 
     csc_type = csc.type;
