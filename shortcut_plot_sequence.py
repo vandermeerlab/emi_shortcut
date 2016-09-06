@@ -60,7 +60,7 @@ for info in infos:
 
         speed = position.speed(t_smooth=0.5)
         run_idx = np.squeeze(speed.data) >= info.run_threshold
-        run_pos = position[~run_idx]
+        run_pos = position[run_idx]
 
         t_start = info.task_times['phase3'].start
         t_stop = info.task_times['phase3'].stop

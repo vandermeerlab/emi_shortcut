@@ -37,7 +37,7 @@ for info in infos:
     spikes = get_spikes(info.spike_mat)
 
     speed = position.speed(t_smooth=0.5)
-    run_idx = np.squeeze(speed.data) <= info.run_threshold
+    run_idx = np.squeeze(speed.data) >= info.run_threshold
     run_pos = position[run_idx]
 
     t_start = info.task_times['phase3'].start
@@ -64,7 +64,7 @@ for info in infos:
     counts_binsize = 0.025
 
     time_edges = get_edges(linear, counts_binsize, lastbin=True)
-    counts = vdm.get_counts(spikes, time_edges)
+    counts = vdm.get_counts(spikes, time_edges, gaussian_std=counts_binsize)
 
     likelihood = vdm.bayesian_prob(counts, tuning_curves, counts_binsize)
 
@@ -86,6 +86,6 @@ for info in infos:
     errors = actual_position.distance(decoded)
     print('Average error distance:', np.mean(errors))
 
-    plt.plot(actual_position.time, actual_position.x, 'r.')
-    plt.plot(decoded.time, decoded.x, 'b.')
-    plt.show()
+    # plt.plot(actual_position.time, actual_position.x, 'r.')
+    # plt.plot(decoded.time, decoded.x, 'b.')
+    # plt.show()

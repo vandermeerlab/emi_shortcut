@@ -10,7 +10,7 @@ from load_data import get_pos, get_spikes
 from tuning_curves_functions import get_tc_1d, find_ideal
 from decode_functions import get_edges
 
-# import info.R063d2_info as r063d2
+import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3
 # import info.R063d4_info as r063d4
 # import info.R063d5_info as r063d5
@@ -30,7 +30,6 @@ output_filepath = os.path.join(thisdir, 'plots', 'decode')
 infos = [r063d3]
 # infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
 
-
 for info in infos:
     print(info.session_id)
     position = get_pos(info.pos_mat, info.pxl_to_cm)
@@ -40,22 +39,22 @@ for info in infos:
     run_idx = np.squeeze(speed.data) >= info.run_threshold
     run_pos = position[run_idx]
 
-    t_start = info.task_times['phase3'].start
-    t_stop = info.task_times['phase3'].stop
+    track_starts = [info.task_times['phase1'].start, info.task_times['phase2'].start, info.task_times['phase3'].start]
+    track_stops = [info.task_times['phase1'].stop, info.task_times['phase2'].stop, info.task_times['phase3'].stop]
 
-    sliced_pos = run_pos.time_slice(t_start, t_stop)
+    track_pos = run_pos.time_slices(track_starts, track_stops)
 
-    sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
+    track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
-    binsize = 1
-    xedges = np.arange(sliced_pos.x.min(), sliced_pos.x.max() + binsize, binsize)
-    yedges = np.arange(sliced_pos.y.min(), sliced_pos.y.max() + binsize, binsize)
+    binsize = 3
+    xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
+    yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
 
-    tuning_curves = vdm.tuning_curve_2d(sliced_pos, sliced_spikes, xedges, yedges, gaussian_sigma=0.2)
+    tuning_curves = vdm.tuning_curve_2d(track_pos, track_spikes, xedges, yedges, gaussian_sigma=0.2)
 
     counts_binsize = 0.025
     time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
-    counts = vdm.get_counts(spikes, time_edges, apply_filter=False)
+    counts = vdm.get_counts(spikes, time_edges, gaussian_std=counts_binsize)
 
     decoding_tc = []
     for tuning_curve in tuning_curves:
@@ -76,20 +75,22 @@ for info in infos:
 
     decoded = vdm.remove_teleports(decoded_pos, speed_thresh=10, min_length=3)
 
-    x_spline = InterpolatedUnivariateSpline(run_pos.time, run_pos.x)
-    y_spline = InterpolatedUnivariateSpline(run_pos.time, run_pos.y)
-    actual_position = vdm.Position(np.hstack((x_spline(decoded.time)[..., np.newaxis],
-                                             (y_spline(decoded.time)[..., np.newaxis]))), decoded.time)
-
-    error = np.abs(decoded.data - actual_position.data)
-    avg_error = np.mean(error)
-    print('Manhattan distance:', avg_error)
+    x_spline = InterpolatedUnivariateSpline(track_pos.time, track_pos.x)
+    y_spline = InterpolatedUnivariateSpline(track_pos.time, track_pos.y)
+    actual_position = vdm.Position(np.hstack((np.clip(x_spline(decoded.time),
+                                                      xedges.min(), xedges.max())[..., np.newaxis],
+                                             (np.clip(y_spline(decoded.time),
+                                                      yedges.min(), yedges.max())[..., np.newaxis]))),
+                                   decoded.time)
 
     errors = actual_position.distance(decoded)
     print('Actual distance:', np.mean(errors))
 
-    print('n_samples:', decoded.n_samples)
+    # plt.plot(actual_position.x, actual_position.y, 'r.', ms=0.7)
+    # plt.plot(decoded.x, decoded.y, 'b.')
+    # plt.show()
 
-    plt.plot(actual_position.x, actual_position.y, 'r.', ms=0.7)
-    plt.plot(decoded.x, decoded.y, 'b.')
-    plt.show()
+    test_xy = actual_position.data + np.random.normal(0, 24, actual_position.data.shape)
+    test_pos = vdm.Position(test_xy, actual_position.time)
+    test_errors = actual_position.distance(test_pos)
+    print('Test distance:', np.mean(test_errors))
