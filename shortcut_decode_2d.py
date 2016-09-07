@@ -73,19 +73,17 @@ def check_tc_smoothing(smooth_tc, smooth_counts):
 
     time_centers = (time_edges[1:] + time_edges[:-1]) / 2.
 
-    decoded_pos = vdm.decode_location(likelihood, xy_centers, time_centers)
-    nan_idx = np.logical_and(np.isnan(decoded_pos.x), np.isnan(decoded_pos.y))
-    decoded_pos = decoded_pos[~nan_idx]
+    decoded = vdm.decode_location(likelihood, xy_centers, time_centers)
+    nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
+    decoded = decoded[~nan_idx]
 
-    decoded = vdm.remove_teleports(decoded_pos, speed_thresh=10, min_length=3)
+    if not decoded.isempty:
+        decoded = vdm.remove_teleports(decoded, speed_thresh=10, min_length=3)
 
-    x_spline = InterpolatedUnivariateSpline(track_pos.time, track_pos.x)
-    y_spline = InterpolatedUnivariateSpline(track_pos.time, track_pos.y)
-    actual_position = vdm.Position(np.hstack((np.clip(x_spline(decoded.time),
-                                                      xedges.min(), xedges.max())[..., np.newaxis],
-                                             (np.clip(y_spline(decoded.time),
-                                                      yedges.min(), yedges.max())[..., np.newaxis]))),
-                                   decoded.time)
+    actual_x = np.interp(decoded.time, track_pos.time, track_pos.x)
+    actual_y = np.interp(decoded.time, track_pos.time, track_pos.y)
+
+    actual_position = vdm.Position(np.hstack((actual_x[..., np.newaxis], actual_y[..., np.newaxis])), decoded.time)
 
     errors = actual_position.distance(decoded)
     print('Actual distance:', np.mean(errors))
@@ -105,8 +103,8 @@ results = []
 
 smoothing_tc = [None, 0.1, 0.25, 0.5, 1., 3., 5., 7.5, 10., 15.]
 smoothing_time = [None, 0.025, 0.05, 0.1, 0.2, 0.5, 1., 2., 5.]
-for smooth_tc in smoothing_tc:
-    for smooth_t in smoothing_time:
+for smooth_tc in smoothing_time:
+    for smooth_t in smoothing_tc:
         inputs.append([smooth_tc, smooth_t])
         results.append(check_tc_smoothing(smooth_tc, smooth_t))
 print('inputs:', inputs)
