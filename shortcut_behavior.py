@@ -19,6 +19,7 @@ import info.R067d1_info as r067d1
 import info.R067d2_info as r067d2
 import info.R067d3_info as r067d3
 import info.R067d4_info as r067d4
+import info.R067d5_info as r067d5
 import info.R068d1_info as r068d1
 import info.R068d2_info as r068d2
 import info.R068d3_info as r068d3
@@ -33,7 +34,7 @@ output_filepath = os.path.join(thisdir, 'plots', 'behavior')
 # infos = [r063d2, r063d3]
 infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
          r066d1, r066d2, r066d3, r066d4,
-         r067d1, r067d2, r067d3, r067d4,
+         r067d1, r067d2, r067d3, r067d4, r067d5,
          r068d1, r068d2, r068d3, r068d4]
 
 
