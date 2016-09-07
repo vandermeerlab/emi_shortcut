@@ -234,7 +234,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
 
 
 # Place fields
-def plot_fields(heatmaps, position, num_neurons, savepath, savefig=True, plot_log=True, num_bins=100, vmax=None):
+def plot_fields(heatmaps, position, num_neurons, savepath=None, savefig=True, plot_log=True, num_bins=100, vmax=None):
     """Plots spiking in 2D position space.
 
         Parameters
@@ -377,7 +377,7 @@ def plot_cooccur(probs, savepath, savefig=True):
         plt.show()
 
 
-def plot_swrs(lfp, swrs, saveloc, row=10, col=8, buffer=20, savefig=True):
+def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
     """Plots all local field potentials (LFP) around sharp-wave ripple (SWR) times
         for each given SWR.
 
@@ -386,7 +386,7 @@ def plot_swrs(lfp, swrs, saveloc, row=10, col=8, buffer=20, savefig=True):
         lfp : vdmlab.LFP
         swrs : list
             Contains vdmlab.LFP objects
-        saveloc : str
+        saveloc : str or None
             Location and filename for the saved plot. Do not add '.png', it is
             added here to include the multiple figures into the filename.
         row = int
@@ -399,7 +399,7 @@ def plot_swrs(lfp, swrs, saveloc, row=10, col=8, buffer=20, savefig=True):
             Default is True and will save the plot to the specified location.
             False shows with plot without saving it.
 
-        """
+    """
     plots_per_fig = row * col
     num_figures = range(int(np.ceil(len(swrs) / plots_per_fig)))
 
@@ -427,3 +427,57 @@ def plot_swrs(lfp, swrs, saveloc, row=10, col=8, buffer=20, savefig=True):
             plt.close()
         else:
             plt.show()
+
+
+def plot_compare_decoded_track(actual_zones, decoded_zones, distance, savepath=None, savefig=True):
+    """Plots barplot comparing decoded vs. actual position during track times.
+
+    Parameters
+    ----------
+    actual_zones: dict
+        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+    decoded_zones: dict
+        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+    distance: str
+        Total distance between actual and decoded positions
+    savepath : str or None
+        Location and filename for the saved plot.
+
+    """
+    total_actual = (len(actual_zones['novel'].time) +
+                    len(actual_zones['shortcut'].time) +
+                    len(actual_zones['u'].time) +
+                    len(actual_zones['other'].time))
+
+    total_decoded = (len(decoded_zones['u'].time) +
+                     len(decoded_zones['shortcut'].time) +
+                     len(decoded_zones['novel'].time) +
+                     len(decoded_zones['other'].time))
+
+    n_groups = np.arange(3)
+    width = 0.45
+    actual = [len(actual_zones['u'].time)/total_actual,
+              len(actual_zones['shortcut'].time)/total_actual,
+              len(actual_zones['novel'].time)/total_actual]
+    decode = [len(decoded_zones['u'].time)/total_decoded,
+              len(decoded_zones['shortcut'].time)/total_decoded,
+              len(decoded_zones['novel'].time)/total_decoded]
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.bar(n_groups, actual, width, color=['#5975a4', '#5f9e6e', '#b55d5f'], label='Actual')
+    ax.bar(n_groups+width, decode, width, color=['b', 'g', 'r'], label='Decoded')
+    plt.ylabel('Proportion of points')
+    sns.despine()
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.set_xticks(n_groups + width)
+    ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
+    ax.set_ylim(0., 1.)
+    ax.text(width*5, 0.8, 'total distance:' + distance, fontsize=12)
+    plt.legend()
+    plt.tight_layout()
+    if savefig:
+        plt.savefig(savepath, dpi=300)
+        plt.close()
+    else:
+        plt.show()
