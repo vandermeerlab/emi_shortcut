@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pickle
+import itertools
 from shapely.geometry import Point, LineString
 
 

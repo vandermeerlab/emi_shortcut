@@ -275,12 +275,13 @@ def find_zones(info, expand_by=6):
     return zone
 
 
-def trajectory_fields(tuning_curves, zone, xedges, yedges, field_thresh):
+def trajectory_fields(tuning_curves, spikes, zone, xedges, yedges, field_thresh):
     """Finds track tuning curves that have firing above field_thresh.
 
     Parameters
     ----------
     tuning_curves : list of np.arrays
+    spikes: list of vdmlab.SpikeTrain objects
     zone : shapely.Polygon
     xedges : np.array
     yedges : np.array
@@ -292,38 +293,42 @@ def trajectory_fields(tuning_curves, zone, xedges, yedges, field_thresh):
     fields_tc : dict
         With u, shortcut, novel, pedestal as keys. Values are np.arrays.
     """
-    xcenters = np.array((xedges[1:] + xedges[:-1]) / 2.)
-    ycenters = np.array((yedges[1:] + yedges[:-1]) / 2.)
+    xcenters = (xedges[1:] + xedges[:-1]) / 2.
+    ycenters = (yedges[1:] + yedges[:-1]) / 2.
 
-    tuning_points = []
-    for i in itertools.product(ycenters, xcenters):
-        tuning_points.append(i)
-    tuning_points = np.array(tuning_points)
+    xy_centers = vdm.cartesian(xcenters, ycenters)
 
-    this_neuron = 0
+    in_u = []
+    in_shortcut = []
+    in_novel = []
+    in_pedestal = []
+
     fields_tc = dict(u=[], shortcut=[], novel=[], pedestal=[])
     fields_neuron = dict(u=[], shortcut=[], novel=[], pedestal=[])
-    for neuron_tc in tuning_curves:
-        this_neuron += 1
+    for i, neuron_tc in enumerate(tuning_curves):
         field_idx = neuron_tc.flatten() > field_thresh
-        field = tuning_points[field_idx]
+        field = xy_centers[field_idx]
         for pt in field:
             point = Point([pt[0], pt[1]])
             if zone['u'].contains(point) or zone['ushort'].contains(point) or zone['unovel'].contains(point):
-                if this_neuron not in fields_neuron['u']:
+                if i not in in_u:
+                    in_u.append(i)
                     fields_tc['u'].append(neuron_tc)
-                    fields_neuron['u'].append(this_neuron)
+                    fields_neuron['u'].append(spikes[i])
             if zone['shortcut'].contains(point) or zone['shortped'].contains(point):
-                if this_neuron not in fields_neuron['shortcut']:
+                if i not in in_shortcut:
+                    in_shortcut.append(i)
                     fields_tc['shortcut'].append(neuron_tc)
-                    fields_neuron['shortcut'].append(this_neuron)
+                    fields_neuron['shortcut'].append(spikes[i])
             if zone['novel'].contains(point) or zone['novelped'].contains(point):
-                if this_neuron not in fields_neuron['novel']:
+                if i not in in_novel:
+                    in_novel.append(i)
                     fields_tc['novel'].append(neuron_tc)
-                    fields_neuron['novel'].append(this_neuron)
+                    fields_neuron['novel'].append(spikes[i])
             if zone['pedestal'].contains(point):
-                if this_neuron not in fields_neuron['pedestal']:
+                if i not in in_pedestal:
+                    in_pedestal.append(i)
                     fields_tc['pedestal'].append(neuron_tc)
-                    fields_neuron['pedestal'].append(this_neuron)
+                    fields_neuron['pedestal'].append(spikes[i])
 
-    return fields_tc
+    return fields_tc, fields_neuron

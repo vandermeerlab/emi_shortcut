@@ -284,7 +284,7 @@ def plot_fields(heatmaps, position, num_neurons, savepath=None, savefig=True, pl
 
 
 # Co-occurrence
-def plot_cooccur(probs, savepath, savefig=True):
+def plot_cooccur(probs, savepath=None):
     """Plots co-occurrence probabilities from p0, p2, p3, p4.
 
         Parameters
@@ -292,11 +292,8 @@ def plot_cooccur(probs, savepath, savefig=True):
         probs : dict
             Where the keys are active (dict), expected (dict), observed (dict), zscore (dict).
             Each dictionary contains trajectories (u, shortcut, novel).
-        savepath : str
+        savepath : str or None
             Location and filename for the saved plot.
-        savefig : boolean
-            Default is True and will save the plot to the specified location.
-            False shows with plot without saving it.
 
         """
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
@@ -370,7 +367,7 @@ def plot_cooccur(probs, savepath, savefig=True):
 
     plt.tight_layout()
 
-    if savefig:
+    if savepath is not None:
         plt.savefig(savepath, dpi=300)
         plt.close()
     else:
@@ -429,15 +426,16 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.show()
 
 
-def plot_compare_decoded_track(actual, decode, distance=None, max_y=None, savepath=None):
+def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of points', distance=None, max_y=None, savepath=None):
     """Plots barplot comparing decoded vs. actual position during track times.
 
     Parameters
     ----------
-    actual_zones: dict
+    decoded: dict
         With u, shortcut, novel, other as keys, each a vdmlab.Position object.
-    decoded_zones: dict
+    actual: dict or None
         With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+    y_label: str
     distance: str or None
         Total distance between actual and decoded positions
     max_y: float or None
@@ -445,19 +443,6 @@ def plot_compare_decoded_track(actual, decode, distance=None, max_y=None, savepa
         Location and filename for the saved plot.
 
     """
-
-    actual_mean = dict()
-    actual_mean['u'] = np.mean(actual['u'])
-    actual_mean['shortcut'] = np.mean(actual['shortcut'])
-    actual_mean['novel'] = np.mean(actual['novel'])
-    actual_mean['other'] = np.mean(actual['other'])
-
-    actual_sem = dict()
-    actual_sem['u'] = stats.sem(actual['u'])
-    actual_sem['shortcut'] = stats.sem(actual['shortcut'])
-    actual_sem['novel'] = stats.sem(actual['novel'])
-    actual_sem['other'] = stats.sem(actual['other'])
-
     decoded_mean = dict()
     decoded_mean['u'] = np.mean(decode['u'])
     decoded_mean['shortcut'] = np.mean(decode['shortcut'])
@@ -470,22 +455,39 @@ def plot_compare_decoded_track(actual, decode, distance=None, max_y=None, savepa
     decoded_sem['novel'] = stats.sem(decode['novel'])
     decoded_sem['other'] = stats.sem(decode['other'])
 
-    actual_means = [actual_mean['u'], actual_mean['shortcut'], actual_mean['novel'], actual_mean['other']]
-    actual_sems = [actual_sem['u'], actual_sem['shortcut'], actual_sem['novel'], actual_sem['other']]
-
     decoded_means = [decoded_mean['u'], decoded_mean['shortcut'], decoded_mean['novel'], decoded_mean['other']]
     decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel'], decoded_sem['other']]
+
+    if actual is not None:
+        actual_mean = dict()
+        actual_mean['u'] = np.mean(actual['u'])
+        actual_mean['shortcut'] = np.mean(actual['shortcut'])
+        actual_mean['novel'] = np.mean(actual['novel'])
+        actual_mean['other'] = np.mean(actual['other'])
+
+        actual_sem = dict()
+        actual_sem['u'] = stats.sem(actual['u'])
+        actual_sem['shortcut'] = stats.sem(actual['shortcut'])
+        actual_sem['novel'] = stats.sem(actual['novel'])
+        actual_sem['other'] = stats.sem(actual['other'])
+
+        actual_means = [actual_mean['u'], actual_mean['shortcut'], actual_mean['novel'], actual_mean['other']]
+        actual_sems = [actual_sem['u'], actual_sem['shortcut'], actual_sem['novel'], actual_sem['other']]
 
     n_groups = np.arange(4)
     width = 0.45
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.bar(n_groups, actual_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f', '#c51b8A'],
-           label='Actual', yerr=actual_sems, ecolor='k')
-    ax.bar(n_groups+width, decoded_means, width, color=['b', 'g', 'r', 'm'],
+
+    ax.bar(n_groups, decoded_means, width, color=['b', 'g', 'r', 'm'],
            label='Decoded', yerr=decoded_sems, ecolor='k')
-    plt.ylabel('Proportion of points')
+
+    if actual is not None:
+        ax.bar(n_groups+width, actual_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f', '#c51b8A'],
+               label='Actual', yerr=actual_sems, ecolor='k')
+
+    plt.ylabel(y_label)
     sns.despine()
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
