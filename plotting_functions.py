@@ -429,7 +429,7 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.show()
 
 
-def plot_compare_decoded_track(actual_zones, decoded_zones, distance, savepath=None, savefig=True):
+def plot_compare_decoded_track(actual, decode, distance=None, max_y=None, savepath=None):
     """Plots barplot comparing decoded vs. actual position during track times.
 
     Parameters
@@ -438,45 +438,66 @@ def plot_compare_decoded_track(actual_zones, decoded_zones, distance, savepath=N
         With u, shortcut, novel, other as keys, each a vdmlab.Position object.
     decoded_zones: dict
         With u, shortcut, novel, other as keys, each a vdmlab.Position object.
-    distance: str
+    distance: str or None
         Total distance between actual and decoded positions
+    max_y: float or None
     savepath : str or None
         Location and filename for the saved plot.
 
     """
-    total_actual = (len(actual_zones['novel'].time) +
-                    len(actual_zones['shortcut'].time) +
-                    len(actual_zones['u'].time) +
-                    len(actual_zones['other'].time))
 
-    total_decoded = (len(decoded_zones['u'].time) +
-                     len(decoded_zones['shortcut'].time) +
-                     len(decoded_zones['novel'].time) +
-                     len(decoded_zones['other'].time))
+    actual_mean = dict()
+    actual_mean['u'] = np.mean(actual['u'])
+    actual_mean['shortcut'] = np.mean(actual['shortcut'])
+    actual_mean['novel'] = np.mean(actual['novel'])
+    actual_mean['other'] = np.mean(actual['other'])
 
-    n_groups = np.arange(3)
+    actual_sem = dict()
+    actual_sem['u'] = stats.sem(actual['u'])
+    actual_sem['shortcut'] = stats.sem(actual['shortcut'])
+    actual_sem['novel'] = stats.sem(actual['novel'])
+    actual_sem['other'] = stats.sem(actual['other'])
+
+    decoded_mean = dict()
+    decoded_mean['u'] = np.mean(decode['u'])
+    decoded_mean['shortcut'] = np.mean(decode['shortcut'])
+    decoded_mean['novel'] = np.mean(decode['novel'])
+    decoded_mean['other'] = np.mean(decode['other'])
+
+    decoded_sem = dict()
+    decoded_sem['u'] = stats.sem(decode['u'])
+    decoded_sem['shortcut'] = stats.sem(decode['shortcut'])
+    decoded_sem['novel'] = stats.sem(decode['novel'])
+    decoded_sem['other'] = stats.sem(decode['other'])
+
+    actual_means = [actual_mean['u'], actual_mean['shortcut'], actual_mean['novel'], actual_mean['other']]
+    actual_sems = [actual_sem['u'], actual_sem['shortcut'], actual_sem['novel'], actual_sem['other']]
+
+    decoded_means = [decoded_mean['u'], decoded_mean['shortcut'], decoded_mean['novel'], decoded_mean['other']]
+    decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel'], decoded_sem['other']]
+
+    n_groups = np.arange(4)
     width = 0.45
-    actual = [len(actual_zones['u'].time)/total_actual,
-              len(actual_zones['shortcut'].time)/total_actual,
-              len(actual_zones['novel'].time)/total_actual]
-    decode = [len(decoded_zones['u'].time)/total_decoded,
-              len(decoded_zones['shortcut'].time)/total_decoded,
-              len(decoded_zones['novel'].time)/total_decoded]
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.bar(n_groups, actual, width, color=['#5975a4', '#5f9e6e', '#b55d5f'], label='Actual')
-    ax.bar(n_groups+width, decode, width, color=['b', 'g', 'r'], label='Decoded')
+    ax.bar(n_groups, actual_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f', '#c51b8A'],
+           label='Actual', yerr=actual_sems, ecolor='k')
+    ax.bar(n_groups+width, decoded_means, width, color=['b', 'g', 'r', 'm'],
+           label='Decoded', yerr=decoded_sems, ecolor='k')
     plt.ylabel('Proportion of points')
     sns.despine()
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
     ax.set_xticks(n_groups + width)
-    ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
-    ax.set_ylim(0., 1.)
-    ax.text(width*5, 0.8, 'total distance:' + distance, fontsize=12)
+    ax.set_xticklabels(['U', 'Shortcut', 'Novel', 'Other'])
+    if max_y is not None:
+        ax.set_ylim(0., max_y)
+    if distance is not None:
+        ax.text(width*6, max_y*-0.15, 'Distance: ' + distance, fontsize=12)
     plt.legend()
     plt.tight_layout()
-    if savefig:
+    if savepath is not None:
         plt.savefig(savepath, dpi=300)
         plt.close()
     else:

@@ -79,3 +79,41 @@ def point_in_zones(position, zones):
     sorted_zones['other'] = vdm.Position(other_data, other_times)
 
     return sorted_zones
+
+
+def compare_rates(zones, jump=0.1):
+    """Compare position normalized by time spent in zone.
+
+    Parameters
+    ----------
+    zones: dict
+        With u, shortcut, novel, other as keys.
+    jump: float
+        Any duration above this amount will not be included.
+
+    Returns
+    -------
+    normalized : dict
+        With u, shortcut, novel, other as keys.
+
+    """
+    u_linger = np.diff(zones['u'].time)
+    shortcut_linger = np.diff(zones['shortcut'].time)
+    novel_linger = np.diff(zones['novel'].time)
+    other_linger = np.diff(zones['other'].time)
+
+    u_linger = np.sum(u_linger[u_linger < jump])
+    shortcut_linger = np.sum(shortcut_linger[shortcut_linger < jump])
+    novel_linger = np.sum(novel_linger[novel_linger < jump])
+    other_linger = np.sum(other_linger[other_linger < jump])
+
+    normalized = dict()
+    normalized['u'] = len(zones['u'].time) / u_linger
+    normalized['shortcut'] = len(zones['shortcut'].time) / shortcut_linger
+    normalized['novel'] = len(zones['novel'].time) / novel_linger
+    if len(zones['other'].time) > 20:
+        normalized['other'] = len(zones['other'].time) / other_linger
+    else:
+        normalized['other'] = np.nan
+
+    return normalized
