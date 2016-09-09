@@ -1,11 +1,12 @@
 import os
 import numpy as np
+
 import vdmlab as vdm
 
-from load_data import get_pos, get_lfp, get_spikes
-from tuning_curves_functions import get_tc_1d
-from field_functions import get_unique_fields
-from plotting_functions import plot_cooccur
+from load_data import get_pos, get_spikes, get_lfp
+from field_functions import get_unique_fields, categorize_fields
+from maze_functions import find_zones
+from plotting_functions import plot_cooccur, plot_cooccur_combined
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3
@@ -13,11 +14,18 @@ import info.R063d4_info as r063d4
 import info.R063d5_info as r063d5
 import info.R063d6_info as r063d6
 import info.R066d1_info as r066d1
-import info.R066d3_info as r066d3
 import info.R066d2_info as r066d2
 import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
 import info.R067d1_info as r067d1
+import info.R067d2_info as r067d2
+import info.R067d3_info as r067d3
+import info.R067d4_info as r067d4
+import info.R067d5_info as r067d5
+import info.R068d1_info as r068d1
+import info.R068d2_info as r068d2
+import info.R068d3_info as r068d3
+import info.R068d4_info as r068d4
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -25,122 +33,108 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
-infos = [r066d3, r066d4]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
+# infos = [r063d2, r063d3]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
+         r066d1, r066d2, r066d3, r066d4,
+         r067d1, r067d2, r067d3, r067d4, r067d5,
+         r068d1, r068d2, r068d3, r068d4]
 
-exp_times = ['pauseA', 'pauseB']
-# exp_times = ['pauseA']
+experiment_times = ['pauseA', 'pauseB']
 
+field_thresh = 1.
+power_thresh = 5.
+z_thresh = 3.
+merge_thresh = 0.02
+min_length = 0.01
 
-# all_probs = dict(active=dict(u=[], shortcut=[], novel=[]), expected=dict(u=[], shortcut=[], novel=[]),
-#                  observed=dict(u=[], shortcut=[], novel=[]), zscore=dict(u=[], shortcut=[], novel=[]))
-for info in infos:
-    print(info.session_id)
-    for exp_time in exp_times:
-        print(exp_time)
+for experiment_time in experiment_times:
+    print(experiment_time)
+
+    combined = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
+
+    total_epochs = 0
+
+    for info in infos:
+        print(info.session_id)
 
         lfp = get_lfp(info.good_swr[0])
         position = get_pos(info.pos_mat, info.pxl_to_cm)
         spikes = get_spikes(info.spike_mat)
 
-        t_start = info.task_times[exp_time][0]
-        t_stop = info.task_times[exp_time][1]
-
-        t_start_idx = vdm.find_nearest_idx(lfp.time, t_start)
-        t_end_idx = vdm.find_nearest_idx(lfp.time, t_stop)
-
-        sliced_lfp = lfp[t_start_idx:t_end_idx]
-
-        thresh = (140.0, 250.0)
-        swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=thresh, power_thres=5)
-
         speed = position.speed(t_smooth=0.5)
         run_idx = np.squeeze(speed.data) >= info.run_threshold
         run_pos = position[run_idx]
 
-        t_start = info.task_times['phase3'].start
-        t_stop = info.task_times['phase3'].stop
+        t_start_tc = info.task_times['phase3'].start
+        t_stop_tc = info.task_times['phase3'].stop
 
-        sliced_pos = run_pos.time_slice(t_start, t_stop)
+        tc_pos = run_pos.time_slice(t_start_tc, t_stop_tc)
+
+        tc_spikes = [spiketrain.time_slice(t_start_tc, t_stop_tc) for spiketrain in spikes]
+
+        binsize = 3
+        xedges = np.arange(tc_pos.x.min(), tc_pos.x.max() + binsize, binsize)
+        yedges = np.arange(tc_pos.y.min(), tc_pos.y.max() + binsize, binsize)
+
+        tuning_curves = vdm.tuning_curve_2d(tc_pos, tc_spikes, xedges, yedges, gaussian_sigma=0.1)
+
+        zones = find_zones(info)
+
+        fields_tunings = categorize_fields(tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
+
+        keys = ['u', 'shortcut', 'novel']
+        unique_fields = dict()
+        unique_fields['u'] = get_unique_fields(fields_tunings['u'],
+                                               fields_tunings['shortcut'],
+                                               fields_tunings['novel'])
+        unique_fields['shortcut'] = get_unique_fields(fields_tunings['shortcut'],
+                                                      fields_tunings['novel'],
+                                                      fields_tunings['u'])
+        unique_fields['novel'] = get_unique_fields(fields_tunings['novel'],
+                                                   fields_tunings['u'],
+                                                   fields_tunings['shortcut'])
+
+        field_spikes = dict(u=[], shortcut=[], novel=[])
+        for field in unique_fields.keys():
+            for key in unique_fields[field]:
+                field_spikes[field].append(spikes[key])
+
+        t_start = info.task_times[experiment_time].start
+        t_stop = info.task_times[experiment_time].stop
+
+        sliced_lfp = lfp.time_slice(t_start, t_stop)
 
         sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
-        tc_filename = info.session_id + '_tuning_1d.pkl'
-        pickled_tc = os.path.join(pickle_filepath, tc_filename)
+        swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
+                                      power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-        tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc, binsize=3)
-
-        u_fields = vdm.find_fields(tuning_curves['u'], hz_thresh=0.1, min_length=1, max_length=len(tuning_curves['u']))
-        shortcut_fields = vdm.find_fields(tuning_curves['shortcut'])
-        novel_fields = vdm.find_fields(tuning_curves['novel'])
-
-        u_compare = vdm.find_fields(tuning_curves['u'], hz_thresh=3, min_length=1, max_length=len(tuning_curves['u']),
-                                    max_mean_firing=10)
-        shortcut_compare = vdm.find_fields(tuning_curves['shortcut'], hz_thresh=3, min_length=1,
-                                           max_length=len(tuning_curves['shortcut']), max_mean_firing=10)
-        novel_compare = vdm.find_fields(tuning_curves['novel'], hz_thresh=3, min_length=1,
-                                        max_length=len(tuning_curves['novel']), max_mean_firing=10)
-
-        u_fields_unique = get_unique_fields(u_fields, shortcut_compare, novel_compare)
-        shortcut_fields_unique = get_unique_fields(shortcut_fields, u_compare, novel_compare)
-        novel_fields_unique = get_unique_fields(novel_fields, u_compare, shortcut_compare)
-
-        u_fields_single = vdm.get_single_field(u_fields_unique)
-        shortcut_fields_single = vdm.get_single_field(shortcut_fields_unique)
-        novel_fields_single = vdm.get_single_field(novel_fields_unique)
-
-        u_spikes = []
-        for key in u_fields_unique:
-            u_spikes.append(spikes[key])
-
-        shortcut_spikes = []
-        for key in shortcut_fields_unique:
-            shortcut_spikes.append(spikes[key])
-
-        novel_spikes = []
-        for key in novel_fields_unique:
-            novel_spikes.append(spikes[key])
-
-        swr_intervals = []
-        for swr in swrs:
-            swr_intervals.append([swr.time[0], swr.time[-1]])
-        swr_intervals = np.array(swr_intervals).T
+        multi_swrs = vdm.find_multi_in_epochs(spikes, swrs, min_involved=3)
 
         count_matrix = dict()
-        count_matrix['u'] = vdm.spike_counts(u_spikes, swr_intervals, window=0.1)
-        count_matrix['shortcut'] = vdm.spike_counts(shortcut_spikes, swr_intervals, window=0.1)
-        count_matrix['novel'] = vdm.spike_counts(novel_spikes, swr_intervals, window=0.1)
+        for key in field_spikes:
+            count_matrix[key] = vdm.spike_counts(field_spikes[key], multi_swrs)
 
-        u_tetrode_mask = vdm.get_tetrode_mask(u_spikes)
-
-        shortcut_tetrode_mask = vdm.get_tetrode_mask(shortcut_spikes)
-
-        novel_tetrode_mask = vdm.get_tetrode_mask(novel_spikes)
+        tetrode_mask = dict()
+        for key in field_spikes:
+            tetrode_mask[key] = vdm.get_tetrode_mask(field_spikes[key])
 
         probs = dict()
-        probs['u'] = vdm.compute_cooccur(count_matrix['u'], u_tetrode_mask, num_shuffles=10000)
+        for key in count_matrix:
+            probs[key] = vdm.compute_cooccur(count_matrix[key], tetrode_mask[key], num_shuffles=10000)
 
-        probs['shortcut'] = vdm.compute_cooccur(count_matrix['shortcut'], shortcut_tetrode_mask, num_shuffles=10000)
-
-        probs['novel'] = vdm.compute_cooccur(count_matrix['novel'], novel_tetrode_mask, num_shuffles=10000)
-
-        filename = info.session_id + '_cooccur-' + exp_time + '.png'
-        savepath = os.path.join(output_filepath, filename)
-        plot_cooccur(probs, savepath)
-
-        # all_probs['active']['u'].append(probs['active']['u'])
-        # all_probs['expected']['u'].append(probs['expected']['u'])
-        # all_probs['observed']['u'].append(probs['observed']['u'])
-        # all_probs['zscore']['u'].append(probs['zscore']['u'])
-        # all_probs['active']['shortcut'].append(probs['active']['shortcut'])
-        # all_probs['expected']['shortcut'].append(probs['expected']['shortcut'])
-        # all_probs['observed']['shortcut'].append(probs['observed']['shortcut'])
-        # all_probs['zscore']['shortcut'].append(probs['zscore']['shortcut'])
-        # all_probs['active']['novel'].append(probs['active']['novel'])
-        # all_probs['expected']['novel'].append(probs['expected']['novel'])
-        # all_probs['observed']['novel'].append(probs['observed']['novel'])
-        # all_probs['zscore']['novel'].append(probs['zscore']['novel'])
-
-        # filename = 'combined_cooccur-' + exp_time + '.png'
+        # filename = 'testing_cooccur-' + experiment_time + '.png'
         # savepath = os.path.join(output_filepath, filename)
-        # plot_cooccur(probs, savepath)
+        # plot_cooccur(probs, savepath=None)
+
+    for trajectory in probs:
+        for key in probs[trajectory]:
+            combined[trajectory][key].append(np.nanmean(probs[trajectory][key]) * multi_swrs.n_epochs)
+
+    total_epochs += multi_swrs.n_epochs
+
+    filename = 'combined_testing_cooccur-' + experiment_time + '.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur_combined(combined, total_epochs, savepath=None)

@@ -374,6 +374,85 @@ def plot_cooccur(probs, savepath=None):
         plt.show()
 
 
+def plot_cooccur_combined(combined, total_epochs, savepath=None):
+    """Plots co-occurrence probabilities from p0, p2, p3, p4.
+
+        Parameters
+        ----------
+        combined : dict
+            Where the keys are active (dict), expected (dict), observed (dict), zscore (dict).
+            Each dictionary contains trajectories (u, shortcut, novel).
+        total_epochs: int
+        savepath : str or None
+            Location and filename for the saved plot.
+
+        """
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    ind = np.arange(3)
+    width = 0.8
+    colours = ['#5975a4', '#5f9e6e', '#b55d5f']
+
+    active_means = [np.sum(combined['u']['active'])/total_epochs,
+                    np.sum(combined['shortcut']['active'])/total_epochs,
+                    np.sum(combined['novel']['active'])/total_epochs]
+    ax1.bar(ind, active_means, width, color=colours)
+    ax1.set_ylabel('Proportion of SWRs active')
+    ax1.set_title('Probability that a given neuron is active')
+    ax1.set_xticks(ind + width*0.5)
+    ax1.set_xticklabels(('U', 'Shortcut', 'Novel'))
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.get_xaxis().tick_bottom()
+    ax1.get_yaxis().tick_left()
+
+    expected_means = [np.sum(combined['u']['expected'])/total_epochs,
+                      np.sum(combined['shortcut']['expected'])/total_epochs,
+                      np.sum(combined['novel']['expected'])/total_epochs]
+    ax2.bar(ind, expected_means, width, color=colours)
+    ax2.set_ylabel('Expected conditional probability')
+    ax2.set_title('Observed conditional probabilities, given independence')
+    ax2.set_xticks(ind + width*0.5)
+    ax2.set_xticklabels(('U', 'Shortcut', 'Novel'))
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+    ax2.get_xaxis().tick_bottom()
+    ax2.get_yaxis().tick_left()
+
+    observed_means = [np.sum(combined['u']['observed'])/total_epochs,
+                      np.sum(combined['shortcut']['observed'])/total_epochs,
+                      np.sum(combined['novel']['observed'])/total_epochs]
+    ax3.bar(ind, observed_means, width, color=colours)
+    ax3.set_ylabel('Cell pair joint probability')
+    ax3.set_title('Observed co-activity')
+    ax3.set_xticks(ind + width*0.5)
+    ax3.set_xticklabels(('U', 'Shortcut', 'Novel'))
+    ax3.spines['top'].set_visible(False)
+    ax3.spines['right'].set_visible(False)
+    ax3.get_xaxis().tick_bottom()
+    ax3.get_yaxis().tick_left()
+
+    zscore_means = [np.sum(combined['u']['zscore'])/total_epochs,
+                      np.sum(combined['shortcut']['zscore'])/total_epochs,
+                      np.sum(combined['novel']['zscore'])/total_epochs]
+    ax4.bar(ind, zscore_means, width, color=colours)
+    ax4.set_ylabel('SWR co-activation z-scored')
+    ax4.set_title('Co-activation above chance levels')
+    ax4.set_xticks(ind + width*0.5)
+    ax4.set_xticklabels(('U', 'Shortcut', 'Novel'))
+    ax4.spines['top'].set_visible(False)
+    ax4.spines['right'].set_visible(False)
+    ax4.get_xaxis().tick_bottom()
+    ax4.get_yaxis().tick_left()
+
+    plt.tight_layout()
+
+    if savepath is not None:
+        plt.savefig(savepath, dpi=300)
+        plt.close()
+    else:
+        plt.show()
+
+
 def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
     """Plots all local field potentials (LFP) around sharp-wave ripple (SWR) times
         for each given SWR.
