@@ -4,7 +4,7 @@ import vdmlab as vdm
 
 from load_data import get_pos, get_lfp, get_spikes
 from tuning_curves_functions import get_tc_1d
-from field_functions import unique_fields
+from field_functions import get_unique_fields
 from plotting_functions import plot_cooccur
 
 import info.R063d2_info as r063d2
@@ -81,9 +81,9 @@ for info in infos:
         novel_compare = vdm.find_fields(tuning_curves['novel'], hz_thresh=3, min_length=1,
                                         max_length=len(tuning_curves['novel']), max_mean_firing=10)
 
-        u_fields_unique = unique_fields(u_fields, shortcut_compare, novel_compare)
-        shortcut_fields_unique = unique_fields(shortcut_fields, u_compare, novel_compare)
-        novel_fields_unique = unique_fields(novel_fields, u_compare, shortcut_compare)
+        u_fields_unique = get_unique_fields(u_fields, shortcut_compare, novel_compare)
+        shortcut_fields_unique = get_unique_fields(shortcut_fields, u_compare, novel_compare)
+        novel_fields_unique = get_unique_fields(novel_fields, u_compare, shortcut_compare)
 
         u_fields_single = vdm.get_single_field(u_fields_unique)
         shortcut_fields_single = vdm.get_single_field(shortcut_fields_unique)
