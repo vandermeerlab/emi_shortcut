@@ -55,7 +55,7 @@ for info in infos:
     spikes = get_spikes(info.spike_mat)
 
     speed = position.speed(t_smooth=0.5)
-    run_idx = np.squeeze(speed.data) >= info.run_threshold
+    run_idx = np.squeeze(speed.data) >= 1.
     run_pos = position[run_idx]
 
     # track_starts = [info.task_times['phase1'].start, info.task_times['phase2'].start, info.task_times['phase3'].start]

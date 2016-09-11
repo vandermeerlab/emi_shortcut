@@ -64,7 +64,7 @@ for experiment_time in experiment_times:
         spikes = get_spikes(info.spike_mat)
 
         speed = position.speed(t_smooth=0.5)
-        run_idx = np.squeeze(speed.data) >= info.run_threshold
+        run_idx = np.squeeze(speed.data) >= 1.
         run_pos = position[run_idx]
 
         t_start_tc = info.task_times['phase3'].start
@@ -137,4 +137,4 @@ for experiment_time in experiment_times:
 
     filename = 'combined_testing_cooccur-' + experiment_time + '.png'
     savepath = os.path.join(output_filepath, filename)
-    plot_cooccur_combined(combined, total_epochs, savepath=None)
+    plot_cooccur_combined(combined, total_epochs, savepath)
