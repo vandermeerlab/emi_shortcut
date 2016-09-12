@@ -31,7 +31,10 @@ pxl_to_cm = (8.8346, 7.1628)
 
 fs = 2000
 
-run_threshold = 0.0
+track_length = dict()
+track_length['u'] = 159.84822710130166
+track_length['shortcut'] = 67.52465342828519
+track_length['novel'] = 12.337853439884093
 
 path_pts = dict()
 path_pts['feeder1'] = [468, 471]

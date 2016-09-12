@@ -526,44 +526,39 @@ def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of point
     decoded_mean['u'] = np.mean(decode['u'])
     decoded_mean['shortcut'] = np.mean(decode['shortcut'])
     decoded_mean['novel'] = np.mean(decode['novel'])
-    decoded_mean['other'] = np.mean(decode['other'])
 
     decoded_sem = dict()
     decoded_sem['u'] = stats.sem(decode['u'])
     decoded_sem['shortcut'] = stats.sem(decode['shortcut'])
     decoded_sem['novel'] = stats.sem(decode['novel'])
-    decoded_sem['other'] = stats.sem(decode['other'])
 
-    decoded_means = [decoded_mean['u'], decoded_mean['shortcut'], decoded_mean['novel'], decoded_mean['other']]
-    decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel'], decoded_sem['other']]
+    decoded_means = [decoded_mean['u'], decoded_mean['shortcut'], decoded_mean['novel']]
+    decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel']]
+
+    n_groups = np.arange(3)
+    width = 0.45
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.bar(n_groups, decoded_means, width, color=['b', 'g', 'r'],
+           label='Decoded', yerr=decoded_sems, ecolor='k')
 
     if actual is not None:
         actual_mean = dict()
         actual_mean['u'] = np.mean(actual['u'])
         actual_mean['shortcut'] = np.mean(actual['shortcut'])
         actual_mean['novel'] = np.mean(actual['novel'])
-        actual_mean['other'] = np.mean(actual['other'])
 
         actual_sem = dict()
         actual_sem['u'] = stats.sem(actual['u'])
         actual_sem['shortcut'] = stats.sem(actual['shortcut'])
         actual_sem['novel'] = stats.sem(actual['novel'])
-        actual_sem['other'] = stats.sem(actual['other'])
 
-        actual_means = [actual_mean['u'], actual_mean['shortcut'], actual_mean['novel'], actual_mean['other']]
-        actual_sems = [actual_sem['u'], actual_sem['shortcut'], actual_sem['novel'], actual_sem['other']]
+        actual_means = [actual_mean['u'], actual_mean['shortcut'], actual_mean['novel']]
+        actual_sems = [actual_sem['u'], actual_sem['shortcut'], actual_sem['novel']]
 
-    n_groups = np.arange(4)
-    width = 0.45
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    ax.bar(n_groups, decoded_means, width, color=['b', 'g', 'r', 'm'],
-           label='Decoded', yerr=decoded_sems, ecolor='k')
-
-    if actual is not None:
-        ax.bar(n_groups+width, actual_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f', '#c51b8A'],
+        ax.bar(n_groups+width, actual_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f'],
                label='Actual', yerr=actual_sems, ecolor='k')
 
     plt.ylabel(y_label)
@@ -571,7 +566,7 @@ def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of point
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
     ax.set_xticks(n_groups + width)
-    ax.set_xticklabels(['U', 'Shortcut', 'Novel', 'Other'])
+    ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
     if max_y is not None:
         ax.set_ylim(0., max_y)
     if distance is not None:
