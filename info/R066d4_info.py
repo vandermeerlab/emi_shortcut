@@ -20,13 +20,13 @@ good_theta = [session + '-csc07.mat']
 
 
 task_times = dict()
-task_times['prerecord'] = vdm.Epoch(np.array([8.8210e+03, 9.1346e+03]))
-task_times['phase1'] = vdm.Epoch(np.array([9.1677e+03, 9.6490e+03]))
-task_times['pauseA'] = vdm.Epoch(np.array([9.7725e+03, 1.0374e+04]))
-task_times['phase2'] = vdm.Epoch(np.array([1.0406e+04, 1.1606e+04]))
-task_times['pauseB'] = vdm.Epoch(np.array([1.1675e+04, 1.3479e+04]))
-task_times['phase3'] = vdm.Epoch(np.array([1.3514e+04, 1.5619e+04]))
-task_times['postrecord'] = vdm.Epoch(np.array([1.5650e+04, 1.6257e+04]))
+task_times['prerecord'] = vdm.Epoch(np.array([8821.0, 9134.6]))
+task_times['phase1'] = vdm.Epoch(np.array([9167.7, 9649.0]))
+task_times['pauseA'] = vdm.Epoch(np.array([9772.5, 10374.0]))
+task_times['phase2'] = vdm.Epoch(np.array([10406.0, 11606.0]))
+task_times['pauseB'] = vdm.Epoch(np.array([11675.0, 13479.0]))
+task_times['phase3'] = vdm.Epoch(np.array([13514.0, 15619.0]))
+task_times['postrecord'] = vdm.Epoch(np.array([15650.0, 16257.0]))
 
 pxl_to_cm = (7.6032, 7.1722)
 
@@ -35,52 +35,44 @@ fs = 2000
 run_threshold = 0.0
 
 path_pts = dict()
-path_pts['feeder1'] = [525, 453]
-path_pts['point1a'] = [543, 426]
-path_pts['point1'] = [533, 400]
-path_pts['point2'] = [539, 380]
-path_pts['point3'] = [539, 349]
-path_pts['point4'] = [491, 372]
-path_pts['point5'] = [436, 368]
-path_pts['point6'] = [351, 402]
-path_pts['point7'] = [314, 371]
-path_pts['point8'] = [278, 402]
-path_pts['point9'] = [266, 372]
-path_pts['point10'] = [218, 374]
-path_pts['point11'] = [194, 378]
-path_pts['point12'] = [207, 308]
-path_pts['point13'] = [197, 82]
-path_pts['point14'] = [210, 54]
-path_pts['point15'] = [286, 46]
-path_pts['point16'] = [520, 44]
-path_pts['feeder2'] = [637, 63]
-path_pts['shortcut1'] = [566, 373]
-path_pts['point17'] = [602, 368]
-path_pts['point18'] = [627, 366]
-path_pts['point19'] = [636, 330]
-path_pts['point20'] = [630, 134]
-path_pts['shortcut2'] = [637, 63]
-path_pts['novel1'] = [302, 405]
-path_pts['point21'] = [303, 455]
-path_pts['point22'] = [316, 471]
-path_pts['point23'] = [289, 478]
-path_pts['novel2'] = [113, 470]
-path_pts['pedestal'] = [337, 225]
+path_pts['feeder1'] = [527, 453]
+path_pts['pt1'] = [524, 396]
+path_pts['turn1'] = [519, 370]
+path_pts['pt2'] = [452, 380]
+path_pts['pt3'] = [361, 390]
+path_pts['pt4'] = [306, 378]
+path_pts['pt5'] = [236, 362]
+path_pts['turn2'] = [206, 344]
+path_pts['pt6'] = [195, 272]
+path_pts['pt7'] = [202, 104]
+path_pts['turn3'] = [216, 50]
+path_pts['pt8'] = [268, 47]
+path_pts['pt9'] = [418, 45]
+path_pts['pt10'] = [511, 48]
+path_pts['feeder2'] = [607, 55]
+path_pts['shortcut1'] = [519, 370]
+path_pts['spt1'] = [606, 369]
+path_pts['spt2'] = [628, 351]
+path_pts['spt3'] = [636, 310]
+path_pts['spt4'] = [638, 172]
+path_pts['shortcut2'] = [607, 55]
+path_pts['novel1'] = [306, 378]
+path_pts['npt1'] = [290, 472]
+path_pts['novel2'] = [85, 473]
+path_pts['pedestal'] = [342, 225]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
-u_trajectory = [path_pts['feeder1'], path_pts['point1'], path_pts['point1a'], path_pts['point2'],
-                path_pts['point3'], path_pts['point4'], path_pts['point5'],
-                path_pts['point6'], path_pts['point7'], path_pts['point8'],
-                path_pts['point9'], path_pts['point10'], path_pts['point11'],
-                path_pts['point12'], path_pts['point13'], path_pts['point14'],
-                path_pts['point15'], path_pts['point16'], path_pts['feeder2']]
+u_trajectory = [path_pts['feeder1'], path_pts['pt1'], path_pts['turn1'], path_pts['pt2'],
+                path_pts['pt3'], path_pts['pt4'], path_pts['pt5'], path_pts['turn2'],
+                path_pts['pt6'], path_pts['pt7'], path_pts['turn3'], path_pts['pt8'], path_pts['pt9'],
+                 path_pts['pt10'], path_pts['feeder2']]
 
-shortcut_trajectory = [path_pts['shortcut1'], path_pts['point17'], path_pts['point18'],
-                       path_pts['point19'], path_pts['point20'], path_pts['shortcut2']]
+shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'], path_pts['spt3'],
+                       path_pts['spt4'], path_pts['shortcut2']]
 
-novel_trajectory = [path_pts['novel1'], path_pts['point21'], path_pts['point22'],
-                    path_pts['point23'], path_pts['novel2']]
+novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['novel2']]
+
 
 sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['swr'] = vdm.Epoch(np.array([[16227.0, 16230.0],
