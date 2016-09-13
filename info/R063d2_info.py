@@ -11,6 +11,7 @@ target = 'dCA1'
 experimenter = 'Emily Irvine'
 
 pos_mat = session + '-vt.mat'
+raw_pos_mat = session + '-raw_position.mat'
 event_mat = session + '-event.mat'
 spike_mat = session + '-spike.mat'
 

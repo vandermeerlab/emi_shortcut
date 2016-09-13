@@ -12,8 +12,10 @@ def load_lfp(matfile):
 
 def load_position(matfile):
     loading_pos = sio.loadmat(matfile)
+    xy = np.array([loading_pos['pos_datax'][0], loading_pos['pos_datay'][0]])
 
-    return vdm.Position([loading_pos['pos_datax'][0], loading_pos['pos_datay'][0]], loading_pos['pos_tvec'][0])
+    return vdm.Position(xy.T, loading_pos['pos_tvec'][0])
+
 
 # This data had issues with the feeder lights contaminating the position tracking, so those contaminating
 # signals were removed.

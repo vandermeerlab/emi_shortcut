@@ -1,5 +1,5 @@
 % Change this filepath to where this data is located on your computer.
-path = 'R066-2014-12-02_recording';
+path = 'R063-2015-03-20_recording';
 
 % Below works only on Emily's laptop.
 % filepath = 'C:\Users\Emily\Desktop\';
@@ -40,7 +40,7 @@ for this_tt = 1:length(tetrodes)
 end
 
 %% input_positions
-cd([filepath, path]);
+% cd([filepath, path]);
 cfg_pos = [];
 position = LoadPos(cfg_pos);
 
@@ -50,7 +50,7 @@ pos_datax = position.data(1,:);
 pos_datay = position.data(2,:);
 pos_label = position.label;
 
-save(strcat(filepath,'\emi_inputs_position'), ...
+save([savepath, path(1:15), '-raw_position'], ...
     'pos_datax', 'pos_datay', 'pos_tvec', 'pos_type', 'pos_label')
 
 

@@ -35,11 +35,11 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
-infos = [r063d2, r063d3]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
-#          r066d1, r066d2, r066d3, r066d4, r066d5,
-#          r067d1, r067d2, r067d3, r067d4, r067d5,
-#          r068d1, r068d2, r068d3, r068d4, r068d5]
+# infos = [r063d2, r063d3]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
+         r066d1, r066d2, r066d3, r066d4, r066d5,
+         r067d1, r067d2, r067d3, r067d4, r067d5,
+         r068d1, r068d2, r068d3, r068d4, r068d5]
 
 experiment_times = ['pauseA', 'pauseB']
 
@@ -52,9 +52,12 @@ min_length = 0.01
 for experiment_time in experiment_times:
     print(experiment_time)
 
+    combined_weighted = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                             shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                             novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
     combined = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
-                shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
-                novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
+                    shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                    novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
 
     total_epochs = 0
 
@@ -66,7 +69,7 @@ for experiment_time in experiment_times:
         spikes = get_spikes(info.spike_mat)
 
         speed = position.speed(t_smooth=0.5)
-        run_idx = np.squeeze(speed.data) >= 1.
+        run_idx = np.squeeze(speed.data) >= 0.1
         run_pos = position[run_idx]
 
         t_start_tc = info.task_times['phase3'].start
@@ -131,12 +134,23 @@ for experiment_time in experiment_times:
         # savepath = os.path.join(output_filepath, filename)
         # plot_cooccur(probs, savepath=None)
 
-    for trajectory in probs:
-        for key in probs[trajectory]:
-            combined[trajectory][key].append(np.nanmean(probs[trajectory][key]) * multi_swrs.n_epochs)
+        total_epochs += multi_swrs.n_epochs
 
-    total_epochs += multi_swrs.n_epochs
+        for trajectory in probs:
+            for key in probs[trajectory]:
+                if len(probs[trajectory][key]) > 0:
+                    combined_weighted[trajectory][key].append(np.nanmean(probs[trajectory][key]) * multi_swrs.n_epochs)
+                    combined[trajectory][key].extend(probs[trajectory][key])
+                else:
+                    combined_weighted[trajectory][key].append(0.0)
+                    combined[trajectory][key].append(0.0)
 
-    filename = 'combined_testing_cooccur-' + experiment_time + '.png'
+    print(len(combined['u']['active']))
+    print(combined['u']['active'])
+    filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+    savepath_weighted = os.path.join(output_filepath, filename_weighted)
+    plot_cooccur_combined(combined_weighted, total_epochs, savepath_weighted)
+
+    filename = 'combined_cooccur-' + experiment_time + '.png'
     savepath = os.path.join(output_filepath, filename)
-    plot_cooccur_combined(combined, total_epochs, savepath)
+    plot_cooccur(combined, savepath)

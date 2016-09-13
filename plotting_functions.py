@@ -505,7 +505,8 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.show()
 
 
-def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of points', distance=None, max_y=None, savepath=None):
+def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of points',
+                               distance=None, max_y=None, savepath=None):
     """Plots barplot comparing decoded vs. actual position during track times.
 
     Parameters
@@ -536,7 +537,10 @@ def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of point
     decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel']]
 
     n_groups = np.arange(3)
-    width = 0.45
+    if actual is None:
+        width = 0.8
+    else:
+        width = 0.45
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -565,13 +569,20 @@ def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of point
     sns.despine()
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
-    ax.set_xticks(n_groups + width)
     ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
+
+    if actual is None:
+        ax.set_xticks(n_groups + width * 0.5)
+    else:
+        ax.set_xticks(n_groups + width)
+        plt.legend()
+
     if max_y is not None:
         ax.set_ylim(0., max_y)
+
     if distance is not None:
-        ax.text(width*6, max_y*-0.15, 'Distance: ' + distance, fontsize=12)
-    plt.legend()
+        ax.text(width*5.5, max_y*0.85, 'Distance: ' + distance, fontsize=12)
+
     plt.tight_layout()
     if savepath is not None:
         plt.savefig(savepath, dpi=300)
