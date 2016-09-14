@@ -10,7 +10,7 @@ import vdmlab as vdm
 from load_data import get_pos, get_spikes
 from maze_functions import find_zones
 from decode_functions import get_edges, point_in_zones, compare_rates
-from plotting_functions import plot_compare_decoded_track
+from plotting_functions import plot_compare_decoded_track, plot_decoded_pause, plot_decoded_errors
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3
@@ -44,103 +44,125 @@ infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
          r067d1, r067d2, r067d3, r067d4, r067d5,
          r068d1, r068d2, r068d3, r068d4, r068d5]
 
-shuffle_id = True
-pause_time = True
-experiment_time = 'pauseA'
 
-combined_errors = []
-combined_actual = dict(u=[], shortcut=[], novel=[], other=[], together=[])
-combined_decoded = dict(u=[], shortcut=[], novel=[], other=[], together=[])
-combined_track_relative = dict(u=[], shortcut=[], novel=[])
+def get_decoded(infos, experiment_time='tracks', shuffle_id=False):
+    """Finds combined decoded from all sessions.
 
-for info in infos:
-    print(info.session_id)
-    position = get_pos(info.pos_mat, info.pxl_to_cm)
-    spikes = get_spikes(info.spike_mat)
+    Parameters
+    ----------
+    info: list of modules
+    experiment_time: str
+    shuffle_id: bool
+        Defaults to False (not shuffled)
 
-    speed = position.speed(t_smooth=0.5)
-    run_idx = np.squeeze(speed.data) >= 0.1
-    run_pos = position[run_idx]
+    Returns
+    -------
+    combined_decoded: dict of vdmlab.Position objects
+        With u, shortcut, novel, other, together as keys.
+    combined_errors: list of np.arrays
+    total_times: list
 
-    track_starts = [info.task_times['phase1'].start, info.task_times['phase2'].start, info.task_times['phase3'].start]
-    track_stops = [info.task_times['phase1'].stop, info.task_times['phase2'].stop, info.task_times['phase3'].stop]
+    """
+    total_times = []
+    combined_errors = []
+    # combined_actual = dict(u=[], shortcut=[], novel=[], other=[], together=[])
+    combined_decoded = dict(u=[], shortcut=[], novel=[], other=[], together=[])
 
-    # track_start = info.task_times['phase3'].start
-    # track_stop = info.task_times['phase3'].stop
+    for info in infos:
+        print(info.session_id)
+        position = get_pos(info.pos_mat, info.pxl_to_cm)
+        spikes = get_spikes(info.spike_mat)
 
-    track_pos = run_pos.time_slices(track_starts, track_stops)
+        speed = position.speed(t_smooth=0.5)
+        run_idx = np.squeeze(speed.data) >= 0.1
+        run_pos = position[run_idx]
 
-    track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
+        track_starts = [info.task_times['phase1'].start,
+                        info.task_times['phase2'].start,
+                        info.task_times['phase3'].start]
+        track_stops = [info.task_times['phase1'].stop,
+                       info.task_times['phase2'].stop,
+                       info.task_times['phase3'].stop]
 
-    binsize = 3
-    xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
-    yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
+        # track_start = info.task_times['phase3'].start
+        # track_stop = info.task_times['phase3'].stop
 
-    tuning_curves = vdm.tuning_curve_2d(track_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
+        track_pos = run_pos.time_slices(track_starts, track_stops)
 
-    if shuffle_id:
-        random.shuffle(tuning_curves)
+        track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
-    if pause_time:
-        decode_spikes = [spiketrain.time_slice(info.task_times['pauseB'].start, info.task_times['pauseB'].stop)
-                         for spiketrain in spikes]
-    else:
-        decode_spikes = track_spikes
+        binsize = 3
+        xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
+        yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
 
-    counts_binsize = 0.025
-    time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
-    counts = vdm.get_counts(decode_spikes, time_edges, gaussian_std=0.025)
+        tuning_curves = vdm.tuning_curve_2d(track_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
 
-    decoding_tc = []
-    for tuning_curve in tuning_curves:
-        decoding_tc.append(np.ravel(tuning_curve))
-    decoding_tc = np.array(decoding_tc)
+        if shuffle_id:
+            random.shuffle(tuning_curves)
 
-    likelihood = vdm.bayesian_prob(counts, decoding_tc, counts_binsize)
+        if experiment_time == 'tracks':
+            decode_spikes = track_spikes
+        else:
+            decode_spikes = [spiketrain.time_slice(info.task_times[experiment_time].start,
+                                                   info.task_times[experiment_time].stop) for spiketrain in spikes]
 
-    xcenters = (xedges[1:] + xedges[:-1]) / 2.
-    ycenters = (yedges[1:] + yedges[:-1]) / 2.
-    xy_centers = vdm.cartesian(xcenters, ycenters)
+        counts_binsize = 0.025
+        time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
+        counts = vdm.get_counts(decode_spikes, time_edges, gaussian_std=0.025)
 
-    time_centers = (time_edges[1:] + time_edges[:-1]) / 2.
+        decoding_tc = []
+        for tuning_curve in tuning_curves:
+            decoding_tc.append(np.ravel(tuning_curve))
+        decoding_tc = np.array(decoding_tc)
 
-    decoded = vdm.decode_location(likelihood, xy_centers, time_centers)
-    nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
-    decoded = decoded[~nan_idx]
+        likelihood = vdm.bayesian_prob(counts, decoding_tc, counts_binsize)
 
-    if not decoded.isempty:
-        decoded = vdm.remove_teleports(decoded, speed_thresh=10, min_length=3)
+        xcenters = (xedges[1:] + xedges[:-1]) / 2.
+        ycenters = (yedges[1:] + yedges[:-1]) / 2.
+        xy_centers = vdm.cartesian(xcenters, ycenters)
 
-    actual_x = np.interp(decoded.time, track_pos.time, track_pos.x)
-    actual_y = np.interp(decoded.time, track_pos.time, track_pos.y)
+        time_centers = (time_edges[1:] + time_edges[:-1]) / 2.
 
-    actual_position = vdm.Position(np.hstack((actual_x[..., np.newaxis], actual_y[..., np.newaxis])), decoded.time)
+        decoded = vdm.decode_location(likelihood, xy_centers, time_centers)
+        nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
+        decoded = decoded[~nan_idx]
 
-    errors = actual_position.distance(decoded)
+        if not decoded.isempty:
+            decoded = vdm.remove_teleports(decoded, speed_thresh=10, min_length=3)
 
-    zones = find_zones(info, expand_by=7)
-    actual_zones = point_in_zones(actual_position, zones)
-    decoded_zones = point_in_zones(decoded, zones)
+        actual_x = np.interp(decoded.time, track_pos.time, track_pos.x)
+        actual_y = np.interp(decoded.time, track_pos.time, track_pos.y)
+
+        actual_position = vdm.Position(np.hstack((actual_x[..., np.newaxis], actual_y[..., np.newaxis])), decoded.time)
+
+        errors = actual_position.distance(decoded)
+
+        zones = find_zones(info, expand_by=7)
+        actual_zones = point_in_zones(actual_position, zones)
+        decoded_zones = point_in_zones(decoded, zones)
+
+        total_times.append(len(time_edges) - 1)
+
+        combined_errors.extend(errors)
+
+        # combined_actual['u'].append(actual_zones['u'])
+        # combined_actual['shortcut'].append(actual_zones['shortcut'])
+        # combined_actual['novel'].append(actual_zones['novel'])
+        # combined_actual['other'].append(actual_zones['other'])
+        # combined_actual['together'].append(len(actual_zones['u'].time) + len(actual_zones['shortcut'].time) +
+        #                                    len(actual_zones['novel'].time) + len(actual_zones['other'].time))
+
+        combined_decoded['u'].append(decoded_zones['u'])
+        combined_decoded['shortcut'].append(decoded_zones['shortcut'])
+        combined_decoded['novel'].append(decoded_zones['novel'])
+        combined_decoded['other'].append(decoded_zones['other'])
+        combined_decoded['together'].append(len(decoded_zones['u'].time) + len(decoded_zones['shortcut'].time) +
+                                            len(decoded_zones['novel'].time) + len(decoded_zones['other'].time))
+
+        return combined_decoded, combined_errors, total_times
 
 
-    combined_errors.append(np.mean(errors))
-
-    combined_actual['u'].append(actual_zones['u'])
-    combined_actual['shortcut'].append(actual_zones['shortcut'])
-    combined_actual['novel'].append(actual_zones['novel'])
-    combined_actual['other'].append(actual_zones['other'])
-    combined_actual['together'].append(len(actual_zones['u'].time) + len(actual_zones['shortcut'].time) +
-                                       len(actual_zones['novel'].time) + len(actual_zones['other'].time))
-
-    combined_decoded['u'].append(decoded_zones['u'])
-    combined_decoded['shortcut'].append(decoded_zones['shortcut'])
-    combined_decoded['novel'].append(decoded_zones['novel'])
-    combined_decoded['other'].append(decoded_zones['other'])
-    combined_decoded['together'].append(len(decoded_zones['u'].time) + len(decoded_zones['shortcut'].time) +
-                                        len(decoded_zones['novel'].time) + len(decoded_zones['other'].time))
-
-
-def compare_decoded_actual(combined_actual, combined_decoded, combined_tracks, shuffle_id, output_filepath, pause=None):
+def compare_decoded_actual(combined_actual, combined_decoded, shuffle_id, output_filepath, pause=None):
     keys = ['u', 'shortcut', 'novel']
 
     actual = dict(u=[], shortcut=[], novel=[])
@@ -179,42 +201,47 @@ def compare_decoded_actual(combined_actual, combined_decoded, combined_tracks, s
     print('Decoded errors:', combined_errors)
 
 
-def normalized_time_spent(combined_actual, combined_decoded, shuffle_id, output_filepath):
-
-    keys = ['u', 'shortcut', 'novel']
-
-    normalized_actual = dict(u=[], shortcut=[], novel=[])
+def normalized_time_spent(combined_decoded, n_sessions, savepath):
     normalized_decoded = dict(u=[], shortcut=[], novel=[])
-
-    n_sessions = len(combined_actual['together'])
-
     for val in range(n_sessions):
-        actual = dict()
         decode = dict()
-        for key in keys:
-            actual[key] = combined_actual[key][val]
+        for key in normalized_decoded:
             decode[key] = combined_decoded[key][val]
-        norm_actual = compare_rates(actual)
         norm_decoded = compare_rates(decode)
-        for key in keys:
-            normalized_actual[key].append(norm_actual[key])
+        for key in normalized_decoded:
             normalized_decoded[key].append(norm_decoded[key])
 
-    if shuffle_id:
-        filename = 'combined-norm_phase3-id_shuffle_decoded.png'
-    else:
-        filename = 'combined-norm_phase3_decoded.png'
-    savepath = os.path.join(output_filepath, filename)
-
     y_label = 'Points normalized by time spent'
-    plot_compare_decoded_track(normalized_actual, normalized_decoded, y_label=y_label, max_y=60., savepath=savepath)
+    plot_compare_decoded_track(normalized_decoded, y_label=y_label, max_y=60., savepath=savepath)
 
+shuffle_id = True
+pause_time = False
+normalize = True
+experiment_time = 'pauseB'
 
-if pause_time is not None:
-    compare_decoded_actual(combined_actual, combined_decoded, combined_track_relative,
-                           shuffle_id, output_filepath, experiment_time)
-else:
-    compare_decoded_actual(combined_actual, combined_decoded, combined_track_relative,
-                           shuffle_id, output_filepath)
+# Plot decoding errors during track times
+if 1:
+    combined_decoded, combined_errors, total_times = get_decoded(infos, shuffle_id=False)
+    shuffled_decoded, shuffled_errors, shuffled_times = get_decoded(infos, shuffle_id=True)
+    filename = 'combined-errors_decoded.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_decoded_errors(combined_errors, shuffled_errors, savepath=savepath)
 
-# plot_normalized = normalized_time_spent(combined_actual, combined_decoded, n_sessions, shuffle_id, output_filepath)
+    filename = 'combine-errors_decoded.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_decoded_errors(combined_errors, shuffled_errors, boxplot=False, savepath=savepath)
+
+# Plot proportion of pause spent in each trajectory
+if 1:
+    combined_decoded, combined_errors, total_times = get_decoded(infos, experiment_time, shuffle_id=False)
+    filename = 'combined-' + experiment_time + '_decoded.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_decoded_pause(combined_decoded, total_times, savepath=savepath)
+
+# Plot decoding normalized by time spent
+if 1:
+    combined_decoded, combined_errors, total_times = get_decoded(infos, shuffle_id=False)
+    n_sessions = len(infos)
+    filename = 'combined-norm_phase3_decoded.png'
+    savepath = os.path.join(output_filepath, filename)
+    normalized_time_spent(combined_decoded, n_sessions, savepath=savepath)

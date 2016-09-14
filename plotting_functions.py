@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import SymLogNorm
 import scipy.stats as stats
 import seaborn as sns
+import pandas as pd
 
 import vdmlab as vdm
 
@@ -505,7 +506,7 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.show()
 
 
-def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of points',
+def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of time',
                                distance=None, max_y=None, savepath=None):
     """Plots barplot comparing decoded vs. actual position during track times.
 
@@ -537,18 +538,20 @@ def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of point
     decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel']]
 
     n_groups = np.arange(3)
-    if actual is None:
-        width = 0.8
-    else:
-        width = 0.45
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.bar(n_groups, decoded_means, width, color=['b', 'g', 'r'],
-           label='Decoded', yerr=decoded_sems, ecolor='k')
+    if actual is None:
+        width = 0.8
 
-    if actual is not None:
+        ax.bar(n_groups + width, decoded_means, width, color=['b', 'g', 'r'],
+               label='Decoded', yerr=decoded_sems, ecolor='k')
+
+        ax.set_xticks(n_groups + width * 0.5)
+    else:
+        width = 0.45
+
         actual_mean = dict()
         actual_mean['u'] = np.mean(actual['u'])
         actual_mean['shortcut'] = np.mean(actual['shortcut'])
@@ -562,8 +565,14 @@ def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of point
         actual_means = [actual_mean['u'], actual_mean['shortcut'], actual_mean['novel']]
         actual_sems = [actual_sem['u'], actual_sem['shortcut'], actual_sem['novel']]
 
-        ax.bar(n_groups+width, actual_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f'],
+        ax.bar(n_groups, actual_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f'],
                label='Actual', yerr=actual_sems, ecolor='k')
+
+        ax.bar(n_groups+width, decoded_means, width, color=['b', 'g', 'r'],
+               label='Decoded', yerr=decoded_sems, ecolor='k')
+
+        ax.set_xticks(n_groups + width)
+        plt.legend()
 
     plt.ylabel(y_label)
     sns.despine()
@@ -571,17 +580,101 @@ def plot_compare_decoded_track(decode, actual=None, y_label='Proportion of point
     ax.xaxis.set_ticks_position('bottom')
     ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
 
-    if actual is None:
-        ax.set_xticks(n_groups + width * 0.5)
-    else:
-        ax.set_xticks(n_groups + width)
-        plt.legend()
-
     if max_y is not None:
         ax.set_ylim(0., max_y)
 
     if distance is not None:
         ax.text(width*5.5, max_y*0.85, 'Distance: ' + distance, fontsize=12)
+
+    plt.tight_layout()
+    if savepath is not None:
+        plt.savefig(savepath, dpi=300)
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_decoded_pause(decode, total_times, savepath=None):
+    """Plots barplot of time decoded in each trajectory by total time.
+
+    Parameters
+    ----------
+    decode: dict
+        With u, shortcut, novel as keys.
+    total_times: list
+        Number of total time bins for each session.
+    savepath : str or None
+        Location and filename for the saved plot.
+
+    """
+    normalized = dict(u=[], shortcut=[], novel=[])
+    for key in normalized:
+        for session in range(len(total_times)):
+            normalized[key].append(len(decode[key][session].time)/total_times[session])
+
+    decoded_mean = dict()
+    decoded_sem = dict()
+    for key in normalized:
+        decoded_mean[key] = np.mean(normalized[key])
+        decoded_sem[key] = stats.sem(normalized[key])
+
+    decoded_means = [decoded_mean['u'], decoded_mean['shortcut'], decoded_mean['novel']]
+    decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel']]
+
+    n_groups = np.arange(3)
+
+    width = 0.8
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.bar(n_groups, decoded_means, width, color=['b', 'g', 'r'],
+           yerr=decoded_sems, ecolor='k')
+
+    ax.set_xticks(n_groups + width * 0.5)
+
+    plt.ylabel('Porportion of time relative to total pause time')
+    sns.despine()
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
+
+    plt.tight_layout()
+    if savepath is not None:
+        plt.savefig(savepath, dpi=300)
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_decoded_errors(decode_errors, shuffled_errors, boxplot=True, savepath=None):
+    """Plots boxplot distance between decoded and actual position for decoded and shuffled_id.
+
+    Parameters
+    ----------
+    decode_errors: list of np.arrays
+    shuffled_errors: list of np.arrays
+    boxplot: bool
+        If True, plots a boxplot. If False, plots a violin plot.
+    savepath : str or None
+        Location and filename for the saved plot.
+
+    """
+    sns.set_style("whitegrid")
+
+    actual_dict = dict(error=decode_errors[0], shuffled='Actual')
+    shuffled_dict = dict(error=shuffled_errors[0], shuffled='Shuffled ID')
+    actual = pd.DataFrame(actual_dict)
+    shuffled = pd.DataFrame(shuffled_dict)
+    data = pd.concat([actual, shuffled])
+
+    plt.figure()
+    if boxplot:
+        ax = sns.boxplot(x='shuffled', y='error', data=data, palette="Set2")
+    else:
+        ax = sns.violinplot(x='shuffled', y='error', data=data, palette="Set2")
+
+    sns.axlabel(xlabel=' ', ylabel="Error (cm)", fontsize=16)
 
     plt.tight_layout()
     if savepath is not None:

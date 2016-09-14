@@ -138,15 +138,13 @@ for experiment_time in experiment_times:
 
         for trajectory in probs:
             for key in probs[trajectory]:
-                if len(probs[trajectory][key]) > 0:
+                if np.sum(probs[trajectory][key]) > 0:
                     combined_weighted[trajectory][key].append(np.nanmean(probs[trajectory][key]) * multi_swrs.n_epochs)
                     combined[trajectory][key].extend(probs[trajectory][key])
                 else:
                     combined_weighted[trajectory][key].append(0.0)
                     combined[trajectory][key].append(0.0)
 
-    print(len(combined['u']['active']))
-    print(combined['u']['active'])
     filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
     savepath_weighted = os.path.join(output_filepath, filename_weighted)
     plot_cooccur_combined(combined_weighted, total_epochs, savepath_weighted)
