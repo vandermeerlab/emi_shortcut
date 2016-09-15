@@ -34,6 +34,8 @@ import info.R068d2_info as r068d2
 import info.R068d3_info as r068d3
 import info.R068d4_info as r068d4
 import info.R068d5_info as r068d5
+import info.R068d6_info as r068d6
+
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -87,7 +89,7 @@ def get_decoded(infos, experiment_time='tracks', shuffle_id=False):
 
         track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
-        binsize = 3
+        binsize = 6
         xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
         yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
 
@@ -216,31 +218,31 @@ def normalized_time_spent(combined_decoded, n_sessions, lengths):
             decoded_linger[key].append(norm_decoded[key])
             decoded_length[key].append(len_decoded[key])
 
-    filename = 'combined-time-norm_tracks_decoded.png'
+    filename = 'bin6_combined-time-norm_tracks_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     y_label = 'Points normalized by time spent'
     plot_decoded(decoded_linger, y_label=y_label, max_y=None, savepath=savepath)
 
-    filename = 'combined-length-norm_tracks_decoded.png'
+    filename = 'bin6_combined-length-norm_tracks_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     y_label = 'Points normalized by track length'
     plot_decoded(decoded_length, y_label=y_label, max_y=None, savepath=savepath)
 
 
-infos = [r063d2, r063d3]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
-#          r066d1, r066d2, r066d3, r066d4, r066d5,
-#          r067d1, r067d2, r067d3, r067d4, r067d5,
-#          r068d1, r068d2, r068d3, r068d4, r068d5]
+# infos = [r063d2, r063d3]
+infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
+         r066d1, r066d2, r066d3, r066d4, r066d5,
+         r067d1, r067d2, r067d3, r067d4, r067d5,
+         r068d1, r068d2, r068d3, r068d4, r068d5, r068d6]
 
 
 # Plot decoding errors during track times
-if 0:
+if 1:
     combined_decoded, combined_errors, total_times, lengths = get_decoded(infos, shuffle_id=False)
     print('Mean decoded errors:', np.mean(combined_errors))
     shuffled_decoded, shuffled_errors, shuffled_times, shuffled_lengths = get_decoded(infos, shuffle_id=True)
     print('Mean shuffled errors:', np.mean(combined_errors))
-    filename = 'combined-errors_decoded.png'
+    filename = 'bin6_combined-errors_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_decoded_errors(combined_errors, shuffled_errors, savepath=savepath)
 
@@ -248,42 +250,42 @@ if 0:
 if 1:
     experiment_time = 'pauseA'
     decoded_pausea, errors_pausea, times_pausea, lengths_pausea = get_decoded(infos, experiment_time, shuffle_id=False)
-    filename = 'combined-' + experiment_time + '_decoded.png'
+    filename = 'bin6_combined-' + experiment_time + '_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_decoded_pause(decoded_pausea, times_pausea, savepath=savepath)
 
     experiment_time = 'pauseB'
     decoded_pauseb, errors_pauseb, times_pauseb, lengths_pauseb = get_decoded(infos, experiment_time, shuffle_id=False)
-    filename = 'combined-' + experiment_time + '_decoded.png'
+    filename = 'bin6_combined-' + experiment_time + '_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_decoded_pause(decoded_pauseb, times_pauseb, savepath=savepath)
 
-    filename = 'combined-pauses_decoded.png'
+    filename = 'bin6_combined-pauses_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_compare_decoded_pauses(decoded_pausea, times_pausea, decoded_pauseb, times_pauseb, ['Pause A', 'Pause B'],
                                 savepath=savepath)
 
 # Plot proportion of pauseA and pauseB spent in each trajectory
-if 0:
+if 1:
     experiment_time = 'phase1'
     decoded_phase1, errors_phase1, times_phase1, lengths_phase1 = get_decoded(infos, experiment_time, shuffle_id=False)
-    filename = 'combined-' + experiment_time + '_decoded.png'
+    filename = 'bin6_combined-' + experiment_time + '_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_decoded_pause(decoded_phase1, times_phase1, savepath=savepath)
 
-    experiment_time = 'phase3'
+    experiment_time = 'phase2'
     decoded_phase3, errors_phase3, times_phase3, lengths_phase3 = get_decoded(infos, experiment_time, shuffle_id=False)
-    filename = 'combined-' + experiment_time + '_decoded.png'
+    filename = 'bin6_combined-' + experiment_time + '_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_decoded_pause(decoded_phase3, times_phase3, savepath=savepath)
 
-    filename = 'combined-phases_decoded.png'
+    filename = 'bin6_combined-phases_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_compare_decoded_pauses(decoded_phase1, times_phase1, decoded_phase3, times_phase3, ['Phase 1', 'Phase 3'],
                                 savepath=savepath)
 
 # Plot decoding normalized by time spent
-if 0:
+if 1:
     combined_decoded, combined_errors, total_times, lengths = get_decoded(infos, shuffle_id=False)
     n_sessions = len(infos)
     normalized_time_spent(combined_decoded, n_sessions, lengths)

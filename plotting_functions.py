@@ -529,7 +529,7 @@ def plot_decoded(decoded, y_label, savepath=None):
     data = pd.concat([u, shortcut, novel])
 
     plt.figure()
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='Set1')
+    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
     sns.axlabel(xlabel=' ', ylabel=y_label, fontsize=16)
 
     sns.despine()
@@ -570,7 +570,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
     data = pd.concat([u, shortcut, novel])
 
     plt.figure()
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='Set1')
+    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
     sns.axlabel(xlabel=' ', ylabel="Proportion of time", fontsize=16)
 
     sns.despine()
@@ -660,103 +660,53 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
 
     together = data.groupby(['trajectory', 'exp_time'])['total'].mean()
 
-    def plot_v3(data):
-        # Specify that I want each subplot to correspond to
-        # a different robot type
-        g = sns.FacetGrid(
-            data,
-            col="robot",
-            col_order=["fixed", "reactive", "predictive"],
-            sharex=False)
+    def plot_v3(data, exp_labels):
+        fig = sns.FacetGrid(data, col='trajectory', col_order=['U', 'Shortcut', 'Novel'], sharex=False)
 
-        # Create the bar plot on each subplot
-        g.map(
-            sns.barplot,
-            "robot", "robot_tasks", "inference",
-            hue_order=["oracle", "bayesian"])
+        fig.map(sns.barplot, 'trajectory', 'total', 'exp_time',  hue_order=[exp_labels[0], exp_labels[1]])
+        axes = np.array(fig.axes.flat)
 
-        # Now I need to draw the 50% lines on each subplot
-        # separately
-        axes = np.array(g.axes.flat)
-        for ax in axes:
-            ax.hlines(19.5, -0.5, 0.5, linestyle='--', linewidth=1)
-            ax.set_ylim(0, 40)
-
-        # Return the figure and axes objects
         return plt.gcf(), axes
 
     def set_labels(fig, axes, exp_labels):
-        # These are the labels of each subplot
         labels = ['U', 'Shortcut', 'Novel']
 
-        # Iterate over each subplot and set the labels
         for i, ax in enumerate(axes):
-
-            # Set the x-axis ticklabels
             ax.set_xticks([-.2, .2])
             ax.set_xticklabels([exp_labels[0], exp_labels[1]])
-
-            # Set the label for each subplot
             ax.set_xlabel(labels[i])
-
-            # Remove the y-axis label and title
             ax.set_ylabel('')
             ax.set_title('')
 
-        # Set the y-axis label only for the left subplot
         axes.flat[0].set_ylabel('Proportion of time')
 
-        # Remove the "spines" (the lines surrounding the subplot)
-        # including the left spine for the 2nd and 3rd subplots
         sns.despine(ax=axes[1], left=True)
         sns.despine(ax=axes[2], left=True)
-
-        # # Set the overall title for the plot
-        # fig.suptitle("Single-agent tasks completed by the robot", fontsize=12, x=0.55)
 
     def set_style():
         plt.style.use(['seaborn-white', 'seaborn-paper'])
 
-    def get_colors():
-        return np.array([
-            [0.1, 0.1, 0.1],          # black
-            [0.4, 0.4, 0.4],          # very dark gray
-            [0.984375, 0.7265625, 0],  # dark yellow
-            [1, 1, 0.9]               # light yellow
-            [0.7, 0.7, 0.7],          # dark gray
-            [0.9, 0.9, 0.9],          # light gray
-            ])
-
-    def color_bars(axes, colors):
-        # Iterate over each subplot
+    def color_bars(axes):
+        colors = sns.color_palette('colorblind')
+        edges = sns.color_palette('deep')
         for i in range(3):
-
-            # Pull out the dark and light colors for
-            # the current subplot
-            dark_color = colors[i*2]
-            light_color = colors[i*2 + 1]
-
-            # These are the patches (matplotlib's terminology
-            # for the rectangles corresponding to the bars)
             p1, p2 = axes[i].patches
 
-            # The first bar gets the dark color
-            p1.set_color(dark_color)
+            p1.set_color(colors[i])
+            p1.set_edgecolor('k')
 
-            # The second bar gets the light color, plus
-            # hatch marks int he dark color
-            p2.set_color(light_color)
-            p2.set_edgecolor(dark_color)
-            p2.set_hatch('////')
+            p2.set_color(colors[i])
+            p2.set_edgecolor('k')
+            p2.set_hatch('//')
 
     def set_size(fig):
-        fig.set_size_inches(6, 3)
+        fig.set_size_inches(6, 4)
         plt.tight_layout()
 
     set_style()
-    fig, axes = plot_v3(together)
+    fig, axes = plot_v3(data, labels)
     set_labels(fig, axes, labels)
-    color_bars(axes, get_colors())
+    color_bars(axes)
     set_size(fig)
 
     if savepath is not None:
