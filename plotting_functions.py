@@ -515,36 +515,22 @@ def plot_decoded(decoded, y_label, savepath=None):
     decoded: dict
         With u, shortcut, novel as keys, each a vdmlab.Position object.
     y_label: str
-    max_y: float or None
     savepath : str or None
         Location and filename for the saved plot.
 
     """
-    keys = ['u', 'shortcut', 'novel']
-    decoded_mean = dict()
-    decoded_sem = dict()
-    for key in keys:
-        decoded_mean[key] = np.mean(decoded[key])
-        decoded_sem[key] = stats.sem(decoded[key])
+    u_dict = dict(total=decoded['u'], trajectory='U')
+    shortcut_dict = dict(total=decoded['shortcut'], trajectory='Shortcut')
+    novel_dict = dict(total=decoded['novel'], trajectory='Novel')
 
-    decoded_means = [decoded_mean['u'], decoded_mean['shortcut'], decoded_mean['novel']]
-    decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel']]
+    u = pd.DataFrame(u_dict)
+    shortcut = pd.DataFrame(shortcut_dict)
+    novel = pd.DataFrame(novel_dict)
+    data = pd.concat([u, shortcut, novel])
 
-    n_groups = np.arange(len(decoded_means))
-    width = 0.8
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    ax.bar(n_groups, decoded_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f'],
-           label='Decoded', yerr=decoded_sems, ecolor='k')
-
-    ax.set_xticks(n_groups + width * 0.5)
-
-    plt.ylabel(y_label)
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks_position('bottom')
-    ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
+    plt.figure()
+    ax = sns.barplot(x='trajectory', y='total', data=data, palette='Set1')
+    sns.axlabel(xlabel=' ', ylabel=y_label, fontsize=16)
 
     sns.despine()
     plt.tight_layout()
@@ -554,61 +540,6 @@ def plot_decoded(decoded, y_label, savepath=None):
         plt.close()
     else:
         plt.show()
-
-
-# def plot_decoded_pause(decode, total_times, savepath=None):
-#     """Plots barplot of time decoded in each trajectory by total time.
-#
-#     Parameters
-#     ----------
-#     decode: dict
-#         With u, shortcut, novel as keys.
-#     total_times: list
-#         Number of total time bins for each session.
-#     savepath : str or None
-#         Location and filename for the saved plot.
-#
-#     """
-#     normalized = dict(u=[], shortcut=[], novel=[])
-#     for key in normalized:
-#         for session in range(len(total_times)):
-#             normalized[key].append(len(decode[key][session].time)/total_times[session])
-#
-#     decoded_mean = dict()
-#     decoded_sem = dict()
-#     for key in normalized:
-#         decoded_mean[key] = np.mean(normalized[key])
-#         decoded_sem[key] = stats.sem(normalized[key])
-#
-#     decoded_means = [decoded_mean['u'], decoded_mean['shortcut'], decoded_mean['novel']]
-#     decoded_sems = [decoded_sem['u'], decoded_sem['shortcut'], decoded_sem['novel']]
-#
-#     n_groups = np.arange(len(decoded_means))
-#
-#     width = 0.8
-#
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111)
-#
-#     ax.bar(n_groups, decoded_means, width, color=['#5975a4', '#5f9e6e', '#b55d5f'],
-#            yerr=decoded_sems, ecolor='k')
-#
-#     ax.set_xticks(n_groups + width * 0.5)
-#
-#     plt.ylabel('Porportion of time relative to total pause time')
-#
-#     ax.yaxis.set_ticks_position('left')
-#     ax.xaxis.set_ticks_position('bottom')
-#     ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
-#
-#     sns.despine()
-#     plt.tight_layout()
-#
-#     if savepath is not None:
-#         plt.savefig(savepath, dpi=300)
-#         plt.close()
-#     else:
-#         plt.show()
 
 
 def plot_decoded_pause(decode, total_times, savepath=None):
@@ -705,54 +636,128 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
         for session in range(len(times_1)):
             decode_1[key].append(len(decoded_1[key][session].time)/times_1[session])
 
-    means_1 = dict()
-    sems_1 = dict()
-    for key in decode_1:
-        means_1[key] = np.mean(decode_1[key])
-        sems_1[key] = stats.sem(decode_1[key])
+    u_dict1 = dict(total=decode_1['u'], trajectory='U', exp_time=labels[0])
+    shortcut_dict1 = dict(total=decode_1['shortcut'], trajectory='Shortcut', exp_time=labels[0])
+    novel_dict1 = dict(total=decode_1['novel'], trajectory='Novel', exp_time=labels[0])
 
-    decoded_means_1 = [means_1['u'], means_1['shortcut'], means_1['novel']]
-    decoded_sems_1 = [sems_1['u'], sems_1['shortcut'], sems_1['novel']]
+    u1 = pd.DataFrame(u_dict1)
+    shortcut1 = pd.DataFrame(shortcut_dict1)
+    novel1 = pd.DataFrame(novel_dict1)
 
     decode_2 = dict(u=[], shortcut=[], novel=[])
     for key in decode_2:
         for session in range(len(times_2)):
             decode_2[key].append(len(decoded_2[key][session].time)/times_2[session])
 
-    means_2 = dict()
-    sems_2 = dict()
-    for key in decode_2:
-        means_2[key] = np.mean(decode_2[key])
-        sems_2[key] = stats.sem(decode_2[key])
+    u_dict2 = dict(total=decode_2['u'], trajectory='U', exp_time=labels[1])
+    shortcut_dict2 = dict(total=decode_2['shortcut'], trajectory='Shortcut', exp_time=labels[1])
+    novel_dict2 = dict(total=decode_2['novel'], trajectory='Novel', exp_time=labels[1])
 
-    decoded_means_2 = [means_2['u'], means_2['shortcut'], means_2['novel']]
-    decoded_sems_2 = [sems_2['u'], sems_2['shortcut'], sems_2['novel']]
+    u2 = pd.DataFrame(u_dict2)
+    shortcut2 = pd.DataFrame(shortcut_dict2)
+    novel2 = pd.DataFrame(novel_dict2)
+    data = pd.concat([u1, shortcut1, novel1, u2, shortcut2, novel2])
 
-    n_groups = np.arange(3)
+    together = data.groupby(['trajectory', 'exp_time'])['total'].mean()
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+    def plot_v3(data):
+        # Specify that I want each subplot to correspond to
+        # a different robot type
+        g = sns.FacetGrid(
+            data,
+            col="robot",
+            col_order=["fixed", "reactive", "predictive"],
+            sharex=False)
 
-    width = 0.45
+        # Create the bar plot on each subplot
+        g.map(
+            sns.barplot,
+            "robot", "robot_tasks", "inference",
+            hue_order=["oracle", "bayesian"])
 
-    ax.bar(n_groups, decoded_means_1, width, color=['b', 'g', 'r'],
-           label=labels[0], yerr=decoded_sems_1, ecolor='k')
+        # Now I need to draw the 50% lines on each subplot
+        # separately
+        axes = np.array(g.axes.flat)
+        for ax in axes:
+            ax.hlines(19.5, -0.5, 0.5, linestyle='--', linewidth=1)
+            ax.set_ylim(0, 40)
 
-    ax.bar(n_groups+width, decoded_means_2, width, color=['#5975a4', '#5f9e6e', '#b55d5f'],
-           label=labels[1], yerr=decoded_sems_2, ecolor='k', hatch='\\')
+        # Return the figure and axes objects
+        return plt.gcf(), axes
 
-    ax.set_xticks(n_groups + width)
-    plt.legend()
+    def set_labels(fig, axes, exp_labels):
+        # These are the labels of each subplot
+        labels = ['U', 'Shortcut', 'Novel']
 
-    plt.ylabel('Proportion of time')
+        # Iterate over each subplot and set the labels
+        for i, ax in enumerate(axes):
 
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks_position('bottom')
-    ax.set_xticklabels(['U', 'Shortcut', 'Novel'])
-    # ax.set_ylim(0., 1.0)
+            # Set the x-axis ticklabels
+            ax.set_xticks([-.2, .2])
+            ax.set_xticklabels([exp_labels[0], exp_labels[1]])
 
-    sns.despine()
-    plt.tight_layout()
+            # Set the label for each subplot
+            ax.set_xlabel(labels[i])
+
+            # Remove the y-axis label and title
+            ax.set_ylabel('')
+            ax.set_title('')
+
+        # Set the y-axis label only for the left subplot
+        axes.flat[0].set_ylabel('Proportion of time')
+
+        # Remove the "spines" (the lines surrounding the subplot)
+        # including the left spine for the 2nd and 3rd subplots
+        sns.despine(ax=axes[1], left=True)
+        sns.despine(ax=axes[2], left=True)
+
+        # # Set the overall title for the plot
+        # fig.suptitle("Single-agent tasks completed by the robot", fontsize=12, x=0.55)
+
+    def set_style():
+        plt.style.use(['seaborn-white', 'seaborn-paper'])
+
+    def get_colors():
+        return np.array([
+            [0.1, 0.1, 0.1],          # black
+            [0.4, 0.4, 0.4],          # very dark gray
+            [0.984375, 0.7265625, 0],  # dark yellow
+            [1, 1, 0.9]               # light yellow
+            [0.7, 0.7, 0.7],          # dark gray
+            [0.9, 0.9, 0.9],          # light gray
+            ])
+
+    def color_bars(axes, colors):
+        # Iterate over each subplot
+        for i in range(3):
+
+            # Pull out the dark and light colors for
+            # the current subplot
+            dark_color = colors[i*2]
+            light_color = colors[i*2 + 1]
+
+            # These are the patches (matplotlib's terminology
+            # for the rectangles corresponding to the bars)
+            p1, p2 = axes[i].patches
+
+            # The first bar gets the dark color
+            p1.set_color(dark_color)
+
+            # The second bar gets the light color, plus
+            # hatch marks int he dark color
+            p2.set_color(light_color)
+            p2.set_edgecolor(dark_color)
+            p2.set_hatch('////')
+
+    def set_size(fig):
+        fig.set_size_inches(6, 3)
+        plt.tight_layout()
+
+    set_style()
+    fig, axes = plot_v3(together)
+    set_labels(fig, axes, labels)
+    color_bars(axes, get_colors())
+    set_size(fig)
 
     if savepath is not None:
         plt.savefig(savepath, dpi=300)
