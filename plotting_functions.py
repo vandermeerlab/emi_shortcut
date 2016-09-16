@@ -601,7 +601,8 @@ def plot_decoded_errors(decode_errors, shuffled_errors, savepath=None):
     data = pd.concat([shuffled, decoded])
 
     plt.figure()
-    ax = sns.boxplot(x='shuffled', y='error', data=data, palette="Set2")
+    flierprops = dict(marker='o', markersize=2, linestyle='none')
+    ax = sns.boxplot(x='shuffled', y='error', data=data, palette="Set2", flierprops=flierprops)
 
     sns.axlabel(xlabel=' ', ylabel="Error (cm)", fontsize=16)
 
@@ -687,8 +688,7 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
         plt.style.use(['seaborn-white', 'seaborn-paper'])
 
     def color_bars(axes):
-        colors = sns.color_palette('colorblind')
-        edges = sns.color_palette('deep')
+        colors = sns.color_palette('Set2')
         for i in range(3):
             p1, p2 = axes[i].patches
 

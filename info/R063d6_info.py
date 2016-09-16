@@ -31,8 +31,6 @@ pxl_to_cm = (7.9773, 7.2098)
 
 fs = 2000
 
-run_threshold = 0.0
-
 path_pts = dict()
 path_pts['feeder1'] = [551, 465]
 path_pts['pt1'] = [553, 420]

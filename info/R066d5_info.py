@@ -20,13 +20,13 @@ good_theta = [session + '-csc07.mat']
 
 
 task_times = dict()
-task_times['prerecord'] = vdm.Epoch(np.array([1.0614e+03, 1.3637e+03]))
-task_times['phase1'] = vdm.Epoch(np.array([1.4076e+03, 1.8226e+03]))
-task_times['pauseA'] = vdm.Epoch(np.array([1.8522e+03, 2.4569e+03]))
-task_times['phase2'] = vdm.Epoch(np.array([2.4925e+03, 3.6944e+03]))
-task_times['pauseB'] = vdm.Epoch(np.array([3.7358e+03, 5.5421e+03]))
-task_times['phase3'] = vdm.Epoch(np.array([5.5787e+03, 8.5847e+03]))
-task_times['postrecord'] = vdm.Epoch(np.array([8.6742e+03, 8.9763e+03]))
+task_times['prerecord'] = vdm.Epoch(np.array([1061.4, 1363.7]))
+task_times['phase1'] = vdm.Epoch(np.array([1407.6, 1822.6]))
+task_times['pauseA'] = vdm.Epoch(np.array([1852.2, 2456.9]))
+task_times['phase2'] = vdm.Epoch(np.array([2492.5, 3694.4]))
+task_times['pauseB'] = vdm.Epoch(np.array([3735.8, 5542.1]))
+task_times['phase3'] = vdm.Epoch(np.array([5578.7, 8584.7]))
+task_times['postrecord'] = vdm.Epoch(np.array([8674.2, 8976.3]))
 
 pxl_to_cm = (7.2408, 7.1628)
 

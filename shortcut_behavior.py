@@ -28,6 +28,17 @@ import info.R068d4_info as r068d4
 import info.R068d5_info as r068d5
 import info.R068d6_info as r068d6
 
+import info.R063d7_info as r063d7
+import info.R063d8_info as r063d8
+import info.R066d6_info as r066d6
+import info.R066d7_info as r066d7
+import info.R066d8_info as r066d8
+import info.R067d6_info as r067d6
+import info.R067d7_info as r067d7
+import info.R067d8_info as r067d8
+import info.R068d7_info as r068d7
+import info.R068d8_info as r068d8
+
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -39,6 +50,12 @@ infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
          r066d1, r066d2, r066d3, r066d4, r066d5,
          r067d1, r067d2, r067d3, r067d4, r067d5,
          r068d1, r068d2, r068d3, r068d4, r068d5, r068d6]
+
+# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r063d7, r063d8,
+#          r066d1, r066d2, r066d3, r066d4, r066d5, r066d6, r066d7, r066d8,
+#          r067d1, r067d2, r067d3, r067d4, r067d5, r067d6, r067d7, r067d8,
+#          r068d1, r068d2, r068d3, r068d4, r068d5, r068d6, r068d7, r068d8]
+
 
 
 durations = dict(u=[], shortcut=[], novel=[])
