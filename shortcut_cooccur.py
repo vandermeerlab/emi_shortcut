@@ -44,112 +44,125 @@ infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
 
 experiment_times = ['pauseA', 'pauseB']
 
-field_thresh = 1.
-power_thresh = 5.
-z_thresh = 3.
-merge_thresh = 0.02
-min_length = 0.01
+def get_cooccur(infos, experiment_times):
+    field_thresh = 1.
+    power_thresh = 5.
+    z_thresh = 3.
+    merge_thresh = 0.02
+    min_length = 0.01
 
-for experiment_time in experiment_times:
-    print(experiment_time)
+    for experiment_time in experiment_times:
+        print(experiment_time)
 
-    combined_weighted = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
-                             shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
-                             novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
-    combined = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
-                    shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
-                    novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
 
-    total_epochs = 0
 
-    for info in infos:
-        print(info.session_id)
+        # total_epochs = 0
+        n_epochs = []
+        all_probs = []
 
-        lfp = get_lfp(info.good_swr[0])
-        position = get_pos(info.pos_mat, info.pxl_to_cm)
-        spikes = get_spikes(info.spike_mat)
+        for info in infos:
+            print(info.session_id)
 
-        speed = position.speed(t_smooth=0.5)
-        run_idx = np.squeeze(speed.data) >= 0.1
-        run_pos = position[run_idx]
+            lfp = get_lfp(info.good_swr[0])
+            position = get_pos(info.pos_mat, info.pxl_to_cm)
+            spikes = get_spikes(info.spike_mat)
 
-        t_start_tc = info.task_times['phase3'].start
-        t_stop_tc = info.task_times['phase3'].stop
+            speed = position.speed(t_smooth=0.5)
+            run_idx = np.squeeze(speed.data) >= 0.1
+            run_pos = position[run_idx]
 
-        tc_pos = run_pos.time_slice(t_start_tc, t_stop_tc)
+            t_start_tc = info.task_times['phase3'].start
+            t_stop_tc = info.task_times['phase3'].stop
 
-        tc_spikes = [spiketrain.time_slice(t_start_tc, t_stop_tc) for spiketrain in spikes]
+            tc_pos = run_pos.time_slice(t_start_tc, t_stop_tc)
 
-        binsize = 3
-        xedges = np.arange(tc_pos.x.min(), tc_pos.x.max() + binsize, binsize)
-        yedges = np.arange(tc_pos.y.min(), tc_pos.y.max() + binsize, binsize)
+            tc_spikes = [spiketrain.time_slice(t_start_tc, t_stop_tc) for spiketrain in spikes]
 
-        tuning_curves = vdm.tuning_curve_2d(tc_pos, tc_spikes, xedges, yedges, gaussian_sigma=0.1)
+            binsize = 3
+            xedges = np.arange(tc_pos.x.min(), tc_pos.x.max() + binsize, binsize)
+            yedges = np.arange(tc_pos.y.min(), tc_pos.y.max() + binsize, binsize)
 
-        zones = find_zones(info)
+            tuning_curves = vdm.tuning_curve_2d(tc_pos, tc_spikes, xedges, yedges, gaussian_sigma=0.1)
 
-        fields_tunings = categorize_fields(tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
+            zones = find_zones(info)
 
-        keys = ['u', 'shortcut', 'novel']
-        unique_fields = dict()
-        unique_fields['u'] = get_unique_fields(fields_tunings['u'],
-                                               fields_tunings['shortcut'],
-                                               fields_tunings['novel'])
-        unique_fields['shortcut'] = get_unique_fields(fields_tunings['shortcut'],
-                                                      fields_tunings['novel'],
-                                                      fields_tunings['u'])
-        unique_fields['novel'] = get_unique_fields(fields_tunings['novel'],
-                                                   fields_tunings['u'],
-                                                   fields_tunings['shortcut'])
+            fields_tunings = categorize_fields(tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
 
-        field_spikes = dict(u=[], shortcut=[], novel=[])
-        for field in unique_fields.keys():
-            for key in unique_fields[field]:
-                field_spikes[field].append(spikes[key])
+            keys = ['u', 'shortcut', 'novel']
+            unique_fields = dict()
+            unique_fields['u'] = get_unique_fields(fields_tunings['u'],
+                                                   fields_tunings['shortcut'],
+                                                   fields_tunings['novel'])
+            unique_fields['shortcut'] = get_unique_fields(fields_tunings['shortcut'],
+                                                          fields_tunings['novel'],
+                                                          fields_tunings['u'])
+            unique_fields['novel'] = get_unique_fields(fields_tunings['novel'],
+                                                       fields_tunings['u'],
+                                                       fields_tunings['shortcut'])
 
-        t_start = info.task_times[experiment_time].start
-        t_stop = info.task_times[experiment_time].stop
+            field_spikes = dict(u=[], shortcut=[], novel=[])
+            for field in unique_fields.keys():
+                for key in unique_fields[field]:
+                    field_spikes[field].append(spikes[key])
 
-        sliced_lfp = lfp.time_slice(t_start, t_stop)
+            t_start = info.task_times[experiment_time].start
+            t_stop = info.task_times[experiment_time].stop
 
-        sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
+            sliced_lfp = lfp.time_slice(t_start, t_stop)
 
-        swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
-                                      power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+            sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
-        multi_swrs = vdm.find_multi_in_epochs(spikes, swrs, min_involved=3)
+            swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
+                                          power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-        count_matrix = dict()
-        for key in field_spikes:
-            count_matrix[key] = vdm.spike_counts(field_spikes[key], multi_swrs)
+            multi_swrs = vdm.find_multi_in_epochs(spikes, swrs, min_involved=3)
 
-        tetrode_mask = dict()
-        for key in field_spikes:
-            tetrode_mask[key] = vdm.get_tetrode_mask(field_spikes[key])
+            n_epochs.append(multi_swrs.n_epochs)
 
-        probs = dict()
-        for key in count_matrix:
-            probs[key] = vdm.compute_cooccur(count_matrix[key], tetrode_mask[key], num_shuffles=10000)
+            count_matrix = dict()
+            for key in field_spikes:
+                count_matrix[key] = vdm.spike_counts(field_spikes[key], multi_swrs)
 
-        # filename = 'testing_cooccur-' + experiment_time + '.png'
-        # savepath = os.path.join(output_filepath, filename)
-        # plot_cooccur(probs, savepath=None)
+            tetrode_mask = dict()
+            for key in field_spikes:
+                tetrode_mask[key] = vdm.get_tetrode_mask(field_spikes[key])
 
-        total_epochs += multi_swrs.n_epochs
+            probs = dict()
+            for key in count_matrix:
+                probs[key] = vdm.compute_cooccur(count_matrix[key], tetrode_mask[key], num_shuffles=10000)
 
-        for trajectory in probs:
-            for key in probs[trajectory]:
-                if np.sum(probs[trajectory][key]) > 0:
-                    combined_weighted[trajectory][key].append(np.nanmean(probs[trajectory][key]) * multi_swrs.n_epochs)
-                    combined[trajectory][key].extend(probs[trajectory][key])
-                else:
-                    combined_weighted[trajectory][key].append(0.0)
-                    combined[trajectory][key].append(0.0)
+            all_probs.append(probs)
 
-    filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
-    savepath_weighted = os.path.join(output_filepath, filename_weighted)
-    plot_cooccur_combined(combined_weighted, total_epochs, savepath_weighted)
+            return all_probs, n_epochs
+            # filename = 'testing_cooccur-' + experiment_time + '.png'
+            # savepath = os.path.join(output_filepath, filename)
+            # plot_cooccur(probs, savepath=None)
 
-    filename = 'combined_cooccur-' + experiment_time + '.png'
-    savepath = os.path.join(output_filepath, filename)
-    plot_cooccur(combined, savepath)
+all_probs, n_epochs = get_cooccur(infos, experiment_times)
+
+total_epochs = np.sum(n_epochs)
+
+combined_weighted = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                         shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                         novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
+combined = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                shortcut=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
+                novel=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]))
+
+keys = ['u', 'shortcut', 'novel']
+for trajectory in combined:
+    for key in combined[trajectory]:
+        if np.sum(probs[trajectory][key]) > 0:
+            combined_weighted[trajectory][key].append(np.nanmean(probs[trajectory][key]) * multi_swrs.n_epochs)
+            combined[trajectory][key].extend(probs[trajectory][key])
+        else:
+            combined_weighted[trajectory][key].append(0.0)
+            combined[trajectory][key].append(0.0)
+
+filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+savepath_weighted = os.path.join(output_filepath, filename_weighted)
+plot_cooccur_combined(combined_weighted, total_epochs, savepath_weighted)
+
+filename = 'combined_cooccur-' + experiment_time + '.png'
+savepath = os.path.join(output_filepath, filename)
+plot_cooccur(combined, savepath)
