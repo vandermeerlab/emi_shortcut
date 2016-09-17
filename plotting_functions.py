@@ -616,6 +616,57 @@ def plot_decoded_errors(decode_errors, shuffled_errors, savepath=None):
         plt.show()
 
 
+# Seaborn specific properties for combined phases
+def plot_v3(data, exp_labels, errors=True):
+    fig = sns.FacetGrid(data, col='trajectory', col_order=['U', 'Shortcut', 'Novel'], sharex=False)
+
+    if errors:
+        fig.map(sns.barplot, 'trajectory', 'total', 'exp_time',  hue_order=[exp_labels[0], exp_labels[1]])
+    else:
+        fig.map(sns.barplot, 'trajectory', 'total', 'exp_time',  hue_order=[exp_labels[0], exp_labels[1]], ci=None)
+    axes = np.array(fig.axes.flat)
+
+    return plt.gcf(), axes
+
+
+def set_labels(fig, axes, exp_labels, ylabel):
+    labels = ['U', 'Shortcut', 'Novel']
+
+    for i, ax in enumerate(axes):
+        ax.set_xticks([-.2, .2])
+        ax.set_xticklabels([exp_labels[0], exp_labels[1]])
+        ax.set_xlabel(labels[i])
+        ax.set_ylabel('')
+        ax.set_title('')
+
+    axes.flat[0].set_ylabel(ylabel)
+
+    sns.despine(ax=axes[1], left=True)
+    sns.despine(ax=axes[2], left=True)
+
+
+def set_style():
+    plt.style.use(['seaborn-white', 'seaborn-paper'])
+
+
+def color_bars(axes):
+    colors = sns.color_palette('Set2')
+    for i in range(3):
+        p1, p2 = axes[i].patches
+
+        p1.set_color(colors[i])
+        p1.set_edgecolor('k')
+
+        p2.set_color(colors[i])
+        p2.set_edgecolor('k')
+        p2.set_hatch('//')
+
+
+def set_size(fig):
+    fig.set_size_inches(6, 4)
+    plt.tight_layout()
+
+
 def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, savepath=None):
     """Plots barplot comparing decoded during two phases
 
@@ -659,51 +710,9 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
     novel2 = pd.DataFrame(novel_dict2)
     data = pd.concat([u1, shortcut1, novel1, u2, shortcut2, novel2])
 
-    def plot_v3(data, exp_labels):
-        fig = sns.FacetGrid(data, col='trajectory', col_order=['U', 'Shortcut', 'Novel'], sharex=False)
-
-        fig.map(sns.barplot, 'trajectory', 'total', 'exp_time',  hue_order=[exp_labels[0], exp_labels[1]])
-        axes = np.array(fig.axes.flat)
-
-        return plt.gcf(), axes
-
-    def set_labels(fig, axes, exp_labels):
-        labels = ['U', 'Shortcut', 'Novel']
-
-        for i, ax in enumerate(axes):
-            ax.set_xticks([-.2, .2])
-            ax.set_xticklabels([exp_labels[0], exp_labels[1]])
-            ax.set_xlabel(labels[i])
-            ax.set_ylabel('')
-            ax.set_title('')
-
-        axes.flat[0].set_ylabel('Proportion of time')
-
-        sns.despine(ax=axes[1], left=True)
-        sns.despine(ax=axes[2], left=True)
-
-    def set_style():
-        plt.style.use(['seaborn-white', 'seaborn-paper'])
-
-    def color_bars(axes):
-        colors = sns.color_palette('Set2')
-        for i in range(3):
-            p1, p2 = axes[i].patches
-
-            p1.set_color(colors[i])
-            p1.set_edgecolor('k')
-
-            p2.set_color(colors[i])
-            p2.set_edgecolor('k')
-            p2.set_hatch('//')
-
-    def set_size(fig):
-        fig.set_size_inches(6, 4)
-        plt.tight_layout()
-
     set_style()
     fig, axes = plot_v3(data, labels)
-    set_labels(fig, axes, labels)
+    set_labels(fig, axes, labels, 'Proportion of time')
     color_bars(axes)
     set_size(fig)
 
@@ -715,106 +724,8 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
 
 
 
-def plot_weighted_cooccur_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, labels, savepath=None):
-    """Plots barplot comparing cooccur z-score during two phases
-
-    Parameters
-    ----------
-    cooccur_1: dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
-    epochs_1: list of ints
-    cooccur_2: dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
-    epochs_2: list of ints
-    labels: list of str
-    savepath : str or None
-        Location and filename for the saved plot.
-
-    """
-    cooccurs_1 = dict(u=[], shortcut=[], novel=[])
-    for key in cooccurs_1:
-        for session in range(len(epochs_1)):
-            cooccurs_1[key].append(np.sum(cooccur_1[key]['zscore'][session])/epochs_1[session])
-
-    u_dict1 = dict(total=cooccurs_1['u'], trajectory='U', exp_time=labels[0])
-    shortcut_dict1 = dict(total=cooccurs_1['shortcut'], trajectory='Shortcut', exp_time=labels[0])
-    novel_dict1 = dict(total=cooccurs_1['novel'], trajectory='Novel', exp_time=labels[0])
-
-    u1 = pd.DataFrame(u_dict1)
-    shortcut1 = pd.DataFrame(shortcut_dict1)
-    novel1 = pd.DataFrame(novel_dict1)
-
-    cooccurs_2 = dict(u=[], shortcut=[], novel=[])
-    for key in cooccurs_2:
-        for session in range(len(epochs_2)):
-            cooccurs_2[key].append(np.sum(cooccur_2[key]['zscore'][session])/epochs_2[session])
-
-    u_dict2 = dict(total=cooccurs_2['u'], trajectory='U', exp_time=labels[1])
-    shortcut_dict2 = dict(total=cooccurs_2['shortcut'], trajectory='Shortcut', exp_time=labels[1])
-    novel_dict2 = dict(total=cooccurs_2['novel'], trajectory='Novel', exp_time=labels[1])
-
-    u2 = pd.DataFrame(u_dict2)
-    shortcut2 = pd.DataFrame(shortcut_dict2)
-    novel2 = pd.DataFrame(novel_dict2)
-    data = pd.concat([u1, shortcut1, novel1, u2, shortcut2, novel2])
-
-    def plot_v3(data, exp_labels):
-        fig = sns.FacetGrid(data, col='trajectory', col_order=['U', 'Shortcut', 'Novel'], sharex=False)
-
-        fig.map(sns.barplot, 'trajectory', 'total', 'exp_time',  hue_order=[exp_labels[0], exp_labels[1]])
-        axes = np.array(fig.axes.flat)
-
-        return plt.gcf(), axes
-
-    def set_labels(fig, axes, exp_labels):
-        labels = ['U', 'Shortcut', 'Novel']
-
-        for i, ax in enumerate(axes):
-            ax.set_xticks([-.2, .2])
-            ax.set_xticklabels([exp_labels[0], exp_labels[1]])
-            ax.set_xlabel(labels[i])
-            ax.set_ylabel('')
-            ax.set_title('')
-
-        axes.flat[0].set_ylabel('Proportion of time')
-
-        sns.despine(ax=axes[1], left=True)
-        sns.despine(ax=axes[2], left=True)
-
-    def set_style():
-        plt.style.use(['seaborn-white', 'seaborn-paper'])
-
-    def color_bars(axes):
-        colors = sns.color_palette('Set2')
-        for i in range(3):
-            p1, p2 = axes[i].patches
-
-            p1.set_color(colors[i])
-            p1.set_edgecolor('k')
-
-            p2.set_color(colors[i])
-            p2.set_edgecolor('k')
-            p2.set_hatch('//')
-
-    def set_size(fig):
-        fig.set_size_inches(6, 4)
-        plt.tight_layout()
-
-    set_style()
-    fig, axes = plot_v3(data, labels)
-    set_labels(fig, axes, labels)
-    color_bars(axes)
-    set_size(fig)
-
-    if savepath is not None:
-        plt.savefig(savepath, dpi=300)
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_cooccur_pauses(cooccur_1, cooccur_2, labels, savepath=None):
-    """Plots barplot comparing cooccur z-score during two phases
+def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, labels, prob, ylabel, savepath=None):
+    """Plots barplot comparing cooccur probabilities during two phases.
 
     Parameters
     ----------
@@ -823,83 +734,45 @@ def plot_cooccur_pauses(cooccur_1, cooccur_2, labels, savepath=None):
     cooccur_2: dict
         With u, shortcut, novel, other as keys, each a vdmlab.Position object.
     labels: list of str
+    prob: str
+        One of expected, observed, active, shuffle, zscore
+    ylabel=str
+
     savepath : str or None
         Location and filename for the saved plot.
 
     """
+    if prob not in ['expected', 'observed', 'active', 'shuffle', 'zscore']:
+        raise ValueError("prob must be one of expected, observed, active, shuffle or zscore")
 
-    cooccurs_1 = dict(u=[], shortcut=[], novel=[])
-    for key in cooccurs_1:
-        for session in range(len(cooccur_1)):
-            cooccurs_1[key].append(cooccur_1[key]['zscore'][session])
+    cooccur_weighted_1 = dict()
+    for key in cooccur_1:
+        cooccur_weighted_1[key] = np.sum(cooccur_1[key][prob])/np.sum(epochs_1)
 
-    u_dict1 = dict(total=cooccurs_1['u'], trajectory='U', exp_time=labels[0])
-    shortcut_dict1 = dict(total=cooccurs_1['shortcut'], trajectory='Shortcut', exp_time=labels[0])
-    novel_dict1 = dict(total=cooccurs_1['novel'], trajectory='Novel', exp_time=labels[0])
+    u_dict1 = dict(total=[cooccur_weighted_1['u']], trajectory='U', exp_time=labels[0])
+    shortcut_dict1 = dict(total=[cooccur_weighted_1['shortcut']], trajectory='Shortcut', exp_time=labels[0])
+    novel_dict1 = dict(total=[cooccur_weighted_1['novel']], trajectory='Novel', exp_time=labels[0])
 
     u1 = pd.DataFrame(u_dict1)
     shortcut1 = pd.DataFrame(shortcut_dict1)
     novel1 = pd.DataFrame(novel_dict1)
 
-    cooccurs_2 = dict(u=[], shortcut=[], novel=[])
-    for key in cooccurs_2:
-        for session in range(len(cooccur_2)):
-            cooccurs_2[key].append(cooccur_2[key]['zscore'][session])
+    cooccur_weighted_2 = dict()
+    for key in cooccur_2:
+        cooccur_weighted_2[key] = np.sum(cooccur_2[key][prob])/np.sum(epochs_2)
 
-    u_dict2 = dict(total=cooccurs_2['u'], trajectory='U', exp_time=labels[1])
-    shortcut_dict2 = dict(total=cooccurs_2['shortcut'], trajectory='Shortcut', exp_time=labels[1])
-    novel_dict2 = dict(total=cooccurs_2['novel'], trajectory='Novel', exp_time=labels[1])
+    u_dict2 = dict(total=[cooccur_weighted_2['u']], trajectory='U', exp_time=labels[1])
+    shortcut_dict2 = dict(total=[cooccur_weighted_2['shortcut']], trajectory='Shortcut', exp_time=labels[1])
+    novel_dict2 = dict(total=[cooccur_weighted_2['novel']], trajectory='Novel', exp_time=labels[1])
 
     u2 = pd.DataFrame(u_dict2)
     shortcut2 = pd.DataFrame(shortcut_dict2)
     novel2 = pd.DataFrame(novel_dict2)
     data = pd.concat([u1, shortcut1, novel1, u2, shortcut2, novel2])
 
-    def plot_v3(data, exp_labels):
-        fig = sns.FacetGrid(data, col='trajectory', col_order=['U', 'Shortcut', 'Novel'], sharex=False)
-
-        fig.map(sns.barplot, 'trajectory', 'total', 'exp_time',  hue_order=[exp_labels[0], exp_labels[1]])
-        axes = np.array(fig.axes.flat)
-
-        return plt.gcf(), axes
-
-    def set_labels(fig, axes, exp_labels):
-        labels = ['U', 'Shortcut', 'Novel']
-
-        for i, ax in enumerate(axes):
-            ax.set_xticks([-.2, .2])
-            ax.set_xticklabels([exp_labels[0], exp_labels[1]])
-            ax.set_xlabel(labels[i])
-            ax.set_ylabel('')
-            ax.set_title('')
-
-        axes.flat[0].set_ylabel('Proportion of time')
-
-        sns.despine(ax=axes[1], left=True)
-        sns.despine(ax=axes[2], left=True)
-
-    def set_style():
-        plt.style.use(['seaborn-white', 'seaborn-paper'])
-
-    def color_bars(axes):
-        colors = sns.color_palette('Set2')
-        for i in range(3):
-            p1, p2 = axes[i].patches
-
-            p1.set_color(colors[i])
-            p1.set_edgecolor('k')
-
-            p2.set_color(colors[i])
-            p2.set_edgecolor('k')
-            p2.set_hatch('//')
-
-    def set_size(fig):
-        fig.set_size_inches(6, 4)
-        plt.tight_layout()
-
     set_style()
-    fig, axes = plot_v3(data, labels)
-    set_labels(fig, axes, labels)
+    fig, axes = plot_v3(data, labels, errors=False)
+    set_labels(fig, axes, labels, ylabel)
     color_bars(axes)
     set_size(fig)
 
