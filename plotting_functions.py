@@ -583,7 +583,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
         plt.show()
 
 
-def plot_decoded_errors(decode_errors, shuffled_errors, savepath=None):
+def plot_decoded_errors(decode_errors, shuffled_errors, fliersize=2, savepath=None):
     """Plots boxplot distance between decoded and actual position for decoded and shuffled_id.
 
     Parameters
@@ -601,7 +601,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, savepath=None):
     data = pd.concat([shuffled, decoded])
 
     plt.figure()
-    flierprops = dict(marker='o', markersize=2, linestyle='none')
+    flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
     ax = sns.boxplot(x='shuffled', y='error', data=data, palette="Set2", flierprops=flierprops)
 
     sns.axlabel(xlabel=' ', ylabel="Error (cm)", fontsize=16)

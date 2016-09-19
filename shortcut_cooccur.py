@@ -37,13 +37,7 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
 
-def get_cooccur(infos, experiment_time):
-    field_thresh = 1.
-    power_thresh = 5.
-    z_thresh = 3.
-    merge_thresh = 0.02
-    min_length = 0.01
-
+def get_cooccur(infos, experiment_time, z_thresh=3., power_thresh=5., merge_thresh=0.02, min_length=0.01):
     n_epochs = []
     all_probs = []
 
@@ -73,6 +67,7 @@ def get_cooccur(infos, experiment_time):
 
         zones = find_zones(info)
 
+        field_thresh = 1.0
         fields_tunings = categorize_fields(tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
 
         keys = ['u', 'shortcut', 'novel']
@@ -224,14 +219,15 @@ if 0:
 
 # Plot two phase's probs together in the same plot
 if 1:
+    z_thresh = 7.0
     experiment_times = ['pauseA', 'pauseB']
-    all_probs_a, n_epochs_a = get_cooccur(infos, experiment_times[0])
+    all_probs_a, n_epochs_a = get_cooccur(infos, experiment_times[0], z_thresh=z_thresh)
     combined_weighted_a = combine_cooccur_weighted(all_probs_a, n_epochs_a)
 
-    all_probs_b, n_epochs_b = get_cooccur(infos, experiment_times[1])
+    all_probs_b, n_epochs_b = get_cooccur(infos, experiment_times[1], z_thresh=z_thresh)
     combined_weighted_b = combine_cooccur_weighted(all_probs_b, n_epochs_b)
 
-    filename = 'pauses-combined_cooccur.png'
+    filename = 'pauses-combined_cooccur_z7.png'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, n_epochs_a, combined_weighted_b, n_epochs_b, experiment_times,
                         prob='zscore', ylabel='SWR co-activation z-scored', savepath=savepath)
