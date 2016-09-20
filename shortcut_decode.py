@@ -14,28 +14,28 @@ from decode_functions import get_edges, point_in_zones, compare_rates, compare_l
 from plotting_functions import (plot_decoded, plot_decoded_pause, plot_decoded_errors,
                                 plot_compare_decoded_pauses)
 
-import info.R063d2_info as r063d2
-import info.R063d3_info as r063d3
-import info.R063d4_info as r063d4
-import info.R063d5_info as r063d5
-import info.R063d6_info as r063d6
-import info.R066d1_info as r066d1
-import info.R066d2_info as r066d2
-import info.R066d3_info as r066d3
-import info.R066d4_info as r066d4
-import info.R066d5_info as r066d5
-import info.R066d6_info as r066d6
-import info.R067d1_info as r067d1
-import info.R067d2_info as r067d2
-import info.R067d3_info as r067d3
-import info.R067d4_info as r067d4
-import info.R067d5_info as r067d5
-import info.R068d1_info as r068d1
-import info.R068d2_info as r068d2
-import info.R068d3_info as r068d3
-import info.R068d4_info as r068d4
-import info.R068d5_info as r068d5
-import info.R068d6_info as r068d6
+import info.r063d2
+import info.r063d3
+import info.r063d4
+import info.r063d5
+import info.r063d6
+import info.r066d1
+import info.r066d2
+import info.r066d3
+import info.r066d4
+import info.r066d5
+import info.r066d6
+import info.r067d1
+import info.r067d2
+import info.r067d3
+import info.r067d4
+import info.r067d5
+import info.r068d1
+import info.r068d2
+import info.r068d3
+import info.r068d4
+import info.r068d5
+import info.r068d6
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -230,12 +230,11 @@ def normalized_time_spent(combined_decoded, n_sessions, lengths):
     plot_decoded(decoded_length, y_label=y_label, max_y=None, savepath=savepath)
 
 
-# infos = [r063d2, r063d3]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
-         r066d1, r066d2, r066d3, r066d4, r066d5, r066d6,
-         r067d1, r067d2, r067d3, r067d4, r067d5,
-         r068d1, r068d2, r068d3, r068d4, r068d5, r068d6]
-# infos = [r068d1, r068d2, r068d3, r068d4, r068d5, r068d6]
+# infos = [info.r063d2, info.r063d3]
+infos = [info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6,
+         info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5, info.r066d6,
+         info.r067d1, info.r067d2, info.r067d3, info.r067d4, info.r067d5,
+         info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6]
 
 
 # Plot decoding errors during track times
