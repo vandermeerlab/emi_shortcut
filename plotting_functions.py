@@ -106,20 +106,23 @@ def plot_zone(zone):
 def plot_bydurations(durations, savepath, savefig=True):
     """Plots duration for each trial separated by trajectories. Behavior only.
 
-        Parameters
-        ----------
-        durations : dict
-            With u, shortcut, novel, num_sessions as keys.
-            Each value is a list of durations (float) for a each session.
-        savepath : str
-            Location and filename for the saved plot.
-        savefig : boolean
-            Default is True and will save the plot to the specified location. False
-            shows with plot without saving it.
+    Parameters
+    ----------
+    durations : dict
+        With u, shortcut, novel, num_sessions as keys.
+        Each value is a list of durations (float) for a each session.
+    savepath : str
+        Location and filename for the saved plot.
+    savefig : boolean
+        Default is True and will save the plot to the specified location. False
+        shows with plot without saving it.
 
-        """
-    ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']])
-    sns.color_palette("hls", 18)
+    """
+    fliersize = 3
+    flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
+    ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette="Set2",
+                     flierprops=flierprops)
+    # sns.color_palette("hls", 18)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
     plt.ylabel('Duration of trial (s)')
     plt.xlabel('sessions=' + str(durations['num_sessions']))
@@ -163,7 +166,7 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
 
     n_groups = list(range(3))
 
-    colour = ['#5975a4', '#5f9e6e', '#b55d5f']
+    colour = ['#72b7a1', '#e79676', '#95a3c3']
 
     data = [all_us, all_shortcuts, all_novels]
     sems = [us_sem, shortcuts_sem, novels_sem]
@@ -211,7 +214,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
 
     trials = list(range(min_length))
 
-    colours = dict(u='#5975a4', shortcut='#5f9e6e', novel='#b55d5f')
+    colours = dict(u='#72b7a1', shortcut='#e79676', novel='#95a3c3')
     labels = dict(u='Full U', shortcut='Shortcut', novel='Novel')
 
     fig = plt.figure()

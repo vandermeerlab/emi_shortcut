@@ -24,6 +24,7 @@ import info.R066d2_info as r066d2
 import info.R066d3_info as r066d3
 import info.R066d4_info as r066d4
 import info.R066d5_info as r066d5
+import info.R066d6_info as r066d6
 import info.R067d1_info as r067d1
 import info.R067d2_info as r067d2
 import info.R067d3_info as r067d3
@@ -231,9 +232,10 @@ def normalized_time_spent(combined_decoded, n_sessions, lengths):
 
 # infos = [r063d2, r063d3]
 infos = [r063d2, r063d3, r063d4, r063d5, r063d6,
-         r066d1, r066d2, r066d3, r066d4, r066d5,
+         r066d1, r066d2, r066d3, r066d4, r066d5, r066d6,
          r067d1, r067d2, r067d3, r067d4, r067d5,
          r068d1, r068d2, r068d3, r068d4, r068d5, r068d6]
+# infos = [r068d1, r068d2, r068d3, r068d4, r068d5, r068d6]
 
 
 # Plot decoding errors during track times
@@ -242,9 +244,9 @@ if 1:
     print('Mean decoded errors:', np.mean(combined_errors))
     shuffled_decoded, shuffled_errors, shuffled_times, shuffled_lengths = get_decoded(infos, shuffle_id=True)
     print('Mean shuffled errors:', np.mean(combined_errors))
-    filename = 'combined-errors_decoded_nooutliers.png'
+    filename = 'combined-errors_decoded.png'
     savepath = os.path.join(output_filepath, filename)
-    plot_decoded_errors(combined_errors, shuffled_errors, fliersize=0, savepath=savepath)
+    plot_decoded_errors(combined_errors, shuffled_errors, fliersize=3, savepath=savepath)
 
 # Plot proportion of pauseA and pauseB spent in each trajectory
 if 0:
