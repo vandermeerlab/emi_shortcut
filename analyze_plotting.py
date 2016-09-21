@@ -653,7 +653,7 @@ def set_style():
 
 
 def color_bars(axes):
-    colors = sns.color_palette('Set2')
+    colors = sns.color_palette('Set1')
     for i in range(3):
         p1, p2 = axes[i].patches
 

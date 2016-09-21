@@ -5,13 +5,13 @@ import pickle
 import plot_behavior
 import analyze_tuning_curves
 import plot_tuning_curves
+import plot_decode
 
 import info
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
-output_filepath = os.path.join(thisdir, 'plots', 'behavior')
 
 all_infos = [
     info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6, info.r063d7, info.r063d8,
@@ -70,26 +70,43 @@ if __name__ == "__main__":
 
     # --- Analyses
 
-    if "tuning_curves" or "plot_tuning_curves" in sys.argv:
-        if needs_to_run(analyze_tuning_curves.outputs):
-            analyze_tuning_curves.analyze(infos)
+    if any(s in sys.argv for s in ["tuning_curves", "plot_tuning_curves", "plot_decode_errors",
+                                   "plot_decode_pauses", "plot_decode_phases", "plot_decode_normalized"]):
+        outputs = analyze_tuning_curves.get_outputs(infos)
+        tuning_curves = []
+        if needs_to_run(outputs):
+            for info in infos:
+                tuning_curves.append(analyze_tuning_curves.analyze(info))
+        else:
+            for info in infos:
+                tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+                pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+                with open(pickled_tuning_curve, 'rb') as fileobj:
+                    tuning_curves.append(pickle.load(fileobj))
 
     if "plot_tuning_curves" in sys.argv:
-        if needs_to_run(plot_tuning_curves.outputs):
-            for info in infos:
-                tuning_curve_filename = info.session_id + '_tuning_curve.pkl'
-                pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+        outputs = analyze_tuning_curves.get_outputs(infos)
+        if needs_to_run(outputs):
+            for tuning_curve, info in zip(infos, tuning_curves):
+                plot_tuning_curves.plot(info, tuning_curve)
 
-                with open(pickled_tuning_curve, 'rb') as fileobj:
-                    tuning_curve = pickle.load(fileobj)
-                plot_tuning_curves.analyze(info, tuning_curve)
+    if "plot_decode_errors" in sys.argv:
+        if needs_to_run(plot_decode.outputs_errors):
+            plot_decode.plot_errors(infos, tuning_curves)
+
+    if "plot_decode_pauses" in sys.argv:
+        if needs_to_run(plot_decode.outputs_pauses):
+            plot_decode.plot_pauses(infos, tuning_curves)
+
+    if "plot_decode_phases" in sys.argv:
+        if needs_to_run(plot_decode.outputs_phases):
+            plot_decode.plot_phases(infos, tuning_curves)
+
+    if "plot_decode_normalized" in sys.argv:
+        if needs_to_run(plot_decode.outputs_normalized):
+            plot_decode.plot_normalized(infos, tuning_curves)
 
     if "behavior" in sys.argv:
         if needs_to_run(plot_behavior.outputs):
             plot_behavior.analyze(infos)
 
-    # If you do run `analyze` multiple times for different parameters sets,
-    # then you should also be able to get the output files for those parameter
-    # sets (e.g., using an `outputs` function that takes in the parameter
-    # values and returns the list of paths). That way you can use needs_to_run
-    # and pass in a list of files for that specific parameter set.
