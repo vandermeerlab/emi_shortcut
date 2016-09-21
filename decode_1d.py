@@ -7,8 +7,8 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
-from tuning_curves_functions import get_tc_1d, find_ideal
-from decode_functions import get_edges
+from analyze_tuning_curves import get_tc_1d, find_ideal
+from analyze_decode import get_edges
 
 # import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3

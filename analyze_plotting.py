@@ -7,7 +7,7 @@ import pandas as pd
 
 import vdmlab as vdm
 
-from behavior_functions import bytrial_counts, summary_bytrial
+from analyze_behavior import bytrial_counts, summary_bytrial
 
 sns.set_style('white')
 sns.set_style('ticks')

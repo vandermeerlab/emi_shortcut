@@ -2,7 +2,7 @@ import os
 import vdmlab as vdm
 
 from load_data import get_lfp
-from plotting_functions import plot_swrs
+from analyze_plotting import plot_swrs
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3

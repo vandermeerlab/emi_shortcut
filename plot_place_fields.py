@@ -4,9 +4,9 @@ import pickle
 import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
-from field_functions import unique_fields
-from tuning_curves_functions import get_tc_1d
-from plotting_functions import plot_fields
+from analyze_fields import unique_fields
+from analyze_tuning_curves import get_tc_1d
+from analyze_plotting import plot_fields
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3

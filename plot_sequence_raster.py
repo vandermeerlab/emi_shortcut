@@ -6,7 +6,7 @@ import seaborn as sns
 import vdmlab as vdm
 
 from load_data import get_pos, get_lfp, get_spikes
-from tuning_curves_functions import get_tc_1d, find_ideal, get_odd_firing_idx
+from analyze_tuning_curves import get_tc_1d, find_ideal, get_odd_firing_idx
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3

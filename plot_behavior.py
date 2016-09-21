@@ -1,8 +1,8 @@
 import os
 
 from load_data import get_pos, get_events
-from maze_functions import get_trial_idx, get_zones
-from plotting_functions import plot_proportions, plot_bydurations, plot_bytrial
+from analyze_maze import get_trial_idx, get_zones
+from analyze_plotting import plot_proportions, plot_bydurations, plot_bytrial
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 

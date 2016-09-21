@@ -4,9 +4,9 @@ import numpy as np
 import vdmlab as vdm
 
 from load_data import get_pos, get_spikes, get_lfp
-from field_functions import get_unique_fields, categorize_fields
-from maze_functions import find_zones
-from plotting_functions import plot_cooccur, plot_cooccur_combined, plot_cooccur_weighted_pauses
+from analyze_fields import get_unique_fields, categorize_fields
+from analyze_maze import find_zones
+from analyze_plotting import plot_cooccur, plot_cooccur_combined, plot_cooccur_weighted_pauses
 
 import info.R063d2_info as r063d2
 import info.R063d3_info as r063d3

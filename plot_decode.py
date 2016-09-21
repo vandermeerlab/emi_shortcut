@@ -2,16 +2,13 @@ import os
 import numpy as np
 import random
 from shapely.geometry import LineString
-import matplotlib.pyplot as plt
-import pickle
-from scipy.interpolate import InterpolatedUnivariateSpline
 
 import vdmlab as vdm
 
 from load_data import get_pos, get_spikes
-from maze_functions import find_zones
-from decode_functions import get_edges, point_in_zones, compare_rates, compare_lengths
-from plotting_functions import (plot_decoded, plot_decoded_pause, plot_decoded_errors,
+from analyze_maze import find_zones
+from analyze_decode import get_edges, point_in_zones, compare_rates, compare_lengths
+from analyze_plotting import (plot_decoded, plot_decoded_pause, plot_decoded_errors,
                                 plot_compare_decoded_pauses)
 
 import info.r063d2

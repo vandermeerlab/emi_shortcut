@@ -1,7 +1,10 @@
 import os
 import sys
+import pickle
 
-import shortcut_behavior
+import plot_behavior
+import analyze_tuning_curves
+import plot_tuning_curves
 
 import info
 
@@ -47,22 +50,43 @@ def needs_to_run(paths):
     return False
 
 if __name__ == "__main__":
-    # The block below lets you tell run.py which info files you want to deal with.
-    # They are defined with names above (eg. all_infos, spike_sorted_infos).
-
     if "all" in sys.argv:
         infos = all_infos
     elif "spike_sorted" in sys.argv:
         infos = spike_sorted_infos
+    elif "r063" in sys.argv:
+        infos = r063_infos
+    elif "r066" in sys.argv:
+        infos = r066_infos
+    elif "r067" in sys.argv:
+        infos = r067_infos
+    elif "r068" in sys.argv:
+        infos = r068_infos
     else:
-        print("Neither 'all' nor 'spike_sorted' passed, so using all infos.")
+        print("None of specified infos passed "
+              "('all', 'spike_sorted', 'r063', 'r066', 'r067', r068'), "
+              "so using all infos.")
         infos = all_infos
 
     # --- Analyses
 
+    if "tuning_curves" or "plot_tuning_curves" in sys.argv:
+        if needs_to_run(analyze_tuning_curves.outputs):
+            analyze_tuning_curves.analyze(infos)
+
+    if "plot_tuning_curves" in sys.argv:
+        if needs_to_run(plot_tuning_curves.outputs):
+            for info in infos:
+                tuning_curve_filename = info.session_id + '_tuning_curve.pkl'
+                pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+
+                with open(pickled_tuning_curve, 'rb') as fileobj:
+                    tuning_curve = pickle.load(fileobj)
+                plot_tuning_curves.analyze(info, tuning_curve)
+
     if "behavior" in sys.argv:
-        if needs_to_run(shortcut_behavior.outputs):
-            shortcut_behavior.analyze(infos)
+        if needs_to_run(plot_behavior.outputs):
+            plot_behavior.analyze(infos)
 
     # If you do run `analyze` multiple times for different parameters sets,
     # then you should also be able to get the output files for those parameter

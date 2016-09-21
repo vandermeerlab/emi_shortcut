@@ -1,13 +1,19 @@
 import os
 import numpy as np
 import pickle
-import itertools
 from shapely.geometry import Point, LineString
-
 
 import vdmlab as vdm
 
-from maze_functions import spikes_by_position
+from run import spike_sorted_infos
+
+from load_data import get_pos, get_spikes
+from analyze_maze import spikes_by_position
+
+
+thisdir = os.path.dirname(os.path.realpath(__file__))
+pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
+output_filepath = os.path.join(thisdir, 'plots', 'tuning')
 
 
 def expand_line(start_pt, stop_pt, line, expand_by):
@@ -149,16 +155,15 @@ def get_tc_1d(info, position, spikes, pickled_tc, binsize, expand_by=2, sampling
 
     tuning_curves = dict()
     if len(linear['u'].x) > 0:
-        tuning_curves['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], binsize, sampling_rate=sampling_rate)
+        tuning_curves['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], binsize)
     else:
         tuning_curves['u'] = None
     if len(linear['shortcut'].x) > 0:
-        tuning_curves['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize,
-                                                     sampling_rate=sampling_rate)
+        tuning_curves['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize)
     else:
         tuning_curves['shortcut'] = None
     if len(linear['novel'].x) > 0:
-        tuning_curves['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], binsize, sampling_rate=sampling_rate)
+        tuning_curves['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], binsize)
     else:
         tuning_curves['novel'] = None
 
@@ -189,3 +194,46 @@ def get_odd_firing_idx(tuning_curve, max_mean_firing):
         if (np.mean(tuning_curve[idx]) > max_mean_firing):
             odd_firing_idx.append(idx)
     return odd_firing_idx
+
+
+infos = spike_sorted_infos
+outputs = []
+for info in infos:
+    outputs.append(os.path.join(output_filepath, info.session_id + '_tuning_curve.pkl'))
+
+def analyze(infos):
+    for info in infos:
+        print('tuning curves:', info.session_id)
+        position = get_pos(info.pos_mat, info.pxl_to_cm)
+        spikes = get_spikes(info.spike_mat)
+
+        speed = position.speed(t_smooth=0.5)
+        run_idx = np.squeeze(speed.data) >= 0.1
+        run_pos = position[run_idx]
+
+        track_starts = [info.task_times['phase1'].start,
+                        info.task_times['phase2'].start,
+                        info.task_times['phase3'].start]
+        track_stops = [info.task_times['phase1'].stop,
+                       info.task_times['phase2'].stop,
+                       info.task_times['phase3'].stop]
+
+        track_pos = run_pos.time_slices(track_starts, track_stops)
+
+        track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
+
+        binsize = 3
+        xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
+        yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
+
+        tuning_curves = vdm.tuning_curve_2d(track_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
+
+        tc_filename = info.session_id + '_tuning_curve.pkl'
+        pickled_tc = os.path.join(pickle_filepath, tc_filename)
+
+        with open(pickled_tc, 'wb') as fileobj:
+            pickle.dump(tuning_curves, fileobj)
+
+
+if __name__ == "__main__":
+    analyze(infos)
