@@ -573,7 +573,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
     data = pd.concat([u, shortcut, novel])
 
     plt.figure()
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
+    ax = sns.barplot(x='trajectory', y='total', data=data, palette='Set2')
     sns.axlabel(xlabel=' ', ylabel="Proportion of time", fontsize=16)
 
     sns.despine()
@@ -653,7 +653,7 @@ def set_style():
 
 
 def color_bars(axes):
-    colors = sns.color_palette('Set1')
+    colors = sns.color_palette('Set2')
     for i in range(3):
         p1, p2 = axes[i].patches
 

@@ -232,5 +232,6 @@ def analyze(info):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-    analyze(spike_sorted_infos)
+    from run import new_rat
+    for info in new_rat:
+        analyze(info)

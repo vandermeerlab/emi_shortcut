@@ -1,5 +1,5 @@
 % Change this filepath to where this data is located on your computer.
-path = 'R066-2014-12-03_recording';
+path = 'R067-2014-12-05_recording';
 
 % Below works only on Emily's laptop.
 % filepath = 'C:\Users\Emily\Desktop\';
