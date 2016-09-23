@@ -6,7 +6,7 @@ import plot_behavior
 import analyze_tuning_curves
 import plot_tuning_curves
 import plot_decode
-import analyze_decode
+import plot_cooccur
 
 import info
 
@@ -16,7 +16,7 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 
 spike_sorted_infos = [
     info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6,
-    info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5,
+    info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5, info.r066d6,
     info.r067d1, info.r067d2, info.r067d3, info.r067d4, info.r067d5, info.r067d6,
     info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6]
 
@@ -84,11 +84,10 @@ if __name__ == "__main__":
         if needs_to_run(plot_behavior.outputs):
             plot_behavior.analyze(infos)
 
-    if "plot_tuning_curves" in sys.argv:
-        outputs = analyze_tuning_curves.get_outputs(infos)
+    if "plot_cooccur" in sys.argv:
+        outputs = plot_cooccur.get_outputs_combined_weighted(infos)
         if needs_to_run(outputs):
-            for tuning_curve, info in zip(infos, tuning_curves):
-                plot_tuning_curves.plot(info, tuning_curve)
+            plot_cooccur.plot(infos)
 
     if "plot_decode_errors" in sys.argv:
         outputs = plot_decode.get_outputs_errors(infos)
@@ -109,3 +108,9 @@ if __name__ == "__main__":
         outputs = plot_decode.get_outputs_phases(infos)
         if needs_to_run(outputs):
             plot_decode.plot_phases(infos, tuning_curves)
+
+    if "plot_tuning_curves" in sys.argv:
+        outputs = analyze_tuning_curves.get_outputs(infos)
+        if needs_to_run(outputs):
+            for tuning_curve, info in zip(infos, tuning_curves):
+                plot_tuning_curves.plot(info, tuning_curve)

@@ -25,14 +25,18 @@ def analyze(info, tuning_curve, experiment_time):
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
-    t_start_tc = info.task_times['phase3'].start
-    t_stop_tc = info.task_times['phase3'].stop
+    track_starts = [info.task_times['phase1'].start,
+                    info.task_times['phase2'].start,
+                    info.task_times['phase3'].start]
+    track_stops = [info.task_times['phase1'].stop,
+                   info.task_times['phase2'].stop,
+                   info.task_times['phase3'].stop]
 
-    tc_pos = run_pos.time_slice(t_start_tc, t_stop_tc)
+    track_pos = run_pos.time_slices(track_starts, track_stops)
 
     binsize = 3
-    xedges = np.arange(tc_pos.x.min(), tc_pos.x.max() + binsize, binsize)
-    yedges = np.arange(tc_pos.y.min(), tc_pos.y.max() + binsize, binsize)
+    xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
+    yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
 
     zones = find_zones(info)
 
@@ -97,25 +101,15 @@ def analyze(info, tuning_curve, experiment_time):
 
 
 if __name__ == "__main__":
-    from run import test
-    infos = test
+    from run import spike_sorted_infos
+    infos = spike_sorted_infos
 
-    if 1:
-        experiment_time = 'pauseA'
+    experiment_times = ['pauseA', 'pauseB']
+    for experiment_time in experiment_times:
+        print(experiment_time)
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
             with open(pickled_tuning_curve, 'rb') as fileobj:
                 tuning_curve = pickle.load(fileobj)
-
-            analyze(info, tuning_curve, experiment_time)
-
-    if 0:
-        experiment_time = 'pauseB'
-        for info in infos:
-            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curve = pickle.load(fileobj)
-
             analyze(info, tuning_curve, experiment_time)

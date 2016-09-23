@@ -74,56 +74,68 @@ def combine_cooccur(cooccurs):
                     combined[trajectory][key].append(0.0)
     return combined
 
-# filename = 'testing_cooccur-' + experiment_time + '.png'
-# savepath = os.path.join(output_filepath, filename)
-# plot_cooccur(probs, savepath=None)
+
+def plot(infos):
+    cooccurs_a = dict(probs=[], n_epochs=[])
+    cooccurs_b = dict(probs=[], n_epochs=[])
+    experiment_time = 'pauseA'
+    print('getting co-occurrence', experiment_time)
+    for info in infos:
+        cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
+        pickled_cooccur = os.path.join(pickle_filepath, cooccur_filename)
+        with open(pickled_cooccur, 'rb') as fileobj:
+            cooccur = pickle.load(fileobj)
+
+        cooccurs_a['probs'].append(cooccur['probs'])
+        cooccurs_a['n_epochs'].append(cooccur['n_epochs'])
+
+    combined_a = combine_cooccur(cooccurs_a)
+    combined_weighted_a = combine_cooccur_weighted(cooccurs_a)
+
+    filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+    savepath_weighted = os.path.join(output_filepath, filename_weighted)
+    plot_cooccur_combined(combined_weighted_a, int(np.sum(cooccurs_a['n_epochs'])), savepath_weighted)
+
+    filename = 'combined_cooccur-' + experiment_time + '.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur(combined_a, savepath)
+
+    experiment_time = 'pauseB'
+    print('getting co-occurrence', experiment_time)
+    for info in infos:
+        cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
+        pickled_cooccur = os.path.join(pickle_filepath, cooccur_filename)
+        with open(pickled_cooccur, 'rb') as fileobj:
+            cooccur = pickle.load(fileobj)
+
+        cooccurs_b['probs'].append(cooccur['probs'])
+        cooccurs_b['n_epochs'].append(cooccur['n_epochs'])
+
+    combined_b = combine_cooccur(cooccurs_b)
+    combined_weighted_b = combine_cooccur_weighted(cooccurs_b)
+
+    filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+    savepath_weighted = os.path.join(output_filepath, filename_weighted)
+    plot_cooccur_combined(combined_weighted_b, int(np.sum(cooccurs_b['n_epochs'])), savepath_weighted)
+
+    filename = 'combined_cooccur-' + experiment_time + '.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur(combined_b, savepath)
+
+    filename = 'pauses-combined_cooccur.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
+                                 combined_weighted_b, cooccurs_b['n_epochs'],
+                                 ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
+                                 savepath=savepath)
+
+
+def get_outputs_combined_weighted(infos):
+    outputs = [os.path.join(output_filepath, 'pauses-combined_cooccur.png')]
+    return outputs
 
 
 if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
-
-    if 1:
-        cooccurs = dict(probs=[], n_epochs=[])
-        experiment_times = ['pauseA', 'pauseB']
-        for experiment_time in experiment_times:
-            for info in infos:
-                tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-                pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-                with open(pickled_tuning_curve, 'rb') as fileobj:
-                    tuning_curve = pickle.load(fileobj)
-
-                cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
-                pickled_cooccur = os.path.join(pickle_filepath, cooccur_filename)
-                with open(pickled_cooccur, 'rb') as fileobj:
-                    cooccur = pickle.load(fileobj)
-
-                cooccurs['probs'].append(cooccur['probs'])
-                cooccurs['n_epochs'].append(cooccur['n_epoch'])
-
-            combined = combine_cooccur(cooccurs)
-            combined_weighted = combine_cooccur_weighted(cooccurs)
-
-            filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
-            savepath_weighted = os.path.join(output_filepath, filename_weighted)
-            plot_cooccur_combined(combined_weighted, int(np.sum(cooccurs['n_epoch'])), savepath_weighted)
-
-            filename = 'combined_cooccur-' + experiment_time + '.png'
-            savepath = os.path.join(output_filepath, filename)
-            plot_cooccur(combined, savepath)
-
-
-# Plot two phase's probs together in the same plot
-# if 0:
-#     z_thresh = 7.0
-#     experiment_times = ['pauseA', 'pauseB']
-#     all_probs_a, n_epochs_a = get_cooccur(infos, experiment_times[0], z_thresh=z_thresh)
-#     combined_weighted_a = combine_cooccur_weighted(all_probs_a, n_epochs_a)
-#
-#     all_probs_b, n_epochs_b = get_cooccur(infos, experiment_times[1], z_thresh=z_thresh)
-#     combined_weighted_b = combine_cooccur_weighted(all_probs_b, n_epochs_b)
-#
-#     filename = 'pauses-combined_cooccur_z7.png'
-#     savepath = os.path.join(output_filepath, filename)
-#     plot_cooccur_weighted_pauses(combined_weighted_a, n_epochs_a, combined_weighted_b, n_epochs_b, experiment_times,
-#                         prob='zscore', ylabel='SWR co-activation z-scored', savepath=savepath)
+    plot(infos)

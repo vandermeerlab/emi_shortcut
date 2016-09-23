@@ -304,7 +304,7 @@ def plot_cooccur(probs, savepath=None):
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     ind = np.arange(3)
     width = 0.8
-    colours = ['#5975a4', '#5f9e6e', '#b55d5f']
+    colours = ['#72b7a1', '#e79676', '#95a3c3']
 
     active_means = [np.nanmean(probs['u']['active']),
                     np.nanmean(probs['shortcut']['active']),
@@ -395,7 +395,7 @@ def plot_cooccur_combined(combined, total_epochs, savepath=None):
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     ind = np.arange(3)
     width = 0.8
-    colours = ['#5975a4', '#5f9e6e', '#b55d5f']
+    colours = ['#72b7a1', '#e79676', '#95a3c3']
 
     active_means = [np.sum(combined['u']['active'])/total_epochs,
                     np.sum(combined['shortcut']['active'])/total_epochs,
