@@ -30,12 +30,12 @@ def normalized_time_spent(combined_decoded, n_sessions, lengths):
     filename = 'combined-time-norm_tracks_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     y_label = 'Points normalized by time spent'
-    plot_decoded(decoded_linger, y_label=y_label, max_y=None, savepath=savepath)
+    plot_decoded(decoded_linger, y_label=y_label, savepath=savepath)
 
     filename = 'combined-length-norm_tracks_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     y_label = 'Points normalized by track length'
-    plot_decoded(decoded_length, y_label=y_label, max_y=None, savepath=savepath)
+    plot_decoded(decoded_length, y_label=y_label, savepath=savepath)
 
 
 def plot_errors(infos, tuning_curves):

@@ -14,18 +14,13 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 
-all_infos = [
-    info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6, info.r063d7, info.r063d8,
-    info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5, info.r066d6, info.r066d7, info.r066d8,
-    info.r067d1, info.r067d2, info.r067d3, info.r067d4, info.r067d5, info.r067d6, info.r067d7, info.r067d8,
-    info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6, info.r068d7, info.r068d8]
-
 spike_sorted_infos = [
     info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6,
-    info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5, info.r066d6,
+    info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5,
     info.r067d1, info.r067d2, info.r067d3, info.r067d4, info.r067d5, info.r067d6,
     info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6]
 
+test = [info.r066d6]
 r063_infos = [
     info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6, info.r063d7, info.r063d8]
 
@@ -53,9 +48,7 @@ def needs_to_run(paths):
     return False
 
 if __name__ == "__main__":
-    if "all" in sys.argv:
-        infos = all_infos
-    elif "spike_sorted" in sys.argv:
+    if "spike_sorted" in sys.argv:
         infos = spike_sorted_infos
     elif "r063" in sys.argv:
         infos = r063_infos
@@ -65,11 +58,11 @@ if __name__ == "__main__":
         infos = r067_infos
     elif "r068" in sys.argv:
         infos = r068_infos
+    elif "test" in sys.argv:
+        infos = test
     else:
-        print("None of specified infos passed "
-              "('all', 'spike_sorted', 'r063', 'r066', 'r067', r068'), "
-              "so using all infos.")
-        infos = all_infos
+        print("Using spike sorted infos.")
+        infos = spike_sorted_infos
 
     # --- Analyses
 
@@ -87,6 +80,10 @@ if __name__ == "__main__":
                 with open(pickled_tuning_curve, 'rb') as fileobj:
                     tuning_curves.append(pickle.load(fileobj))
 
+    if "behavior" in sys.argv:
+        if needs_to_run(plot_behavior.outputs):
+            plot_behavior.analyze(infos)
+
     if "plot_tuning_curves" in sys.argv:
         outputs = analyze_tuning_curves.get_outputs(infos)
         if needs_to_run(outputs):
@@ -98,6 +95,11 @@ if __name__ == "__main__":
         if needs_to_run(outputs):
             plot_decode.plot_errors(infos, tuning_curves)
 
+    if "plot_decode_normalized" in sys.argv:
+        outputs = plot_decode.get_outputs_normalized(infos)
+        if needs_to_run(outputs):
+            plot_decode.plot_normalized(infos, tuning_curves)
+
     if "plot_decode_pauses" in sys.argv:
         outputs = plot_decode.get_outputs_pauses(infos)
         if needs_to_run(outputs):
@@ -107,13 +109,3 @@ if __name__ == "__main__":
         outputs = plot_decode.get_outputs_phases(infos)
         if needs_to_run(outputs):
             plot_decode.plot_phases(infos, tuning_curves)
-
-    if "plot_decode_normalized" in sys.argv:
-        outputs = plot_decode.get_outputs_normalized(infos)
-        if needs_to_run(outputs):
-            plot_decode.plot_normalized(infos, tuning_curves)
-
-    if "behavior" in sys.argv:
-        if needs_to_run(plot_behavior.outputs):
-            plot_behavior.analyze(infos)
-

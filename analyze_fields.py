@@ -93,6 +93,7 @@ def categorize_fields(tuning_curves, zone, xedges, yedges, field_thresh):
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
 
     xy_centers = vdm.cartesian(xcenters, ycenters)
+    print(len(xy_centers))
 
     fields_tc = dict(u=dict(), shortcut=dict(), novel=dict(), pedestal=dict())
 

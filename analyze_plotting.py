@@ -532,7 +532,7 @@ def plot_decoded(decoded, y_label, savepath=None):
     data = pd.concat([u, shortcut, novel])
 
     plt.figure()
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
+    ax = sns.barplot(x='trajectory', y='total', data=data, palette='Set2')
     sns.axlabel(xlabel=' ', ylabel=y_label, fontsize=16)
 
     sns.despine()
