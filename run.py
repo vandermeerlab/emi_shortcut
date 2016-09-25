@@ -66,16 +66,24 @@ if __name__ == "__main__":
 
     # --- Analyses
 
-    if any(s in sys.argv for s in ["tuning_curves", "plot_tuning_curves", "plot_decode_errors",
+    if any(s in sys.argv for s in ["tuning_curves", "plot_tuning_curves", "plot_cooccur", "plot_decode_errors",
                                    "plot_decode_pauses", "plot_decode_phases", "plot_decode_normalized"]):
-        outputs = analyze_tuning_curves.get_outputs(infos)
-        tuning_curves = []
-        if needs_to_run(outputs):
-            for info in infos:
-                tuning_curves.append(analyze_tuning_curves.analyze(info))
+        if "tc_all" in sys.argv:
+            outputs = analyze_tuning_curves.get_outputs_all(infos)
         else:
-            for info in infos:
-                tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+            outputs = analyze_tuning_curves.get_outputs(infos)
+        tuning_curves = []
+        for info, outfile in zip(infos, outputs):
+            if needs_to_run([outfile]):
+                if "tc_all" in sys.argv:
+                    tuning_curves.append(analyze_tuning_curves.analyze(info, use_all_tracks=True))
+                else:
+                    tuning_curves.append(analyze_tuning_curves.analyze(info))
+            else:
+                if "tc_all" in sys.argv:
+                    tuning_curve_filename = info.session_id + '_tuning-curve_all-phases.pkl'
+                else:
+                    tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
                 pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
                 with open(pickled_tuning_curve, 'rb') as fileobj:
                     tuning_curves.append(pickle.load(fileobj))

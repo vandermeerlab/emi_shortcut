@@ -300,11 +300,11 @@ def combine_decode(infos, filename, experiment_time, shuffle_id, tuning_curves=N
 outputs_tracks = []
 
 if __name__ == "__main__":
-    from run import all_infos, spike_sorted_infos
+    from run import spike_sorted_infos
 
     infos = spike_sorted_infos
 
-    if 0:
+    if 1:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
@@ -320,7 +320,7 @@ if __name__ == "__main__":
                 tuning_curve = pickle.load(fileobj)
             decoded_tracks_shuffled = combine_decode(info, '_decode-tracks_shuffled.pkl', experiment_time='tracks',
                                                      shuffle_id=True, tuning_curves=tuning_curve)
-    if 0:
+    if 1:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)

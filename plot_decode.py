@@ -151,7 +151,7 @@ def get_outputs_normalized(infos):
 
 
 if __name__ == "__main__":
-    from run import all_infos, spike_sorted_infos
+    from run import spike_sorted_infos
     infos = spike_sorted_infos
 
     tuning_curves = []

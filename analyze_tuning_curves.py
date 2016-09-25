@@ -197,8 +197,14 @@ def get_outputs(infos):
         outputs.append(os.path.join(pickle_filepath, info.session_id + '_tuning-curve.pkl'))
     return outputs
 
+def get_outputs_all(infos):
+    outputs = []
+    for info in infos:
+        outputs.append(os.path.join(pickle_filepath, info.session_id + '_tuning-curve_all-phases.pkl'))
+    return outputs
 
-def analyze(info):
+
+def analyze(info, use_all_tracks=False):
     print('tuning curves:', info.session_id)
     position = get_pos(info.pos_mat, info.pxl_to_cm)
     spikes = get_spikes(info.spike_mat)
@@ -207,15 +213,16 @@ def analyze(info):
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
-    # track_starts = [info.task_times['phase1'].start,
-    #                 info.task_times['phase2'].start,
-    #                 info.task_times['phase3'].start]
-    # track_stops = [info.task_times['phase1'].stop,
-    #                info.task_times['phase2'].stop,
-    #                info.task_times['phase3'].stop]
-
-    track_starts = [info.task_times['phase3'].start]
-    track_stops = [info.task_times['phase3'].stop]
+    if use_all_tracks:
+        track_starts = [info.task_times['phase1'].start,
+                        info.task_times['phase2'].start,
+                        info.task_times['phase3'].start]
+        track_stops = [info.task_times['phase1'].stop,
+                       info.task_times['phase2'].stop,
+                        info.task_times['phase3'].stop]
+    else:
+        track_starts = [info.task_times['phase3'].start]
+        track_stops = [info.task_times['phase3'].stop]
 
     track_pos = run_pos.time_slices(track_starts, track_stops)
 
@@ -227,7 +234,10 @@ def analyze(info):
 
     tuning_curves = vdm.tuning_curve_2d(track_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
 
-    tc_filename = info.session_id + '_tuning-curve.pkl'
+    if use_all_tracks:
+        tc_filename = info.session_id + '_tuning-curve_all-phases.pkl'
+    else:
+        tc_filename = info.session_id + '_tuning-curve.pkl'
     pickled_tc = os.path.join(pickle_filepath, tc_filename)
 
     with open(pickled_tc, 'wb') as fileobj:
@@ -240,5 +250,9 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
 
-    for info in infos:
-        analyze(info)
+    if 0:
+        for info in infos:
+            analyze(info)
+    if 1:
+        for info in infos:
+            analyze(info, use_all_tracks=True)

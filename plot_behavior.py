@@ -80,5 +80,5 @@ def analyze(infos):
 
 
 if __name__ == "__main__":
-    from run import all_infos, spike_sorted_infos
+    from run import spike_sorted_infos
     analyze(spike_sorted_infos)
