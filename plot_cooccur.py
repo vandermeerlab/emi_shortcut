@@ -75,13 +75,16 @@ def combine_cooccur(cooccurs):
     return combined
 
 
-def plot(infos):
+def plot(infos, all_tracks_tc=False):
     cooccurs_a = dict(probs=[], n_epochs=[])
     cooccurs_b = dict(probs=[], n_epochs=[])
     experiment_time = 'pauseA'
     print('getting co-occurrence', experiment_time)
     for info in infos:
-        cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
+        if all_tracks_tc:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '_all-tracks.pkl'
+        else:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
         pickled_cooccur = os.path.join(pickle_filepath, cooccur_filename)
         with open(pickled_cooccur, 'rb') as fileobj:
             cooccur = pickle.load(fileobj)
@@ -92,7 +95,10 @@ def plot(infos):
     combined_a = combine_cooccur(cooccurs_a)
     combined_weighted_a = combine_cooccur_weighted(cooccurs_a)
 
-    filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+    if all_tracks_tc:
+        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '_all-tracks.pdf'
+    else:
+        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.pdf'
     savepath_weighted = os.path.join(output_filepath, filename_weighted)
     plot_cooccur_combined(combined_weighted_a, int(np.sum(cooccurs_a['n_epochs'])), savepath_weighted)
 
@@ -103,7 +109,10 @@ def plot(infos):
     experiment_time = 'pauseB'
     print('getting co-occurrence', experiment_time)
     for info in infos:
-        cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
+        if all_tracks_tc:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '_all-tracks.pkl'
+        else:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
         pickled_cooccur = os.path.join(pickle_filepath, cooccur_filename)
         with open(pickled_cooccur, 'rb') as fileobj:
             cooccur = pickle.load(fileobj)
@@ -114,7 +123,10 @@ def plot(infos):
     combined_b = combine_cooccur(cooccurs_b)
     combined_weighted_b = combine_cooccur_weighted(cooccurs_b)
 
-    filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+    if all_tracks_tc:
+        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '_all-tracks.pdf'
+    else:
+        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.pdf'
     savepath_weighted = os.path.join(output_filepath, filename_weighted)
     plot_cooccur_combined(combined_weighted_b, int(np.sum(cooccurs_b['n_epochs'])), savepath_weighted)
 
@@ -138,4 +150,9 @@ def get_outputs_combined_weighted(infos):
 if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
-    plot(infos)
+
+    all_tracks_tc = True
+    if all_tracks_tc:
+        plot(infos, all_tracks_tc)
+    else:
+        plot(infos)

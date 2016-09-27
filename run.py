@@ -119,6 +119,6 @@ if __name__ == "__main__":
 
     if "plot_tuning_curves" in sys.argv:
         outputs = analyze_tuning_curves.get_outputs(infos)
-        if needs_to_run(outputs):
-            for tuning_curve, info in zip(infos, tuning_curves):
-                plot_tuning_curves.plot(info, tuning_curve)
+        # if needs_to_run(outputs):
+        for tuning_curve, info in zip(infos, tuning_curves):
+            plot_tuning_curves.plot(info, tuning_curve)

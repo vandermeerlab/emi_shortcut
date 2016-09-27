@@ -14,7 +14,7 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
 
-def analyze(info, tuning_curve, experiment_time):
+def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
     print('cooccur:', info.session_id)
 
     lfp = get_lfp(info.good_swr[0])
@@ -94,7 +94,10 @@ def analyze(info, tuning_curve, experiment_time):
     output['probs'] = probs
     output['n_epochs'] = multi_swrs.n_epochs
 
-    cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
+    if all_tracks_tc:
+        cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '_all-tracks.pkl'
+    else:
+        cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
     pickled_path = os.path.join(pickle_filepath, cooccur_filename)
 
     with open(pickled_path, 'wb') as fileobj:
@@ -107,12 +110,17 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
 
+    all_tracks_tc = False
+
     experiment_times = ['pauseA', 'pauseB']
     for experiment_time in experiment_times:
         print(experiment_time)
         for info in infos:
-            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+            if all_tracks_tc:
+                tuning_curve_filename = info.session_id + '_tuning-curve_all-phases.pkl'
+            else:
+                tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
             with open(pickled_tuning_curve, 'rb') as fileobj:
                 tuning_curve = pickle.load(fileobj)
-            analyze(info, tuning_curve, experiment_time)
+            analyze(info, tuning_curve, experiment_time, all_tracks_tc)
