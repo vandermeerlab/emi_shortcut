@@ -36,22 +36,27 @@ def normalized_time_spent(combined_decoded, n_sessions, lengths, filenames):
     plot_decoded(decoded_length, y_label=y_label, savepath=savepath)
 
 
-def plot_errors(infos, tuning_curves, all_tracks_tc=False):
+def plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc=False):
     experiment_time = 'tracks'
     print('getting decoded', experiment_time)
     decoded = combine_decode(infos, '_decode-tracks.pkl', experiment_time=experiment_time,
-                                        shuffle_id=False, tuning_curves=tuning_curves)
+                             shuffle_id=False, tuning_curves=tuning_curves)
 
     print('getting decoded', experiment_time, 'shuffled')
     decoded_shuffle = combine_decode(infos, '_decode-tracks-shuffled.pkl', experiment_time='tracks',
-                                        shuffle_id=True, tuning_curves=tuning_curves)
+                                     shuffle_id=True, tuning_curves=tuning_curves)
 
-    if all_tracks_tc:
+    if all_tracks_tc and by_trajectory:
+        filename = 'combined-errors_decoded_all-tracks_by-trajectory.png'
+    elif all_tracks_tc and not by_trajectory:
         filename = 'combined-errors_decoded_all-tracks.png'
+    elif not all_tracks_tc and by_trajectory:
+        filename = 'combined-errors_decoded_by-trajectory.png'
     else:
         filename = 'combined-errors_decoded.png'
     savepath = os.path.join(output_filepath, filename)
-    plot_decoded_errors(decoded['combined_errors'], decoded_shuffle['combined_errors'], fliersize=3, savepath=savepath)
+    plot_decoded_errors(decoded['combined_errors'], decoded_shuffle['combined_errors'], by_trajectory, fliersize=3,
+                        savepath=savepath)
 
 
 def plot_pauses(infos, tuning_curves, all_tracks_tc=False):
@@ -113,7 +118,6 @@ def plot_phases(infos, tuning_curves, all_tracks_tc=False):
         filename = 'combined-' + experiment_time + '_decoded_all-tracks.png'
     else:
         filename = 'combined-' + experiment_time + '_decoded.png'
-    filename = 'combined-' + experiment_time + '_decoded.png'
     savepath = os.path.join(output_filepath, filename)
     plot_decoded_pause(decoded_phase3['combined_decoded'], decoded_phase3['total_times'], savepath=savepath)
 
@@ -201,6 +205,8 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
 
+    by_trajectory = True
+
     all_tracks_tc = False
     if all_tracks_tc:
         tuning_curves = []
@@ -210,7 +216,7 @@ if __name__ == "__main__":
             with open(pickled_tuning_curve, 'rb') as fileobj:
                 tuning_curves.append(pickle.load(fileobj))
 
-        plot_errors(infos, tuning_curves, all_tracks_tc)
+        plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc)
         plot_pauses(infos, tuning_curves, all_tracks_tc)
         plot_phases(infos, tuning_curves, all_tracks_tc)
         plot_normalized(infos, tuning_curves, all_tracks_tc)
@@ -223,7 +229,7 @@ if __name__ == "__main__":
             with open(pickled_tuning_curve, 'rb') as fileobj:
                 tuning_curves.append(pickle.load(fileobj))
 
-        plot_errors(infos, tuning_curves)
+        plot_errors(infos, tuning_curves, by_trajectory)
         plot_pauses(infos, tuning_curves)
         plot_phases(infos, tuning_curves)
         plot_normalized(infos, tuning_curves)

@@ -586,22 +586,36 @@ def plot_decoded_pause(decode, total_times, savepath=None):
         plt.show()
 
 
-def plot_decoded_errors(decode_errors, shuffled_errors, fliersize=2, savepath=None):
+def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fliersize=2, savepath=None):
     """Plots boxplot distance between decoded and actual position for decoded and shuffled_id.
 
     Parameters
     ----------
-    decode_errors: list of np.arrays
-    shuffled_errors: list of np.arrays
+    decode_errors: dict of lists
+        With u, shortcut, novel, other, and together as keys.
+    shuffled_errors: dict of lists
+        With u, shortcut, novel, other, and together as keys.
+    by_trajectory: boolean
+    fliersize: int
     savepath : str or None
         Location and filename for the saved plot.
 
     """
-    decoded_dict = dict(error=decode_errors, shuffled='Decoded')
-    shuffled_dict = dict(error=shuffled_errors, shuffled='ID-shuffle decoded')
-    decoded = pd.DataFrame(decoded_dict)
-    shuffled = pd.DataFrame(shuffled_dict)
-    data = pd.concat([shuffled, decoded])
+    if by_trajectory:
+        decoded_u = pd.DataFrame(dict(error=decode_errors['u'], shuffled='Decoded_u'))
+        decoded_shortcut = pd.DataFrame(dict(error=decode_errors['shortcut'], shuffled='Decoded_shortcut'))
+        decoded_novel = pd.DataFrame(dict(error=decode_errors['novel'], shuffled='Decoded_novel'))
+        shuffled_u = pd.DataFrame(dict(error=shuffled_errors['u'], shuffled='ID-shuffle decoded_u'))
+        shuffled_shortcut = pd.DataFrame(dict(error=shuffled_errors['shortcut'], shuffled='ID-shuffle decoded_shortcut'))
+        shuffled_novel = pd.DataFrame(dict(error=shuffled_errors['novel'], shuffled='ID-shuffle decoded_novel'))
+
+        data = pd.concat([shuffled_u, decoded_u, shuffled_shortcut, decoded_shortcut, shuffled_novel, decoded_novel])
+    else:
+        decoded_dict = dict(error=decode_errors['together'], shuffled='Decoded')
+        shuffled_dict = dict(error=shuffled_errors['together'], shuffled='ID-shuffle decoded')
+        decoded = pd.DataFrame(decoded_dict)
+        shuffled = pd.DataFrame(shuffled_dict)
+        data = pd.concat([shuffled, decoded])
 
     plt.figure()
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')

@@ -222,13 +222,18 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     zones = find_zones(info, expand_by=7)
     decoded_zones = point_in_zones(decoded, zones)
 
+    keys = ['u', 'shortcut', 'novel']
+    errors = dict()
     if experiment_time == 'tracks':
-        actual_x = np.interp(decoded.time, track_pos.time, track_pos.x)
-        actual_y = np.interp(decoded.time, track_pos.time, track_pos.y)
-        actual_position = vdm.Position(np.hstack((actual_x[..., np.newaxis], actual_y[..., np.newaxis])), decoded.time)
-        errors = actual_position.distance(decoded)
+        for trajectory in keys:
+            actual_x = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.x)
+            actual_y = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.y)
+            actual_position = vdm.Position(np.hstack((actual_x[..., np.newaxis], actual_y[..., np.newaxis])),
+                                           decoded_zones[trajectory].time)
+            errors[trajectory] = actual_position.distance(decoded_zones[trajectory])
     else:
-        errors = []
+        for trajectory in decoded_zones:
+            errors[trajectory] = []
 
     output = dict()
     output['zones'] = decoded_zones
@@ -287,7 +292,11 @@ def combine_decode(infos, filename, experiment_time, shuffle_id, tuning_curves=N
                                             len(decoded['zones']['novel'].time) +
                                             len(decoded['zones']['other'].time))
 
-        combined_errors.extend(decoded['errors'])
+        keys = ['u', 'shortcut', 'novel']
+        combined_errors = dict(u=[], shortcut=[], novel=[], together=[])
+        for trajectory in keys:
+            combined_errors[trajectory].extend(decoded['errors'][trajectory])
+            combined_errors['together'].extend(decoded['errors'][trajectory])
 
     output = dict()
     output['combined_decoded'] = combined_decoded
@@ -304,7 +313,7 @@ if __name__ == "__main__":
 
     infos = spike_sorted_infos
 
-    if 1:
+    if 0:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
@@ -312,7 +321,7 @@ if __name__ == "__main__":
                 tuning_curve = pickle.load(fileobj)
             decoded_tracks = combine_decode(info, '_decode-tracks.pkl', experiment_time='tracks',
                                             shuffle_id=False, tuning_curves=tuning_curve)
-    if 1:
+    if 0:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
@@ -320,7 +329,7 @@ if __name__ == "__main__":
                 tuning_curve = pickle.load(fileobj)
             decoded_tracks_shuffled = combine_decode(info, '_decode-tracks_shuffled.pkl', experiment_time='tracks',
                                                      shuffle_id=True, tuning_curves=tuning_curve)
-    if 1:
+    if 0:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)

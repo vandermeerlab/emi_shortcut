@@ -97,10 +97,17 @@ if __name__ == "__main__":
         if needs_to_run(outputs):
             plot_cooccur.plot(infos)
 
-    if "plot_decode_errors" in sys.argv:
-        outputs = plot_decode.get_outputs_errors(infos)
+    if "plot_decode_errors_all_tracks-trajectories" in sys.argv:
+        all_tracks_tc = True
+        outputs = plot_decode.get_outputs_errors(infos, all_tracks_tc)
         if needs_to_run(outputs):
-            plot_decode.plot_errors(infos, tuning_curves)
+            plot_decode.plot_errors(infos, tuning_curves, by_trajectory=True)
+
+    if "plot_decode_errors_all_trajectories" in sys.argv:
+        all_tracks_tc = False
+        outputs = plot_decode.get_outputs_errors(infos, all_tracks_tc)
+        if needs_to_run(outputs):
+            plot_decode.plot_errors(infos, tuning_curves, by_trajectory=True)
 
     if "plot_decode_normalized" in sys.argv:
         outputs = plot_decode.get_outputs_normalized(infos)
