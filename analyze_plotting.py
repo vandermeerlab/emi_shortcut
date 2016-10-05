@@ -40,7 +40,7 @@ def raster_plot(spikes, savepath, savefig=False):
     plt.ylim(0, location+1)
 
     if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -73,7 +73,7 @@ def plot_sorted_tc(sorted_tc, savepath, savefig=True):
     plt.tight_layout()
 
     if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -130,7 +130,7 @@ def plot_bydurations(durations, savepath, savefig=True):
     sns.despine()
 
     if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -171,7 +171,7 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
     data = [all_us, all_shortcuts, all_novels]
     sems = [us_sem, shortcuts_sem, novels_sem]
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(5, 4))
     ax = fig.add_subplot(111)
     for i in list(range(len(data))):
         ax.bar(n_groups[i], data[i], align='center',
@@ -186,7 +186,7 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
 
     # plt.tight_layout()
     if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -217,7 +217,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
     labels = dict(u='Full U', shortcut='Shortcut', novel='Novel')
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(5, 4))
     ax = fig.add_subplot(111)
     for path in means:
         ax.plot(trials, means[path], color=colours[path], label=labels[path], marker='o', lw=2)
@@ -232,7 +232,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
     plt.legend(loc=1, prop={'size': 10})
 
     if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -266,7 +266,7 @@ def plot_fields(heatmaps, position, num_neurons, savepath=None, savefig=True, pl
             neurons or sessions to better directly compare.
 
         """
-    plt.figure()
+    plt.figure(figsize=(5, 4))
     plt.plot(position.x, position.y, 'k.', ms=0.2)
     xedges = np.linspace(np.min(position.x)-2, np.max(position.x)+2, num_bins+1)
     yedges = np.linspace(np.min(position.y)-2, np.max(position.y)+2, num_bins+1)
@@ -282,7 +282,7 @@ def plot_fields(heatmaps, position, num_neurons, savepath=None, savefig=True, pl
     plt.text(2, 6, r'n=' + str(num_neurons), fontsize=15)
 
     if savefig:
-        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
@@ -373,7 +373,7 @@ def plot_cooccur(probs, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath, dpi=300)
+        plt.savefig(savepath)
         plt.close()
     else:
         plt.show()
@@ -452,7 +452,7 @@ def plot_cooccur_combined(combined, total_epochs, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath, dpi=300)
+        plt.savefig(savepath)
         plt.close()
     else:
         plt.show()
@@ -504,7 +504,7 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.axis('off')
 
         if savefig:
-            plt.savefig(saveloc + str(fig + 1) + '.png', dpi=300)
+            plt.savefig(saveloc + str(fig + 1) + '.png')
             plt.close()
         else:
             plt.show()
@@ -531,7 +531,7 @@ def plot_decoded(decoded, y_label, savepath=None):
     novel = pd.DataFrame(novel_dict)
     data = pd.concat([u, shortcut, novel])
 
-    plt.figure()
+    plt.figure(figsize=(5, 4))
     ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
     sns.axlabel(xlabel=' ', ylabel=y_label, fontsize=16)
 
@@ -539,7 +539,7 @@ def plot_decoded(decoded, y_label, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath, dpi=300)
+        plt.savefig(savepath)
         plt.close()
     else:
         plt.show()
@@ -572,7 +572,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
     novel = pd.DataFrame(novel_dict)
     data = pd.concat([u, shortcut, novel])
 
-    plt.figure()
+    plt.figure(figsize=(5, 4))
     ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
     sns.axlabel(xlabel=' ', ylabel="Proportion of time", fontsize=16)
 
@@ -580,7 +580,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath, dpi=300)
+        plt.savefig(savepath)
         plt.close()
     else:
         plt.show()
@@ -617,7 +617,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
         shuffled = pd.DataFrame(shuffled_dict)
         data = pd.concat([shuffled, decoded])
 
-    plt.figure()
+    plt.figure(figsize=(5, 4))
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
     ax = sns.boxplot(x='shuffled', y='error', data=data, palette='colorblind', flierprops=flierprops)
 
@@ -627,7 +627,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
     sns.despine()
 
     if savepath is not None:
-        plt.savefig(savepath, dpi=300)
+        plt.savefig(savepath)
         plt.close()
     else:
         plt.show()
@@ -734,7 +734,7 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
     set_size(fig)
 
     if savepath is not None:
-        plt.savefig(savepath, dpi=300)
+        plt.savefig(savepath)
         plt.close()
     else:
         plt.show()
@@ -794,7 +794,7 @@ def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, label
     set_size(fig)
 
     if savepath is not None:
-        plt.savefig(savepath, dpi=300)
+        plt.savefig(savepath)
         plt.close()
     else:
         plt.show()
