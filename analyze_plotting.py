@@ -120,7 +120,7 @@ def plot_bydurations(durations, savepath, savefig=True):
     """
     fliersize = 3
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
-    ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette="Set2",
+    ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette="colorblind",
                      flierprops=flierprops)
     # sns.color_palette("hls", 18)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
@@ -166,7 +166,7 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
 
     n_groups = list(range(3))
 
-    colour = ['#72b7a1', '#e79676', '#95a3c3']
+    colour = ['#0072b2', '#009e73', '#d55e00']
 
     data = [all_us, all_shortcuts, all_novels]
     sems = [us_sem, shortcuts_sem, novels_sem]
@@ -214,7 +214,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
 
     trials = list(range(min_length))
 
-    colours = dict(u='#72b7a1', shortcut='#e79676', novel='#95a3c3')
+    colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
     labels = dict(u='Full U', shortcut='Shortcut', novel='Novel')
 
     fig = plt.figure()
@@ -304,7 +304,7 @@ def plot_cooccur(probs, savepath=None):
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     ind = np.arange(3)
     width = 0.8
-    colours = ['#72b7a1', '#e79676', '#95a3c3']
+    colours = ['#0072b2', '#009e73',  '#d55e00']
 
     active_means = [np.nanmean(probs['u']['active']),
                     np.nanmean(probs['shortcut']['active']),
@@ -395,7 +395,7 @@ def plot_cooccur_combined(combined, total_epochs, savepath=None):
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     ind = np.arange(3)
     width = 0.8
-    colours = ['#72b7a1', '#e79676', '#95a3c3']
+    colours = ['#0072b2', '#009e73',  '#d55e00']
 
     active_means = [np.sum(combined['u']['active'])/total_epochs,
                     np.sum(combined['shortcut']['active'])/total_epochs,
@@ -532,7 +532,7 @@ def plot_decoded(decoded, y_label, savepath=None):
     data = pd.concat([u, shortcut, novel])
 
     plt.figure()
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='Set2')
+    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
     sns.axlabel(xlabel=' ', ylabel=y_label, fontsize=16)
 
     sns.despine()
@@ -573,7 +573,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
     data = pd.concat([u, shortcut, novel])
 
     plt.figure()
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='Set2')
+    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
     sns.axlabel(xlabel=' ', ylabel="Proportion of time", fontsize=16)
 
     sns.despine()
@@ -619,7 +619,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
 
     plt.figure()
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
-    ax = sns.boxplot(x='shuffled', y='error', data=data, palette="Set2", flierprops=flierprops)
+    ax = sns.boxplot(x='shuffled', y='error', data=data, palette='colorblind', flierprops=flierprops)
 
     sns.axlabel(xlabel=' ', ylabel="Error (cm)", fontsize=16)
 
@@ -667,7 +667,7 @@ def set_style():
 
 
 def color_bars(axes):
-    colors = sns.color_palette('Set2')
+    colors = sns.color_palette('colorblind')
     for i in range(3):
         p1, p2 = axes[i].patches
 

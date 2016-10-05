@@ -149,7 +149,7 @@ def spikes_by_position(spikes, zone, position):
     return path_spikes
 
 
-def get_zones(info, position):
+def get_zones(info, position, expand_by=6):
     """Finds the spikes that occur while the animal is in certain positions.
 
     Parameters
@@ -179,9 +179,9 @@ def get_zones(info, position):
     novel_stop = Point(info.novel_trajectory[-1])
 
     zones = dict()
-    zones['u'] = vdm.expand_line(u_start, u_stop, u_line)
-    zones['shortcut'] = vdm.expand_line(shortcut_start, shortcut_stop, shortcut_line)
-    zones['novel'] = vdm.expand_line(novel_start, novel_stop, novel_line)
+    zones['u'] = vdm.expand_line(u_start, u_stop, u_line, expand_by)
+    zones['shortcut'] = vdm.expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
+    zones['novel'] = vdm.expand_line(novel_start, novel_stop, novel_line, expand_by)
     zones['ushort'] = zones['u'].intersection(zones['shortcut'])
     zones['unovel'] = zones['u'].intersection(zones['novel'])
 
