@@ -16,7 +16,7 @@ outputs = [
     os.path.join(output_filepath, 'shortcut_behaviour_bytrial.png')]
 
 
-def analyze(infos):
+def analyze(infos, filename):
     durations = dict(u=[], shortcut=[], novel=[])
     num_sessions = 0
 
@@ -69,16 +69,37 @@ def analyze(infos):
         novels.append(len(trial['novel'])/float(len(trial['start_trials'])))
         togethers.append(sorted(trial['u'] + trial['shortcut'] + trial['novel']))
 
-    savepath = os.path.join(output_filepath, 'shortcut_behaviour_proportions.png')
+    savename = filename + '_proportions.pdf'
+    savepath = os.path.join(output_filepath, savename)
     plot_proportions(us, shortcuts, novels, savepath)
 
-    savepath = os.path.join(output_filepath, 'shortcut_behaviour_durations.png')
+    savename = filename + '_durations.pdf'
+    savepath = os.path.join(output_filepath, savename)
     plot_bydurations(durations, savepath)
 
-    savepath = os.path.join(output_filepath, 'shortcut_behaviour_bytrial.png')
+    savename = filename + '_bytrial.pdf'
+    savepath = os.path.join(output_filepath, savename)
     plot_bytrial(togethers, savepath)
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-    analyze(spike_sorted_infos)
+    from run import (spike_sorted_infos,
+                     r063_infos, r066_infos, r067_infos, r068_infos,
+                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos,
+                     days123_infos, days456_infos)
+
+    analyze(spike_sorted_infos, 'all_behaviour')
+    analyze(days123_infos, 'early_behaviour')
+    analyze(days456_infos, 'late_behaviour')
+
+    analyze(day1_infos, 'session1_behaviour')
+    analyze(day2_infos, 'session2_behaviour')
+    analyze(day3_infos, 'session3_behaviour')
+    analyze(day4_infos, 'session4_behaviour')
+    analyze(day5_infos, 'session5_behaviour')
+    analyze(day6_infos, 'session6_behaviour')
+
+    # analyze(r063_infos, 'R063_behaviour')
+    # analyze(r066_infos, 'R066_behaviour')
+    # analyze(r067_infos, 'R067_behaviour')
+    # analyze(r068_infos, 'R068_behaviour')

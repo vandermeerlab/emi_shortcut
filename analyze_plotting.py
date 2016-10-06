@@ -120,9 +120,9 @@ def plot_bydurations(durations, savepath, savefig=True):
     """
     fliersize = 3
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
+    plt.figure(figsize=(5, 5))
     ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette="colorblind",
                      flierprops=flierprops)
-    # sns.color_palette("hls", 18)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
     plt.ylabel('Duration of trial (s)')
     plt.xlabel('sessions=' + str(durations['num_sessions']))
@@ -171,17 +171,14 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
     data = [all_us, all_shortcuts, all_novels]
     sems = [us_sem, shortcuts_sem, novels_sem]
 
-    fig = plt.figure(figsize=(5, 4))
-    ax = fig.add_subplot(111)
+    plt.figure(figsize=(5, 4))
     for i in list(range(len(data))):
-        ax.bar(n_groups[i], data[i], align='center',
+        plt.bar(n_groups[i], data[i], align='center',
                yerr=sems[i], color=colour[i], ecolor='#525252')
 
     plt.xlabel('(sessions=' + str(len(us)) + ')')
     plt.ylabel('Proportion of trials')
     sns.despine()
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks_position('bottom')
     plt.xticks(n_groups, ['U', 'Shortcut', 'Novel'])
 
     # plt.tight_layout()
@@ -217,19 +214,19 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
     labels = dict(u='Full U', shortcut='Shortcut', novel='Novel')
 
-    fig = plt.figure(figsize=(5, 4))
+    fig = plt.figure(figsize=(6, 4))
     ax = fig.add_subplot(111)
     for path in means:
-        ax.plot(trials, means[path], color=colours[path], label=labels[path], marker='o', lw=2)
+        ax.plot(trials, means[path], color=colours[path], label=labels[path], marker='o', lw=1)
         ax.fill_between(trials, np.array(means[path]) - np.array(sems[path]),
                         np.array(means[path]) + np.array(sems[path]),
-                        color=colours[path], interpolate=True, alpha=0.3)
+                        color=colours[path], interpolate=True, alpha=0.2)
     plt.ylabel('Proportion of trials')
     plt.xlabel('Trial number (sessions=' + str(len(togethers)) + ')')
     sns.despine()
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
-    plt.legend(loc=1, prop={'size': 10})
+    plt.legend(loc=1, bbox_to_anchor=(1.1, 1.2))
 
     if savefig:
         plt.savefig(savepath, bbox_inches='tight')
