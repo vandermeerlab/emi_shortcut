@@ -40,7 +40,7 @@ def raster_plot(spikes, savepath, savefig=False):
     plt.ylim(0, location+1)
 
     if savefig:
-        plt.savefig(savepath, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
         plt.show()
@@ -73,7 +73,7 @@ def plot_sorted_tc(sorted_tc, savepath, savefig=True):
     plt.tight_layout()
 
     if savefig:
-        plt.savefig(savepath, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
         plt.show()
@@ -121,6 +121,7 @@ def plot_bydurations(durations, savepath, savefig=True):
     fliersize = 3
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
     plt.figure(figsize=(5, 5))
+
     ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette="colorblind",
                      flierprops=flierprops)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
@@ -130,7 +131,7 @@ def plot_bydurations(durations, savepath, savefig=True):
     sns.despine()
 
     if savefig:
-        plt.savefig(savepath, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
         plt.show()
@@ -183,7 +184,7 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
 
     # plt.tight_layout()
     if savefig:
-        plt.savefig(savepath, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
         plt.show()
@@ -229,7 +230,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
     plt.legend(loc=1, bbox_to_anchor=(1.1, 1.2))
 
     if savefig:
-        plt.savefig(savepath, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
         plt.show()
@@ -279,7 +280,7 @@ def plot_fields(heatmaps, position, num_neurons, savepath=None, savefig=True, pl
     plt.text(2, 6, r'n=' + str(num_neurons), fontsize=15)
 
     if savefig:
-        plt.savefig(savepath, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
         plt.show()
@@ -370,7 +371,7 @@ def plot_cooccur(probs, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -449,7 +450,7 @@ def plot_cooccur_combined(combined, total_epochs, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -501,7 +502,7 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.axis('off')
 
         if savefig:
-            plt.savefig(saveloc + str(fig + 1) + '.png')
+            plt.savefig(saveloc + str(fig + 1) + '.png', transparent=True)
             plt.close()
         else:
             plt.show()
@@ -536,7 +537,7 @@ def plot_decoded(decoded, y_label, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -577,7 +578,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -607,16 +608,18 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
         shuffled_novel = pd.DataFrame(dict(error=shuffled_errors['novel'], shuffled='ID-shuffle decoded_novel'))
 
         data = pd.concat([shuffled_u, decoded_u, shuffled_shortcut, decoded_shortcut, shuffled_novel, decoded_novel])
+        colours = 'colorblind'
     else:
         decoded_dict = dict(error=decode_errors['together'], shuffled='Decoded')
         shuffled_dict = dict(error=shuffled_errors['together'], shuffled='ID-shuffle decoded')
         decoded = pd.DataFrame(decoded_dict)
         shuffled = pd.DataFrame(shuffled_dict)
         data = pd.concat([shuffled, decoded])
+        colours = ['#ffffff', '#bdbdbd']
 
     plt.figure(figsize=(5, 4))
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
-    ax = sns.boxplot(x='shuffled', y='error', data=data, palette='colorblind', flierprops=flierprops)
+    ax = sns.boxplot(x='shuffled', y='error', data=data, palette=colours, flierprops=flierprops)
 
     sns.axlabel(xlabel=' ', ylabel="Error (cm)", fontsize=16)
 
@@ -624,7 +627,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
     sns.despine()
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -673,7 +676,7 @@ def color_bars(axes):
 
         p2.set_color(colors[i])
         p2.set_edgecolor('k')
-        p2.set_hatch('//')
+        # p2.set_hatch('//')
 
 
 def set_size(fig):
@@ -731,7 +734,7 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
     set_size(fig)
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -791,7 +794,7 @@ def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, label
     set_size(fig)
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()

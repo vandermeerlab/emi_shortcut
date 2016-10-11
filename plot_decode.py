@@ -205,7 +205,7 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
 
-    by_trajectory = True
+    by_trajectory = False
 
     all_tracks_tc = False
     if all_tracks_tc:

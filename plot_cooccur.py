@@ -134,17 +134,31 @@ def plot(infos, all_tracks_tc=False):
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur(combined_b, savepath)
 
-    filename = 'pauses-combined_cooccur-zscore.png'
+    filename = 'pauses-combined_cooccur_weighted-zscore.png'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],
                                  ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
                                  savepath=savepath)
 
-    filename = 'pauses-combined_cooccur-expected.png'
+    filename = 'pauses-combined_cooccur_weighted-expected.png'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],
+                                 ['pauseA', 'pauseB'], prob='expected', ylabel='Proportion of SWRs active',
+                                 savepath=savepath)
+
+    filename = 'pauses-combined_cooccur-zscore.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur_weighted_pauses(combined_a, cooccurs_a['n_epochs'],
+                                 combined_b, cooccurs_b['n_epochs'],
+                                 ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
+                                 savepath=savepath)
+
+    filename = 'pauses-combined_cooccur-expected.png'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur_weighted_pauses(combined_a, cooccurs_a['n_epochs'],
+                                 combined_b, cooccurs_b['n_epochs'],
                                  ['pauseA', 'pauseB'], prob='expected', ylabel='Proportion of SWRs active',
                                  savepath=savepath)
 

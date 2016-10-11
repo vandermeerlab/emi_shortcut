@@ -173,12 +173,15 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
-    track_starts = [info.task_times['phase1'].start,
-                        info.task_times['phase2'].start,
-                        info.task_times['phase3'].start]
-    track_stops = [info.task_times['phase1'].stop,
-                   info.task_times['phase2'].stop,
-                   info.task_times['phase3'].stop]
+    # track_starts = [info.task_times['phase1'].start,
+    #                 info.task_times['phase2'].start,
+    #                 info.task_times['phase3'].start]
+    # track_stops = [info.task_times['phase1'].stop,
+    #                info.task_times['phase2'].stop,
+    #                info.task_times['phase3'].stop]
+
+    track_starts = [info.task_times['phase3'].start]
+    track_stops = [info.task_times['phase3'].stop]
 
     track_pos = run_pos.time_slices(track_starts, track_stops)
 
@@ -224,21 +227,26 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
 
     keys = ['u', 'shortcut', 'novel']
     errors = dict()
+    actual_position = dict()
     if experiment_time == 'tracks':
         for trajectory in keys:
             actual_x = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.x)
             actual_y = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.y)
-            actual_position = vdm.Position(np.hstack((actual_x[..., np.newaxis], actual_y[..., np.newaxis])),
-                                           decoded_zones[trajectory].time)
-            errors[trajectory] = actual_position.distance(decoded_zones[trajectory])
+            actual_position[trajectory] = vdm.Position(np.hstack((actual_x[..., np.newaxis],
+                                                                  actual_y[..., np.newaxis])),
+                                                       decoded_zones[trajectory].time)
+            errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
     else:
         for trajectory in decoded_zones:
             errors[trajectory] = []
+            actual_position[trajectory] = []
 
     output = dict()
     output['zones'] = decoded_zones
     output['errors'] = errors
     output['times'] = len(time_centers)
+    output['actual'] = actual_position
+    output['decoded'] = decoded
 
     if experiment_time == 'tracks':
         if shuffle_id:
@@ -313,22 +321,18 @@ if __name__ == "__main__":
 
     infos = spike_sorted_infos
 
-    if 0:
+    if 1:
+        tuning_curves = []
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
             with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curve = pickle.load(fileobj)
-            decoded_tracks = combine_decode(info, '_decode-tracks.pkl', experiment_time='tracks',
-                                            shuffle_id=False, tuning_curves=tuning_curve)
-    if 0:
-        for info in infos:
-            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curve = pickle.load(fileobj)
-            decoded_tracks_shuffled = combine_decode(info, '_decode-tracks_shuffled.pkl', experiment_time='tracks',
-                                                     shuffle_id=True, tuning_curves=tuning_curve)
+                tuning_curves.append(pickle.load(fileobj))
+        decoded_tracks = combine_decode(infos, '_decode-tracks.pkl', experiment_time='tracks',
+                                        shuffle_id=False, tuning_curves=tuning_curves)
+        decoded_tracks_shuffled = combine_decode(infos, '_decode-tracks_shuffled.pkl', experiment_time='tracks',
+                                                 shuffle_id=True, tuning_curves=tuning_curves)
+
     if 0:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
