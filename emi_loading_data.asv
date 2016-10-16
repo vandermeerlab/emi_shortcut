@@ -1,5 +1,5 @@
 % Change this filepath to where this data is located on your computer.
-path = 'R068-2014-12-10_recording';
+path = 'R068-2014-12-09_recording';
 
 % Below works only on Emily's laptop.
 % filepath = 'C:\Users\Emily\Desktop\';
@@ -80,15 +80,15 @@ cfg.eventLabel = {'led1id', 'led2id', 'ledoff', 'pb1id', 'pb2id', 'pboff', ...
 
 evt = LoadEvents(cfg_evt);
 evt_type = evt.type;
-evt_led1id = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.led1id))))};
-evt_led2id = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.led2id))))};
-evt_ledoff = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.ledoff))))};
-evt_pb1id = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.pb1id))))};
-evt_pb2id = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.pb2id))))};
-evt_pboff = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.pboff))))};
-evt_feeder1id = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.feeder1id))))};
-evt_feeder2id = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.feeder2id))))};
-evt_feederoff = evt.t{find(not(cellfun('isempty', strfind(evt.label, ExpKeys.feederoff))))};
+evt_led1id = evt.t{1};
+evt_led2id = evt.t{2};
+evt_ledoff = evt.t{3};
+evt_pb1id = evt.t{4};
+evt_pb2id = evt.t{5};
+evt_pboff = evt.t{6};
+evt_feeder1id = evt.t{7};
+evt_feeder2id = evt.t{8};
+evt_feederoff = evt.t{9};
 evt_label = evt.label;
 
 save([savepath, path(1:15), '-event'], ...

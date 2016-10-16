@@ -11,7 +11,7 @@ target = 'dCA1'
 experimenter = 'Emily Irvine'
 
 pos_mat = session + '-vt.mat'
-# event_mat = session + '-event.mat'
+event_mat = session + '-event.mat'
 # spike_mat = session + '-spike.mat'
 
 good_lfp = [session + '-csc00c.ncs']

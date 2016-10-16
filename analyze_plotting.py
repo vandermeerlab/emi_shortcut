@@ -103,7 +103,7 @@ def plot_zone(zone):
     plt.plot(zone.exterior.xy[0], zone.exterior.xy[1], 'b', lw=1)
 
 
-def plot_bydurations(durations, savepath, savefig=True):
+def plot_bydurations(durations, savepath, figsize=(5,4), savefig=True):
     """Plots duration for each trial separated by trajectories. Behavior only.
 
     Parameters
@@ -113,6 +113,8 @@ def plot_bydurations(durations, savepath, savefig=True):
         Each value is a list of durations (float) for a each session.
     savepath : str
         Location and filename for the saved plot.
+    figsize : tuple
+        Width by height in inches.
     savefig : boolean
         Default is True and will save the plot to the specified location. False
         shows with plot without saving it.
@@ -120,14 +122,16 @@ def plot_bydurations(durations, savepath, savefig=True):
     """
     fliersize = 3
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
-    plt.figure(figsize=(5, 5))
+    plt.figure(figsize=figsize)
 
-    ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette="colorblind",
+    colour = ['#0072b2', '#009e73', '#d55e00']
+
+    ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette=colour,
                      flierprops=flierprops)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
     plt.ylabel('Duration of trial (s)')
     plt.xlabel('sessions=' + str(durations['num_sessions']))
-    plt.ylim(0, 140)
+    plt.ylim(0, 110)
     sns.despine()
 
     if savefig:
@@ -137,7 +141,7 @@ def plot_bydurations(durations, savepath, savefig=True):
         plt.show()
 
 
-def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
+def plot_proportions(us, shortcuts, novels, savepath, figsize=(5,4), savefig=True):
     """Plots proportion of each trajectory taken. Behavior only.
 
         Parameters
@@ -153,6 +157,8 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
             len(novel) == num_sessions evaluated
         savepath : str
             Location and filename for the saved plot.
+        figsize : tuple
+            Width by height in inches.
         savefig : boolean
             Default is True and will save the plot to the specified location. False
             shows with plot without saving it.
@@ -172,13 +178,14 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
     data = [all_us, all_shortcuts, all_novels]
     sems = [us_sem, shortcuts_sem, novels_sem]
 
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=figsize)
     for i in list(range(len(data))):
         plt.bar(n_groups[i], data[i], align='center',
                yerr=sems[i], color=colour[i], ecolor='#525252')
 
     plt.xlabel('(sessions=' + str(len(us)) + ')')
     plt.ylabel('Proportion of trials')
+    plt.ylim(0, 0.75)
     sns.despine()
     plt.xticks(n_groups, ['U', 'Shortcut', 'Novel'])
 
@@ -190,7 +197,7 @@ def plot_proportions(us, shortcuts, novels, savepath, savefig=True):
         plt.show()
 
 
-def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
+def plot_bytrial(togethers, savepath, min_length=30, figsize=(6,4), savefig=True):
     """Plots choice of trajectory by trial. Behavior only.
 
         Parameters
@@ -201,6 +208,8 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
         min_length = int
             This is the number of trials to be considered.
             The default is set to 30 (Eg. trials 1-30 are considered).
+        figsize : tuple
+            Width by height in inches.
         savefig : boolean
             Default is True and will save the plot to the specified location.
             False shows with plot without saving it.
@@ -215,7 +224,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
     labels = dict(u='Full U', shortcut='Shortcut', novel='Novel')
 
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     for path in means:
         ax.plot(trials, means[path], color=colours[path], label=labels[path], marker='o', lw=1)
@@ -224,6 +233,7 @@ def plot_bytrial(togethers, savepath, min_length=30, savefig=True):
                         color=colours[path], interpolate=True, alpha=0.2)
     plt.ylabel('Proportion of trials')
     plt.xlabel('Trial number (sessions=' + str(len(togethers)) + ')')
+    plt.ylim(0.0, 1.0)
     sns.despine()
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')

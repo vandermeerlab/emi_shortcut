@@ -16,7 +16,7 @@ outputs = [
     os.path.join(output_filepath, 'shortcut_behaviour_bytrial.png')]
 
 
-def analyze(infos, filename):
+def analyze(infos, filename, figsize='normal'):
     durations = dict(u=[], shortcut=[], novel=[])
     num_sessions = 0
 
@@ -71,34 +71,45 @@ def analyze(infos, filename):
 
     savename = filename + '_proportions.pdf'
     savepath = os.path.join(output_filepath, savename)
-    plot_proportions(us, shortcuts, novels, savepath)
+    if figsize == 'small':
+        plot_proportions(us, shortcuts, novels, savepath, figsize=(2.5,2))
+    else:
+        plot_proportions(us, shortcuts, novels, savepath)
 
     savename = filename + '_durations.pdf'
     savepath = os.path.join(output_filepath, savename)
-    plot_bydurations(durations, savepath)
+    if figsize == 'small':
+        plot_bydurations(durations, savepath, figsize=(2.5, 2))
+    else:
+        plot_bydurations(durations, savepath)
 
     savename = filename + '_bytrial.pdf'
     savepath = os.path.join(output_filepath, savename)
-    plot_bytrial(togethers, savepath)
+    if figsize == 'small':
+        plot_bytrial(togethers, savepath, figsize=(3, 2))
+    else:
+        plot_bytrial(togethers, savepath)
 
 
 if __name__ == "__main__":
-    from run import (spike_sorted_infos,
+    from run import (behavior_infos,
+                     days1234_infos, days5678_infos,
                      r063_infos, r066_infos, r067_infos, r068_infos,
-                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos,
-                     days123_infos, days456_infos)
+                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
 
-    analyze(spike_sorted_infos, 'all_behaviour')
-    analyze(days123_infos, 'early_behaviour')
-    analyze(days456_infos, 'late_behaviour')
+    analyze(behavior_infos, 'all_behaviour')
+    analyze(days1234_infos, 'early_behaviour', figsize='small')
+    analyze(days5678_infos, 'late_behaviour', figsize='small')
 
-    analyze(day1_infos, 'session1_behaviour')
-    analyze(day2_infos, 'session2_behaviour')
-    analyze(day3_infos, 'session3_behaviour')
-    analyze(day4_infos, 'session4_behaviour')
-    analyze(day5_infos, 'session5_behaviour')
-    analyze(day6_infos, 'session6_behaviour')
-
+    # analyze(day1_infos, 'session1_behaviour')
+    # analyze(day2_infos, 'session2_behaviour')
+    # analyze(day3_infos, 'session3_behaviour')
+    # analyze(day4_infos, 'session4_behaviour')
+    # analyze(day5_infos, 'session5_behaviour')
+    # analyze(day6_infos, 'session6_behaviour')
+    # analyze(day7_infos, 'session7_behaviour')
+    # analyze(day8_infos, 'session8_behaviour')
+    #
     # analyze(r063_infos, 'R063_behaviour')
     # analyze(r066_infos, 'R066_behaviour')
     # analyze(r067_infos, 'R067_behaviour')
