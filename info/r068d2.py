@@ -75,3 +75,5 @@ novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
 
 sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['run'] = vdm.Epoch(np.array([[2458.4, 2498.4]]))
+
+sequence['u']['swr'] = vdm.Epoch(np.array([[7721.2, 7721.5]]))
