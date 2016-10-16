@@ -72,21 +72,21 @@ def analyze(infos, filename, figsize='normal'):
     savename = filename + '_proportions.pdf'
     savepath = os.path.join(output_filepath, savename)
     if figsize == 'small':
-        plot_proportions(us, shortcuts, novels, savepath, figsize=(2.5,2))
+        plot_proportions(us, shortcuts, novels, savepath, figsize=(3, 2))
     else:
         plot_proportions(us, shortcuts, novels, savepath)
 
     savename = filename + '_durations.pdf'
     savepath = os.path.join(output_filepath, savename)
     if figsize == 'small':
-        plot_bydurations(durations, savepath, figsize=(2.5, 2))
+        plot_bydurations(durations, savepath, figsize=(3, 2))
     else:
         plot_bydurations(durations, savepath)
 
     savename = filename + '_bytrial.pdf'
     savepath = os.path.join(output_filepath, savename)
     if figsize == 'small':
-        plot_bytrial(togethers, savepath, figsize=(3, 2))
+        plot_bytrial(togethers, savepath, figsize=(3.5, 2))
     else:
         plot_bytrial(togethers, savepath)
 
@@ -98,8 +98,8 @@ if __name__ == "__main__":
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
 
     analyze(behavior_infos, 'all_behaviour')
-    analyze(days1234_infos, 'early_behaviour', figsize='small')
-    analyze(days5678_infos, 'late_behaviour', figsize='small')
+    # analyze(days1234_infos, 'early_behaviour', figsize='small')
+    # analyze(days5678_infos, 'late_behaviour', figsize='small')
 
     # analyze(day1_infos, 'session1_behaviour')
     # analyze(day2_infos, 'session2_behaviour')

@@ -28,7 +28,7 @@ def combine_cooccur_weighted(cooccurs):
 
     Returns
     -------
-    combined_weighted: list
+    combined_weighted: dict
 
     """
     combined_weighted = dict(u=dict(expected=[], observed=[], active=[], shuffle=[], zscore=[]),
@@ -134,14 +134,14 @@ def plot(infos, all_tracks_tc=False):
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur(combined_b, savepath)
 
-    filename = 'pauses-combined_cooccur_weighted-zscore.png'
+    filename = 'pauses-combined_cooccur_weighted-zscore.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],
                                  ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
                                  savepath=savepath)
 
-    filename = 'pauses-combined_cooccur_weighted-expected.png'
+    filename = 'pauses-combined_cooccur_weighted-expected.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],

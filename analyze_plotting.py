@@ -11,7 +11,7 @@ from analyze_behavior import bytrial_counts, summary_bytrial
 
 sns.set_style('white')
 sns.set_style('ticks')
-sns.set_context('poster')
+# sns.set_context('poster')
 
 
 def raster_plot(spikes, savepath, savefig=False):
@@ -103,7 +103,7 @@ def plot_zone(zone):
     plt.plot(zone.exterior.xy[0], zone.exterior.xy[1], 'b', lw=1)
 
 
-def plot_bydurations(durations, savepath, figsize=(5,4), savefig=True):
+def plot_bydurations(durations, savepath, figsize=(4.5, 3), savefig=True):
     """Plots duration for each trial separated by trajectories. Behavior only.
 
     Parameters
@@ -130,8 +130,8 @@ def plot_bydurations(durations, savepath, figsize=(5,4), savefig=True):
                      flierprops=flierprops)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
     plt.ylabel('Duration of trial (s)')
-    plt.xlabel('sessions=' + str(durations['num_sessions']))
-    plt.ylim(0, 110)
+    plt.xlabel('(sessions=' + str(durations['num_sessions']) + ')')
+    plt.ylim(0, 120)
     sns.despine()
 
     if savefig:
@@ -141,7 +141,7 @@ def plot_bydurations(durations, savepath, figsize=(5,4), savefig=True):
         plt.show()
 
 
-def plot_proportions(us, shortcuts, novels, savepath, figsize=(5,4), savefig=True):
+def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=True):
     """Plots proportion of each trajectory taken. Behavior only.
 
         Parameters
@@ -197,7 +197,7 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(5,4), savefig=Tru
         plt.show()
 
 
-def plot_bytrial(togethers, savepath, min_length=30, figsize=(6,4), savefig=True):
+def plot_bytrial(togethers, savepath, min_length=30, figsize=(5.5, 3), savefig=True):
     """Plots choice of trajectory by trial. Behavior only.
 
         Parameters
@@ -222,7 +222,7 @@ def plot_bytrial(togethers, savepath, min_length=30, figsize=(6,4), savefig=True
     trials = list(range(min_length))
 
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
-    labels = dict(u='Full U', shortcut='Shortcut', novel='Novel')
+    labels = dict(u='U', shortcut='Shortcut', novel='Novel')
 
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
@@ -237,7 +237,7 @@ def plot_bytrial(togethers, savepath, min_length=30, figsize=(6,4), savefig=True
     sns.despine()
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
-    plt.legend(loc=1, bbox_to_anchor=(1.1, 1.2))
+    plt.legend(loc=1, bbox_to_anchor=(1.1, 1.3))
 
     if savefig:
         plt.savefig(savepath, bbox_inches='tight', transparent=True)
@@ -580,7 +580,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
     novel = pd.DataFrame(novel_dict)
     data = pd.concat([u, shortcut, novel])
 
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(2.5, 2))
     ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
     sns.axlabel(xlabel=' ', ylabel="Proportion of time", fontsize=16)
 
@@ -594,7 +594,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
         plt.show()
 
 
-def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fliersize=2, savepath=None):
+def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fliersize=1, savepath=None):
     """Plots boxplot distance between decoded and actual position for decoded and shuffled_id.
 
     Parameters
@@ -627,11 +627,23 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
         data = pd.concat([shuffled, decoded])
         colours = ['#ffffff', '#bdbdbd']
 
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(3, 2))
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
-    ax = sns.boxplot(x='shuffled', y='error', data=data, palette=colours, flierprops=flierprops)
+    # ax = sns.boxplot(x='shuffled', y='error', data=data, palette=colours, flierprops=flierprops)
+    ax = sns.boxplot(x='shuffled', y='error', data=data, flierprops=flierprops)
 
-    sns.axlabel(xlabel=' ', ylabel="Error (cm)", fontsize=16)
+    edge_colour = '#252525'
+    for i, artist in enumerate(ax.artists):
+        artist.set_edgecolor(edge_colour)
+        artist.set_facecolor(colours[i])
+
+        for j in range(i*6, i*6+6):
+            line = ax.lines[j]
+            line.set_color(edge_colour)
+            line.set_mfc(edge_colour)
+            line.set_mec(edge_colour)
+
+    sns.axlabel(xlabel=' ', ylabel="Error (cm)")
 
     plt.tight_layout()
     sns.despine()
@@ -665,6 +677,7 @@ def set_labels(fig, axes, exp_labels, ylabel):
         ax.set_xlabel(labels[i])
         ax.set_ylabel('')
         ax.set_title('')
+    # plt.ylim(0, 0.062)
 
     axes.flat[0].set_ylabel(ylabel)
 
@@ -673,6 +686,7 @@ def set_labels(fig, axes, exp_labels, ylabel):
 
 
 def set_style():
+    # sns.set(font='serif')
     plt.style.use(['seaborn-white', 'seaborn-paper'])
 
 
@@ -690,7 +704,7 @@ def color_bars(axes):
 
 
 def set_size(fig):
-    fig.set_size_inches(6, 4)
+    fig.set_size_inches(4.5, 3)
     plt.tight_layout()
 
 

@@ -53,9 +53,9 @@ def plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc=False):
     elif not all_tracks_tc and by_trajectory:
         filename = 'combined-errors_decoded_by-trajectory.png'
     else:
-        filename = 'combined-errors_decoded.png'
+        filename = 'combined-errors_decoded.pdf'
     savepath = os.path.join(output_filepath, filename)
-    plot_decoded_errors(decoded['combined_errors'], decoded_shuffle['combined_errors'], by_trajectory, fliersize=3,
+    plot_decoded_errors(decoded['combined_errors'], decoded_shuffle['combined_errors'], by_trajectory, fliersize=2,
                         savepath=savepath)
 
 
@@ -88,7 +88,7 @@ def plot_pauses(infos, tuning_curves, all_tracks_tc=False):
     if all_tracks_tc == True:
         filename = 'combined-pauses_decoded_all-tracks.png'
     else:
-        filename = 'combined-pauses_decoded.png'
+        filename = 'combined-pauses_decoded.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_compare_decoded_pauses(decoded_pausea['combined_decoded'], decoded_pausea['total_times'],
                                 decoded_pauseb['combined_decoded'], decoded_pauseb['total_times'],

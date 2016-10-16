@@ -110,7 +110,7 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
 
-    all_tracks_tc = False
+    all_tracks_tc = True
 
     experiment_times = ['pauseA', 'pauseB']
     for experiment_time in experiment_times:
