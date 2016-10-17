@@ -1,5 +1,5 @@
 % Change this filepath to where this data is located on your computer.
-path = 'R068-2014-12-10_recording';
+path = 'R063-2015-03-24_recording';
 
 % Below works only on Emily's laptop.
 % filepath = 'C:\Users\Emily\Desktop\';
@@ -16,6 +16,19 @@ savepath = 'E:\code\emi_shortcut\cache\data\';
 %% cd to data
 % cd([filepath, path]);
 cd([filepath, path(1:4), '_EI\', path]);
+
+cfg_spk = [];
+cfg_spk.uint = '64';
+cfg_spk.load_questionable_cells = 0;
+
+spikes = LoadSpikes(cfg_spk);
+
+spikes_type = spikes.type;
+spikes_times = spikes.t;
+spikes_label = spikes.label;
+
+save([savepath, path(1:15), '-spike4'], ...
+    'spikes_times', 'spikes_label', 'spikes_type');
 
 
 %% input_csc
