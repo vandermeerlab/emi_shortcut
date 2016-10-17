@@ -6,7 +6,7 @@ from shapely.geometry import Point, LineString
 
 import vdmlab as vdm
 
-from load_data import get_pos, get_spikes
+from load_data import get_pos, get_spikes, get_lfp
 from analyze_maze import find_zones
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -168,6 +168,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     print('decoding:', info.session_id)
     position = get_pos(info.pos_mat, info.pxl_to_cm)
     spikes = get_spikes(info.spike_mat)
+    lfp = get_lfp(info.good_swr[0])
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= 0.1
@@ -190,9 +191,20 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
 
     if experiment_time == 'tracks':
         decode_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
+        epochs_interest = vdm.Epoch(np.hstack([np.array(track_starts), np.array(track_stops)]))
+
     else:
         decode_spikes = [spiketrain.time_slice(info.task_times[experiment_time].start,
                                                info.task_times[experiment_time].stop) for spiketrain in spikes]
+        sliced_lfp = lfp.time_slice(info.task_times[experiment_time].start, info.task_times[experiment_time].stop)
+        z_thresh = 3.0
+        power_thresh = 5.0
+        merge_thresh = 0.02
+        min_length = 0.01
+        swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
+                                      power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+
+        epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=3)
 
     counts_binsize = 0.025
     time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
@@ -220,7 +232,11 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     decoded = decoded[~nan_idx]
 
     if not decoded.isempty:
-        decoded = vdm.remove_teleports(decoded, speed_thresh=10, min_length=3)
+        sequences = vdm.remove_teleports(decoded, speed_thresh=10, min_length=3)
+        decoded_epochs = sequences.contains(epochs_interest)
+        decoded = vdm.epoch_position(decoded, decoded_epochs)
+    else:
+        raise ValueError("decoded cannot be empty.")
 
     zones = find_zones(info, expand_by=7)
     decoded_zones = point_in_zones(decoded, zones)
@@ -333,7 +349,7 @@ if __name__ == "__main__":
         decoded_tracks_shuffled = combine_decode(infos, '_decode-tracks_shuffled.pkl', experiment_time='tracks',
                                                  shuffle_id=True, tuning_curves=tuning_curves)
 
-    if 0:
+    if 1:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
