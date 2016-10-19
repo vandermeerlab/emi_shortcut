@@ -1,5 +1,5 @@
 % Change this filepath to where this data is located on your computer.
-path = 'R063-2015-03-24_recording';
+path = 'R068-2014-12-08_recording';
 
 % Below works only on Emily's laptop.
 % filepath = 'C:\Users\Emily\Desktop\';
@@ -10,7 +10,8 @@ path = 'R063-2015-03-24_recording';
 % LoadExpKeys;
 
 % Below works on Emily's work computer
-filepath = 'E:\data-shortcut\data-working\Shortcut-20150727\';
+filepath = 'G:\data-working\Shortcut-20150611\';
+% filepath = 'E:\data-shortcut\data-working\Shortcut-20150727\';
 savepath = 'E:\code\emi_shortcut\cache\data\';
 % savepath = 'C:\Users\EmilyWork\Desktop\lfps\';
 %% cd to data
@@ -30,7 +31,22 @@ spikes_label = spikes.label;
 save([savepath, path(1:15), '-spike4'], ...
     'spikes_times', 'spikes_label', 'spikes_type');
 
+% cd to data
+% cd([filepath, path]);
+cd([filepath, path(1:4), '_EI\', path]);
 
+cfg_spk = [];
+cfg_spk.uint = '64';
+cfg_spk.load_questionable_cells = 1;
+
+spikes = LoadSpikes(cfg_spk);
+
+spikes_type = spikes.type;
+spikes_times = spikes.t;
+spikes_label = spikes.label;
+
+save([savepath, path(1:15), '-spike5'], ...
+    'spikes_times', 'spikes_label', 'spikes_type');
 %% input_csc
 
 cfg_csc = [];
