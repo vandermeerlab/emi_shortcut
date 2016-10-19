@@ -130,6 +130,7 @@ def plot_bydurations(durations, savepath, figsize=(4.5, 3), savefig=True):
                      flierprops=flierprops)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
     plt.ylabel('Duration of trial (s)')
+    # ax.set(yticklabels=[])
     plt.xlabel('(sessions=' + str(durations['num_sessions']) + ')')
     plt.ylim(0, 120)
     sns.despine()
@@ -178,13 +179,15 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=
     data = [all_us, all_shortcuts, all_novels]
     sems = [us_sem, shortcuts_sem, novels_sem]
 
-    plt.figure(figsize=figsize)
+    fig =  plt.figure(figsize=figsize)
+    ax = fig.add_subplot(111)
     for i in list(range(len(data))):
-        plt.bar(n_groups[i], data[i], align='center',
+        ax.bar(n_groups[i], data[i], align='center',
                yerr=sems[i], color=colour[i], ecolor='#525252')
 
     plt.xlabel('(sessions=' + str(len(us)) + ')')
     plt.ylabel('Proportion of trials')
+    # ax.set(yticklabels=[])
     plt.ylim(0, 0.75)
     sns.despine()
     plt.xticks(n_groups, ['U', 'Shortcut', 'Novel'])
@@ -232,12 +235,13 @@ def plot_bytrial(togethers, savepath, min_length=30, figsize=(5.5, 3), savefig=T
                         np.array(means[path]) + np.array(sems[path]),
                         color=colours[path], interpolate=True, alpha=0.2)
     plt.ylabel('Proportion of trials')
+    # ax.set(yticklabels=[])
     plt.xlabel('Trial number (sessions=' + str(len(togethers)) + ')')
     plt.ylim(0.0, 1.0)
     sns.despine()
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
-    plt.legend(loc=1, bbox_to_anchor=(1.1, 1.3))
+    # plt.legend(loc=1, bbox_to_anchor=(1.1, 1.3))
 
     if savefig:
         plt.savefig(savepath, bbox_inches='tight', transparent=True)
@@ -688,6 +692,7 @@ def set_labels(fig, axes, exp_labels, ylabel):
 def set_style():
     # sns.set(font='serif')
     plt.style.use(['seaborn-white', 'seaborn-paper'])
+    # plt.style.use(['seaborn-white', 'seaborn-poster'])
 
 
 def color_bars(axes):
@@ -704,7 +709,7 @@ def color_bars(axes):
 
 
 def set_size(fig):
-    fig.set_size_inches(4.5, 3)
+    fig.set_size_inches(7.5, 4.5)
     plt.tight_layout()
 
 
