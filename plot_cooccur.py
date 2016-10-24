@@ -95,16 +95,16 @@ def plot(infos, all_tracks_tc=False):
     combined_a = combine_cooccur(cooccurs_a)
     combined_weighted_a = combine_cooccur_weighted(cooccurs_a)
 
-    if all_tracks_tc:
-        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '_all-tracks.png'
-    else:
-        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
-    savepath_weighted = os.path.join(output_filepath, filename_weighted)
-    plot_cooccur_combined(combined_weighted_a, int(np.sum(cooccurs_a['n_epochs'])), savepath_weighted)
-
-    filename = 'combined_cooccur-' + experiment_time + '.png'
-    savepath = os.path.join(output_filepath, filename)
-    plot_cooccur(combined_a, savepath)
+    # if all_tracks_tc:
+    #     filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '_all-tracks.png'
+    # else:
+    #     filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+    # savepath_weighted = os.path.join(output_filepath, filename_weighted)
+    # plot_cooccur_combined(combined_weighted_a, int(np.sum(cooccurs_a['n_epochs'])), savepath_weighted)
+    #
+    # filename = 'combined_cooccur-' + experiment_time + '.png'
+    # savepath = os.path.join(output_filepath, filename)
+    # plot_cooccur(combined_a, savepath)
 
     experiment_time = 'pauseB'
     print('getting co-occurrence', experiment_time)
@@ -123,16 +123,16 @@ def plot(infos, all_tracks_tc=False):
     combined_b = combine_cooccur(cooccurs_b)
     combined_weighted_b = combine_cooccur_weighted(cooccurs_b)
 
-    if all_tracks_tc:
-        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '_all-tracks.png'
-    else:
-        filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
-    savepath_weighted = os.path.join(output_filepath, filename_weighted)
-    plot_cooccur_combined(combined_weighted_b, int(np.sum(cooccurs_b['n_epochs'])), savepath_weighted)
-
-    filename = 'combined_cooccur-' + experiment_time + '.png'
-    savepath = os.path.join(output_filepath, filename)
-    plot_cooccur(combined_b, savepath)
+    # if all_tracks_tc:
+    #     filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '_all-tracks.png'
+    # else:
+    #     filename_weighted = 'combined_weighted_cooccur-' + experiment_time + '.png'
+    # savepath_weighted = os.path.join(output_filepath, filename_weighted)
+    # plot_cooccur_combined(combined_weighted_b, int(np.sum(cooccurs_b['n_epochs'])), savepath_weighted)
+    #
+    # filename = 'combined_cooccur-' + experiment_time + '.png'
+    # savepath = os.path.join(output_filepath, filename)
+    # plot_cooccur(combined_b, savepath)
 
     filename = 'pauses-combined_cooccur_weighted-zscore.pdf'
     savepath = os.path.join(output_filepath, filename)
@@ -148,19 +148,19 @@ def plot(infos, all_tracks_tc=False):
                                  ['pauseA', 'pauseB'], prob='expected', ylabel='Proportion of SWRs active',
                                  savepath=savepath)
 
-    filename = 'pauses-combined_cooccur-zscore.png'
-    savepath = os.path.join(output_filepath, filename)
-    plot_cooccur_weighted_pauses(combined_a, cooccurs_a['n_epochs'],
-                                 combined_b, cooccurs_b['n_epochs'],
-                                 ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
-                                 savepath=savepath)
-
-    filename = 'pauses-combined_cooccur-expected.png'
-    savepath = os.path.join(output_filepath, filename)
-    plot_cooccur_weighted_pauses(combined_a, cooccurs_a['n_epochs'],
-                                 combined_b, cooccurs_b['n_epochs'],
-                                 ['pauseA', 'pauseB'], prob='expected', ylabel='Proportion of SWRs active',
-                                 savepath=savepath)
+    # filename = 'pauses-combined_cooccur-zscore.png'
+    # savepath = os.path.join(output_filepath, filename)
+    # plot_cooccur_weighted_pauses(combined_a, cooccurs_a['n_epochs'],
+    #                              combined_b, cooccurs_b['n_epochs'],
+    #                              ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
+    #                              savepath=savepath)
+    #
+    # filename = 'pauses-combined_cooccur-expected.png'
+    # savepath = os.path.join(output_filepath, filename)
+    # plot_cooccur_weighted_pauses(combined_a, cooccurs_a['n_epochs'],
+    #                              combined_b, cooccurs_b['n_epochs'],
+    #                              ['pauseA', 'pauseB'], prob='expected', ylabel='Proportion of SWRs active',
+    #                              savepath=savepath)
 
 
 def get_outputs_combined_weighted(infos):
