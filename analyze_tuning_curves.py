@@ -250,9 +250,9 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
 
-    if 0:
+    if 1:
         for info in infos:
             analyze(info)
-    if 1:
+    if 0:
         for info in infos:
             analyze(info, use_all_tracks=True)
