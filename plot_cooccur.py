@@ -8,7 +8,9 @@ from load_data import get_pos, get_spikes, get_lfp
 from analyze_fields import get_unique_fields, categorize_fields
 from analyze_maze import find_zones
 from analyze_cooccur import analyze
-from analyze_plotting import plot_cooccur, plot_cooccur_combined, plot_cooccur_weighted_pauses
+from analyze_plotting import (plot_cooccur,
+                              plot_cooccur_combined,
+                              plot_cooccur_weighted_pauses)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -134,14 +136,14 @@ def plot(infos, all_tracks_tc=False):
     # savepath = os.path.join(output_filepath, filename)
     # plot_cooccur(combined_b, savepath)
 
-    filename = 'pauses-combined_cooccur_weighted-zscore.pdf'
+    filename = 'pauses456-combined_cooccur_weighted-zscore.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],
                                  ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
                                  savepath=savepath)
 
-    filename = 'pauses-combined_cooccur_weighted-expected.pdf'
+    filename = 'pauses456-combined_cooccur_weighted-expected.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],
@@ -170,7 +172,7 @@ def get_outputs_combined_weighted(infos):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos
-    infos = spike_sorted_infos
+    infos = days456_infos
 
     all_tracks_tc = True
     if all_tracks_tc:
