@@ -844,7 +844,7 @@ def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, label
     plt.subplots_adjust(wspace=0.08)
 
     if savepath is not None:
-        plt.savefig(savepath)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()

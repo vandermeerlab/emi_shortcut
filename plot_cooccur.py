@@ -172,7 +172,7 @@ def get_outputs_combined_weighted(infos):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos
-    infos = days456_infos
+    infos = spike_sorted_infos
 
     all_tracks_tc = True
     if all_tracks_tc:
