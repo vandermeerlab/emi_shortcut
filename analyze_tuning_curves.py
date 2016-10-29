@@ -213,18 +213,21 @@ def analyze(info, use_all_tracks=False):
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
+    track_starts = [info.task_times['phase1'].start,
+                    info.task_times['phase2'].start,
+                    info.task_times['phase3'].start]
+    track_stops = [info.task_times['phase1'].stop,
+                   info.task_times['phase2'].stop,
+                   info.task_times['phase3'].stop]
+
+    track_pos = run_pos.time_slices(track_starts, track_stops)
+
     if use_all_tracks:
-        track_starts = [info.task_times['phase1'].start,
-                        info.task_times['phase2'].start,
-                        info.task_times['phase3'].start]
-        track_stops = [info.task_times['phase1'].stop,
-                       info.task_times['phase2'].stop,
-                        info.task_times['phase3'].stop]
+        tc_pos = track_pos
     else:
         track_starts = [info.task_times['phase3'].start]
         track_stops = [info.task_times['phase3'].stop]
-
-    track_pos = run_pos.time_slices(track_starts, track_stops)
+        tc_pos = run_pos.time_slices(track_starts, track_stops)
 
     track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
@@ -232,7 +235,7 @@ def analyze(info, use_all_tracks=False):
     xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
     yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
 
-    tuning_curves = vdm.tuning_curve_2d(track_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
+    tuning_curves = vdm.tuning_curve_2d(tc_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
 
     if use_all_tracks:
         tc_filename = info.session_id + '_tuning-curve_all-phases.pkl'
@@ -253,6 +256,6 @@ if __name__ == "__main__":
     if 1:
         for info in infos:
             analyze(info)
-    if 0:
+    if 1:
         for info in infos:
             analyze(info, use_all_tracks=True)

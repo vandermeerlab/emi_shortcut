@@ -691,8 +691,8 @@ def set_labels(fig, axes, exp_labels, ylabel):
 
 def set_style():
     # sns.set(font='serif')
-    plt.style.use(['seaborn-white', 'seaborn-paper'])
-    # plt.style.use(['seaborn-white', 'seaborn-poster'])
+    # plt.style.use(['seaborn-white', 'seaborn-paper'])
+    plt.style.use(['seaborn-white', 'seaborn-poster'])
 
 
 def color_bars(axes):
@@ -709,7 +709,7 @@ def color_bars(axes):
 
 
 def set_size(fig):
-    fig.set_size_inches(7.5, 4.5)
+    fig.set_size_inches(9., 6.)
     plt.tight_layout()
 
 
@@ -796,45 +796,22 @@ def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, label
     for key in cooccur_1:
         epochs_1 = np.array(epochs_1)
         cooccur_1[key][prob] = np.array(cooccur_1[key][prob])
-        total_weight = np.sum(epochs_1)
-        weighted_mean1[key] = np.sum(cooccur_1[key][prob]) / total_weight
-        observations = cooccur_1[key][prob] / epochs_1
-        weighted_sem1[key] = np.sqrt(np.sum(epochs_1**2 * (observations-weighted_mean1[key])**2)) / total_weight
-    # print(weighted_sem1.keys())
-
-    # u_dict1 = dict(total=[cooccur_weighted_1['u']], trajectory='U', exp_time=labels[0])
-    # shortcut_dict1 = dict(total=[cooccur_weighted_1['shortcut']], trajectory='Shortcut', exp_time=labels[0])
-    # novel_dict1 = dict(total=[cooccur_weighted_1['novel']], trajectory='Novel', exp_time=labels[0])
-    #
-    # u1 = pd.DataFrame(u_dict1)
-    # shortcut1 = pd.DataFrame(shortcut_dict1)
-    # novel1 = pd.DataFrame(novel_dict1)
+        total_weight1 = np.sum(epochs_1)
+        weighted_mean1[key] = np.sum(cooccur_1[key][prob]) / total_weight1
+        observations1 = cooccur_1[key][prob] / epochs_1
+        weighted_sem1[key] = np.sqrt(
+                             np.sum(epochs_1**2 * (observations1 - weighted_mean1[key])**2)) / total_weight1
 
     weighted_mean2 = dict()
     weighted_sem2 = dict()
     for key in cooccur_2:
         epochs_2 = np.array(epochs_2)
         cooccur_2[key][prob] = np.array(cooccur_2[key][prob])
-        total_weight = np.sum(epochs_2)
-        weighted_mean2[key] = np.sum(cooccur_2[key][prob]) / total_weight
-        observations = cooccur_2[key][prob] / epochs_2
+        total_weight2 = np.sum(epochs_2)
+        weighted_mean2[key] = np.sum(cooccur_2[key][prob]) / total_weight2
+        observations2 = cooccur_2[key][prob] / epochs_2
         weighted_sem2[key] = np.sqrt(
-            np.sum(epochs_2 ** 2 * (observations - weighted_mean2[key]) ** 2)) / total_weight
-
-    # u_dict2 = dict(total=[cooccur_weighted_2['u']], trajectory='U', exp_time=labels[1])
-    # shortcut_dict2 = dict(total=[cooccur_weighted_2['shortcut']], trajectory='Shortcut', exp_time=labels[1])
-    # novel_dict2 = dict(total=[cooccur_weighted_2['novel']], trajectory='Novel', exp_time=labels[1])
-    #
-    # u2 = pd.DataFrame(u_dict2)
-    # shortcut2 = pd.DataFrame(shortcut_dict2)
-    # novel2 = pd.DataFrame(novel_dict2)
-    # data = pd.concat([u1, shortcut1, novel1, u2, shortcut2, novel2])
-    #
-    # set_style()
-    # fig, axes = plot_v3(data, labels, errors=False)
-    # set_labels(fig, axes, labels, ylabel)
-    # color_bars(axes)
-    # set_size(fig)
+            np.sum(epochs_2 ** 2 * (observations2 - weighted_mean2[key]) ** 2)) / total_weight2
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(4.5, 2.5))
 
@@ -871,3 +848,59 @@ def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, label
         plt.close()
     else:
         plt.show()
+
+
+# def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, labels, prob, ylabel, savepath=None):
+#     """Plots barplot comparing cooccur probabilities during two phases.
+#     Parameters
+#     ----------
+#     cooccur_1: dict
+#         With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+#     cooccur_2: dict
+#         With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+#     labels: list of str
+#     prob: str
+#         One of expected, observed, active, shuffle, zscore
+#     ylabel=str
+#     savepath : str or None
+#         Location and filename for the saved plot.
+#     """
+#     if prob not in ['expected', 'observed', 'active', 'shuffle', 'zscore']:
+#         raise ValueError("prob must be one of expected, observed, active, shuffle or zscore")
+#
+#     cooccur_weighted_1 = dict()
+#     for key in cooccur_1:
+#         cooccur_weighted_1[key] = np.sum(cooccur_1[key][prob])/np.sum(epochs_1)
+#
+#     u_dict1 = dict(total=[cooccur_weighted_1['u']], trajectory='U', exp_time=labels[0])
+#     shortcut_dict1 = dict(total=[cooccur_weighted_1['shortcut']], trajectory='Shortcut', exp_time=labels[0])
+#     novel_dict1 = dict(total=[cooccur_weighted_1['novel']], trajectory='Novel', exp_time=labels[0])
+#
+#     u1 = pd.DataFrame(u_dict1)
+#     shortcut1 = pd.DataFrame(shortcut_dict1)
+#     novel1 = pd.DataFrame(novel_dict1)
+#
+#     cooccur_weighted_2 = dict()
+#     for key in cooccur_2:
+#         cooccur_weighted_2[key] = np.sum(cooccur_2[key][prob])/np.sum(epochs_2)
+#
+#     u_dict2 = dict(total=[cooccur_weighted_2['u']], trajectory='U', exp_time=labels[1])
+#     shortcut_dict2 = dict(total=[cooccur_weighted_2['shortcut']], trajectory='Shortcut', exp_time=labels[1])
+#     novel_dict2 = dict(total=[cooccur_weighted_2['novel']], trajectory='Novel', exp_time=labels[1])
+#
+#     u2 = pd.DataFrame(u_dict2)
+#     shortcut2 = pd.DataFrame(shortcut_dict2)
+#     novel2 = pd.DataFrame(novel_dict2)
+#     data = pd.concat([u1, shortcut1, novel1, u2, shortcut2, novel2])
+#
+#     set_style()
+#     fig, axes = plot_v3(data, labels, errors=False)
+#     set_labels(fig, axes, labels, ylabel)
+#     color_bars(axes)
+#     set_size(fig)
+#
+#     if savepath is not None:
+#         plt.savefig(savepath, transparent=True)
+#         plt.close()
+#     else:
+#         plt.show()

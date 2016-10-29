@@ -233,7 +233,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
 
     if not decoded.isempty:
         sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=3)
-        decoded_epochs = sequences.contains(epochs_interest)
+        decoded_epochs = sequences.intersect(epochs_interest, boundaries=False)
         decoded = vdm.epoch_position(decoded, decoded_epochs)
     else:
         raise ValueError("decoded cannot be empty.")

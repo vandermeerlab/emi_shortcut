@@ -25,15 +25,12 @@ def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
-    # track_starts = [info.task_times['phase1'].start,
-    #                 info.task_times['phase2'].start,
-    #                 info.task_times['phase3'].start]
-    # track_stops = [info.task_times['phase1'].stop,
-    #                info.task_times['phase2'].stop,
-    #                info.task_times['phase3'].stop]
-
-    track_starts = [info.task_times['phase3'].start]
-    track_stops = [info.task_times['phase3'].stop]
+    track_starts = [info.task_times['phase1'].start,
+                    info.task_times['phase2'].start,
+                    info.task_times['phase3'].start]
+    track_stops = [info.task_times['phase1'].stop,
+                   info.task_times['phase2'].stop,
+                   info.task_times['phase3'].stop]
 
     track_pos = run_pos.time_slices(track_starts, track_stops)
 

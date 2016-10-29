@@ -1,5 +1,5 @@
 % Change this filepath to where this data is located on your computer.
-path = 'R068-2014-12-08_recording';
+path = 'R063-2015-03-20_recording';
 
 % Below works only on Emily's laptop.
 % filepath = 'C:\Users\Emily\Desktop\';
@@ -17,6 +17,8 @@ savepath = 'E:\code\emi_shortcut\cache\data\';
 %% cd to data
 % cd([filepath, path]);
 cd([filepath, path(1:4), '_EI\', path]);
+
+%%
 
 cfg_spk = [];
 cfg_spk.uint = '64';
