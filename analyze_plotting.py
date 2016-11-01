@@ -130,10 +130,11 @@ def plot_bydurations(durations, savepath, figsize=(4.5, 3), savefig=True):
                      flierprops=flierprops)
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
     plt.ylabel('Duration of trial (s)')
-    # ax.set(yticklabels=[])
+    # plt.title('Early')
+    # ax.set(yticklabels=[], yticks=[])
     plt.xlabel('(sessions=' + str(durations['num_sessions']) + ')')
     plt.ylim(0, 120)
-    sns.despine()
+    sns.despine(left=False)
 
     if savefig:
         plt.savefig(savepath, bbox_inches='tight', transparent=True)
@@ -179,7 +180,7 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=
     data = [all_us, all_shortcuts, all_novels]
     sems = [us_sem, shortcuts_sem, novels_sem]
 
-    fig =  plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     for i in list(range(len(data))):
         ax.bar(n_groups[i], data[i], align='center',
@@ -187,9 +188,10 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=
 
     plt.xlabel('(sessions=' + str(len(us)) + ')')
     plt.ylabel('Proportion of trials')
-    # ax.set(yticklabels=[])
+    # plt.title('Early')
+    # ax.set(yticklabels=[], yticks=[])
     plt.ylim(0, 0.75)
-    sns.despine()
+    sns.despine(left=False)
     plt.xticks(n_groups, ['U', 'Shortcut', 'Novel'])
 
     # plt.tight_layout()
@@ -200,7 +202,7 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=
         plt.show()
 
 
-def plot_bytrial(togethers, savepath, min_length=30, figsize=(5.5, 3), savefig=True):
+def plot_bytrial(togethers, savepath, min_length=30, figsize=(6., 3), savefig=True):
     """Plots choice of trajectory by trial. Behavior only.
 
         Parameters
@@ -235,13 +237,14 @@ def plot_bytrial(togethers, savepath, min_length=30, figsize=(5.5, 3), savefig=T
                         np.array(means[path]) + np.array(sems[path]),
                         color=colours[path], interpolate=True, alpha=0.2)
     plt.ylabel('Proportion of trials')
-    # ax.set(yticklabels=[])
+    # plt.title('Early')
+    # ax.set(yticklabels=[], yticks=[])
     plt.xlabel('Trial number (sessions=' + str(len(togethers)) + ')')
     plt.ylim(0.0, 1.0)
-    sns.despine()
+    sns.despine(left=False)
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
-    # plt.legend(loc=1, bbox_to_anchor=(1.1, 1.3))
+    plt.legend(loc=1, bbox_to_anchor=(1.42, 1.1))
 
     if savefig:
         plt.savefig(savepath, bbox_inches='tight', transparent=True)

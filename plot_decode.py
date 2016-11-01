@@ -88,7 +88,7 @@ def plot_pauses(infos, tuning_curves, all_tracks_tc=False):
     if all_tracks_tc == True:
         filename = 'combined-pauses_decoded_all-tracks.png'
     else:
-        filename = 'combined-pauses_decoded.pdf'
+        filename = 'combined6-pauses_decoded.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_compare_decoded_pauses(decoded_pausea['combined_decoded'], decoded_pausea['total_times'],
                                 decoded_pauseb['combined_decoded'], decoded_pauseb['total_times'],
@@ -202,8 +202,8 @@ def get_outputs_normalized(infos, all_tracks_tc=False):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-    infos = spike_sorted_infos
+    from run import spike_sorted_infos, days123_infos, days456_infos, day6_infos
+    infos = day6_infos
 
     by_trajectory = False
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
             with open(pickled_tuning_curve, 'rb') as fileobj:
                 tuning_curves.append(pickle.load(fileobj))
 
-        plot_errors(infos, tuning_curves, by_trajectory)
+        # plot_errors(infos, tuning_curves, by_trajectory)
         plot_pauses(infos, tuning_curves)
-        plot_phases(infos, tuning_curves)
-        plot_normalized(infos, tuning_curves)
+        # plot_phases(infos, tuning_curves)
+        # plot_normalized(infos, tuning_curves)

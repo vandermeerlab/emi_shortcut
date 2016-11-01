@@ -136,14 +136,14 @@ def plot(infos, all_tracks_tc=False):
     # savepath = os.path.join(output_filepath, filename)
     # plot_cooccur(combined_b, savepath)
 
-    filename = 'pauses456-combined_cooccur_weighted-zscore.pdf'
+    filename = 'pauses-combined_cooccur_weighted-zscore.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],
                                  ['pauseA', 'pauseB'], prob='zscore', ylabel='SWR co-activation z-scored',
                                  savepath=savepath)
 
-    filename = 'pauses456-combined_cooccur_weighted-expected.pdf'
+    filename = 'pauses-combined_cooccur_weighted-expected.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_cooccur_weighted_pauses(combined_weighted_a, cooccurs_a['n_epochs'],
                                  combined_weighted_b, cooccurs_b['n_epochs'],
@@ -165,6 +165,56 @@ def plot(infos, all_tracks_tc=False):
     #                              savepath=savepath)
 
 
+def plot_prepost(infos, exp_times=['prerecord', 'postrecord'], all_tracks_tc=False):
+    cooccurs1 = dict(probs=[], n_epochs=[])
+    cooccurs2 = dict(probs=[], n_epochs=[])
+    experiment_time = exp_times[0]
+    print('getting co-occurrence', experiment_time)
+    for info in infos:
+        if all_tracks_tc:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '_all-tracks.pkl'
+        else:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
+        pickled_cooccur = os.path.join(pickle_filepath, cooccur_filename)
+        with open(pickled_cooccur, 'rb') as fileobj:
+            cooccur = pickle.load(fileobj)
+
+        cooccurs1['probs'].append(cooccur['probs'])
+        cooccurs1['n_epochs'].append(cooccur['n_epochs'])
+
+    combined_weighted1 = combine_cooccur_weighted(cooccurs1)
+
+    experiment_time = exp_times[1]
+    print('getting co-occurrence', experiment_time)
+    for info in infos:
+        if all_tracks_tc:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '_all-tracks.pkl'
+        else:
+            cooccur_filename = info.session_id + '_cooccur-' + experiment_time + '.pkl'
+        pickled_cooccur = os.path.join(pickle_filepath, cooccur_filename)
+        with open(pickled_cooccur, 'rb') as fileobj:
+            cooccur = pickle.load(fileobj)
+
+        cooccurs2['probs'].append(cooccur['probs'])
+        cooccurs2['n_epochs'].append(cooccur['n_epochs'])
+
+    combined_weighted2 = combine_cooccur_weighted(cooccurs2)
+
+    filename = 'prepost-combined_cooccur_weighted-zscore.pdf'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur_weighted_pauses(combined_weighted1, cooccurs1['n_epochs'],
+                                 combined_weighted2, cooccurs2['n_epochs'],
+                                 ['pre', 'post'], prob='zscore', ylabel='SWR co-activation z-scored',
+                                 savepath=savepath)
+
+    filename = 'prepost-combined_cooccur_weighted-expected.pdf'
+    savepath = os.path.join(output_filepath, filename)
+    plot_cooccur_weighted_pauses(combined_weighted1, cooccurs1['n_epochs'],
+                                 combined_weighted2, cooccurs2['n_epochs'],
+                                 ['pre', 'post'], prob='expected', ylabel='Proportion of SWRs active',
+                                 savepath=savepath)
+
+
 def get_outputs_combined_weighted(infos):
     outputs = [os.path.join(output_filepath, 'pauses-combined_cooccur.png')]
     return outputs
@@ -173,6 +223,9 @@ def get_outputs_combined_weighted(infos):
 if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos
     infos = spike_sorted_infos
+
+    # all_tracks_tc = True
+    # plot_prepost(infos, exp_times=['prerecord', 'postrecord'])
 
     all_tracks_tc = True
     if all_tracks_tc:

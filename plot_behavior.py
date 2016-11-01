@@ -97,8 +97,8 @@ if __name__ == "__main__":
                      r063_infos, r066_infos, r067_infos, r068_infos,
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
 
-    # analyze(behavior_infos, 'all_behaviour')
-    analyze(days1234_infos, 'early_behaviour', figsize='small')
+    analyze(behavior_infos, 'all_behaviour', figsize='small')
+    # analyze(days1234_infos, 'early_behaviour', figsize='small')
     # analyze(days5678_infos, 'late_behaviour', figsize='small')
 
     # analyze(day1_infos, 'session1_behaviour')
