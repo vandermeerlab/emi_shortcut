@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import scipy
 
 from load_data import get_pos, get_events
 from analyze_maze import get_trial_idx, get_zones
@@ -63,11 +65,19 @@ def analyze(infos, filename, figsize='normal'):
     novels = []
     togethers = []
 
+    n_shortcuts = []
+    n_us = []
+    n_novels = []
+
     for trial in trials:
         shortcuts.append(len(trial['shortcut'])/float(len(trial['start_trials'])))
         us.append(len(trial['u'])/float(len(trial['start_trials'])))
         novels.append(len(trial['novel'])/float(len(trial['start_trials'])))
         togethers.append(sorted(trial['u'] + trial['shortcut'] + trial['novel']))
+
+        n_shortcuts.append(len(trial['shortcut']))
+        n_us.append(len(trial['u']))
+        n_novels.append(len(trial['novel']))
 
     savename = filename + '_proportions.pdf'
     savepath = os.path.join(output_filepath, savename)
@@ -75,6 +85,10 @@ def analyze(infos, filename, figsize='normal'):
         plot_proportions(us, shortcuts, novels, savepath, figsize=(2.5, 2))
     else:
         plot_proportions(us, shortcuts, novels, savepath)
+
+    print('u:', np.mean(n_us), '+/-', scipy.stats.sem(n_us))
+    print('shortcut:', np.mean(n_shortcuts), '+/-', scipy.stats.sem(n_shortcuts))
+    print('novel:', np.mean(n_novels), '+/-', scipy.stats.sem(n_novels))
 
     savename = filename + '_durations.pdf'
     savepath = os.path.join(output_filepath, savename)

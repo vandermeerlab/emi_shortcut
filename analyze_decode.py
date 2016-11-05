@@ -174,12 +174,18 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
-    # track_starts = [info.task_times['phase1'].start,
-    #                 info.task_times['phase2'].start,
-    #                 info.task_times['phase3'].start]
-    # track_stops = [info.task_times['phase1'].stop,
-    #                info.task_times['phase2'].stop,
-    #                info.task_times['phase3'].stop]
+    track_starts = [info.task_times['phase1'].start,
+                    info.task_times['phase2'].start,
+                    info.task_times['phase3'].start]
+    track_stops = [info.task_times['phase1'].stop,
+                   info.task_times['phase2'].stop,
+                   info.task_times['phase3'].stop]
+
+    track_pos = run_pos.time_slices(track_starts, track_stops)
+
+    binsize = 3
+    xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
+    yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
 
     track_starts = [info.task_times['phase3'].start]
     track_stops = [info.task_times['phase3'].stop]
@@ -208,7 +214,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
 
     counts_binsize = 0.025
     time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
-    counts = vdm.get_counts(decode_spikes, time_edges, gaussian_std=0.025)
+    counts = vdm.get_counts(decode_spikes, time_edges, gaussian_std=0.005)
 
     decoding_tc = []
     for tuning in tuning_curve:
@@ -216,10 +222,6 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     decoding_tc = np.array(decoding_tc)
 
     likelihood = vdm.bayesian_prob(counts, decoding_tc, counts_binsize)
-
-    binsize = 3
-    xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
-    yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
 
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
