@@ -230,6 +230,6 @@ if __name__ == "__main__":
                 tuning_curves.append(pickle.load(fileobj))
 
         plot_errors(infos, tuning_curves, by_trajectory)
-        plot_pauses(infos, tuning_curves)
+        # plot_pauses(infos, tuning_curves)
         # plot_phases(infos, tuning_curves)
         # plot_normalized(infos, tuning_curves)

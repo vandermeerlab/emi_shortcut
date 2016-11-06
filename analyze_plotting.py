@@ -634,6 +634,9 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
         data = pd.concat([shuffled, decoded])
         colours = ['#ffffff', '#bdbdbd']
 
+        print('actual:', np.mean(decode_errors['together']), stats.sem(decode_errors['together']))
+        print('shuffle:', np.mean(shuffled_errors['together']), stats.sem(shuffled_errors['together']))
+
     plt.figure(figsize=(3, 2))
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
     # ax = sns.boxplot(x='shuffled', y='error', data=data, palette=colours, flierprops=flierprops)
