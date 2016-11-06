@@ -86,7 +86,8 @@ sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['swr'] = vdm.Epoch(np.array([[19482.6, 19483.0],
                                            [19613.0, 19613.4],
                                            [19719.95, 19720.5]]))
-sequence['u']['run'] = vdm.Epoch(np.array([[13826.0, 13866.0],
+sequence['u']['run'] = vdm.Epoch(np.array([[14468.0, 14488.0],
+                                           [13826.0, 13866.0],
                                            [14130.0, 14160.0],
                                            [19220.0, 19260.0],
                                            [14370.0, 14440.0]]))
