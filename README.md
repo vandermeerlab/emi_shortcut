@@ -5,7 +5,7 @@ Getting started for this project
   this project also requires the following.
 
   ```
-  conda install matplotlib seaborn jupyter
+  conda install seaborn jupyter
   ```
 
 * Jupyter notebooks can be started by:

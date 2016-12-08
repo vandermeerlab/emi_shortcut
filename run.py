@@ -35,8 +35,11 @@ r066_infos = [
 r067_infos = [
     info.r067d1, info.r067d2, info.r067d3, info.r067d4, info.r067d5, info.r067d6, info.r067d8, info.r067d8]
 
+# r068_infos = [
+#     info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6, info.r068d7, info.r068d8]
+
 r068_infos = [
-    info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6, info.r068d7, info.r068d8]
+    info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6]
 
 day1_infos = [info.r066d1, info.r067d1, info.r068d1]
 

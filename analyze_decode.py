@@ -339,7 +339,7 @@ if __name__ == "__main__":
 
     infos = spike_sorted_infos
 
-    if 1:
+    if 0:
         tuning_curves = []
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
@@ -351,7 +351,7 @@ if __name__ == "__main__":
         decoded_tracks_shuffled = combine_decode(infos, '_decode-tracks_shuffled.pkl', experiment_time='tracks',
                                                  shuffle_id=True, tuning_curves=tuning_curves)
 
-    if 1:
+    if 0:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
@@ -363,3 +363,13 @@ if __name__ == "__main__":
             experiment_time = 'pauseB'
             decoded_pauseb = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
                                             shuffle_id=False, tuning_curves=tuning_curve)
+
+    if 1:
+        for info in infos:
+            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+            with open(pickled_tuning_curve, 'rb') as fileobj:
+                tuning_curve = pickle.load(fileobj)
+            experiment_times = ['phase1', 'prerecord', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+            for experiment_time in experiment_times:
+                analyze(info, tuning_curve, experiment_time)

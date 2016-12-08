@@ -775,6 +775,62 @@ def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, 
         plt.show()
 
 
+def plot_compare_decoded(decoded, labels, ylabel, savepath=None):
+    """Plots barplot comparing decoded during two phases
+
+    Parameters
+    ----------
+    means: list of dict
+        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+    sems: list of dict
+    labels: list of str
+    savepath : str or None
+        Location and filename for the saved plot.
+
+    """
+    if len(decoded) != len(labels):
+        raise ValueError('decoded and labels must be the same length')
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(4.5, 2.5))
+
+    ind = np.arange(1)
+    width = 0.5
+    xtick_loc = []
+    colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
+
+    for ax, trajectory in zip([ax1, ax2, ax3], ['u', 'shortcut', 'novel']):
+        count = 0
+        for decode in decoded:
+            ax.bar(ind+(count*width), np.mean(decode[trajectory]), width, color=colours[trajectory],
+                   yerr=stats.sem(decode[trajectory]), ecolor='k')
+            xtick_loc.append(ind + (count*width) + (0.5*width))
+            count += 1
+
+    for ax in [ax2, ax3]:
+        ax.spines['left'].set_visible(False)
+        ax.tick_params(axis='y', which='both', length=0)
+
+    for ax, trajectory in zip([ax1, ax2, ax3], ['U', 'Shortcut', 'Novel']):
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_xlabel(trajectory)
+        ax.set_xticks(xtick_loc)
+        ax.set_xticklabels(labels)
+        ax.xaxis.set_ticks_position('bottom')
+
+    ax1.set_ylabel(ylabel)
+    ax1.yaxis.set_ticks_position('left')
+
+    plt.tight_layout()
+    plt.subplots_adjust(wspace=0.08)
+
+    if savepath is not None:
+        plt.savefig(savepath, transparent=True)
+        plt.close()
+    else:
+        plt.show()
+
+
 
 def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, labels, prob, ylabel, savepath=None):
     """Plots barplot comparing cooccur probabilities during two phases.
