@@ -13,7 +13,7 @@ def convert_to_cm(path_pts, xy_conversion):
     return path_pts
 
 
-def extract_xy(target, info):
+def extract_xy(target):
     """Extracts x and y from neuralynx target. Converts to cm.
 
     Parameters
@@ -27,8 +27,8 @@ def extract_xy(target, info):
 
     """
     binary_target = "{:032b}".format(target)
-    x = int(binary_target[20:31], 2) / info.pxl_to_cm[0]
-    y = int(binary_target[4:15], 2) / info.pxl_to_cm[1]
+    x = int(binary_target[20:31], 2)
+    y = int(binary_target[4:15], 2)
 
     return x, y
 
