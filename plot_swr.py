@@ -1,7 +1,7 @@
 import os
 import vdmlab as vdm
 
-from load_data import get_lfp
+from loading_data import get_data
 from analyze_plotting import plot_swrs
 
 import info.R063d2_info as r063d2
@@ -28,7 +28,8 @@ infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4,
 
 for info in infos:
     print('Working on ' + info.session_id)
-    lfp = get_lfp(info.good_swr[0])
+
+    events, position, spikes, lfp, lfp_theta = get_data(info)
 
     thresh = (140.0, 250.0)
     swrs = vdm.detect_swr_hilbert(lfp, fs=info.fs, thresh=thresh)

@@ -285,7 +285,7 @@ def get_outputs_normalized(infos, all_tracks_tc=False):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, r068_infos
-    infos = r068_infos
+    infos = spike_sorted_infos
 
     by_trajectory = False
 

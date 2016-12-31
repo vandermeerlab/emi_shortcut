@@ -6,7 +6,7 @@ from shapely.geometry import Point, LineString
 
 import vdmlab as vdm
 
-from load_data import get_pos, get_spikes, get_lfp
+from loading_data import get_data
 from analyze_maze import find_zones
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -166,9 +166,8 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
 
     """
     print('decoding:', info.session_id)
-    position = get_pos(info.pos_mat, info.pxl_to_cm)
-    spikes = get_spikes(info.spike_mat)
-    lfp = get_lfp(info.good_swr[0])
+
+    events, position, spikes, lfp, lfp_theta = get_data(info)
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= 0.1

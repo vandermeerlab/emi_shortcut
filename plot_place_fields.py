@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import vdmlab as vdm
 
-from load_data import get_pos, get_spikes
+from loading_data import get_data
 from analyze_fields import unique_fields
 from analyze_tuning_curves import get_tc_1d
 from analyze_plotting import plot_fields
@@ -35,8 +35,7 @@ for info in infos:
     tc_filename = info.session_id + '_tuning_1d.pkl'
     pickled_tc = os.path.join(pickle_filepath, tc_filename)
 
-    position = get_pos(info.pos_mat, info.pxl_to_cm)
-    spikes = get_spikes(info.spike_mat)
+    events, position, spikes, lfp, lfp_theta = get_data(info)
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= info.run_threshold

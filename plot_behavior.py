@@ -2,7 +2,7 @@ import os
 import numpy as np
 import scipy
 
-from load_data import get_pos, get_events
+from loading_data import get_data
 from analyze_maze import get_trial_idx, get_zones
 from analyze_plotting import plot_proportions, plot_bydurations, plot_bytrial
 
@@ -26,14 +26,15 @@ def analyze(infos, filename, figsize='normal'):
 
     for info in infos:
         print(info.session_id)
+
+        events, position, spikes, lfp, lfp_theta = get_data(info)
+
         t_start = info.task_times['phase3'].start
         t_stop = info.task_times['phase3'].stop
 
-        pos = get_pos(info.pos_mat, info.pxl_to_cm)
-        sliced_pos = pos.time_slice(t_start, t_stop)
+        sliced_pos = position.time_slice(t_start, t_stop)
 
         # Slicing events to only Phase 3
-        events = get_events(info.event_mat)
 
         feeder1_times = []
         for feeder1 in events['feeder1']:

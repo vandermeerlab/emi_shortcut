@@ -4,7 +4,7 @@ import pickle
 
 import vdmlab as vdm
 
-from load_data import get_pos, get_spikes, get_lfp
+from loading_data import get_data
 from analyze_fields import get_unique_fields, categorize_fields
 from analyze_maze import find_zones
 
@@ -17,9 +17,7 @@ output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
     print('cooccur:', info.session_id)
 
-    lfp = get_lfp(info.good_swr[0])
-    position = get_pos(info.pos_mat, info.pxl_to_cm)
-    spikes = get_spikes(info.spike_mat)
+    events, position, spikes, lfp, lfp_theta = get_data(info)
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= 0.1

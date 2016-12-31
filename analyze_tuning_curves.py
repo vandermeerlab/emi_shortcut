@@ -5,7 +5,7 @@ from shapely.geometry import Point, LineString
 
 import vdmlab as vdm
 
-from load_data import get_pos, get_spikes
+from loading_data import get_data
 from analyze_maze import spikes_by_position
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -197,6 +197,7 @@ def get_outputs(infos):
         outputs.append(os.path.join(pickle_filepath, info.session_id + '_tuning-curve.pkl'))
     return outputs
 
+
 def get_outputs_all(infos):
     outputs = []
     for info in infos:
@@ -206,8 +207,8 @@ def get_outputs_all(infos):
 
 def analyze(info, use_all_tracks=False):
     print('tuning curves:', info.session_id)
-    position = get_pos(info.pos_mat, info.pxl_to_cm)
-    spikes = get_spikes(info.spike_mat)
+
+    events, position, spikes, lfp, lfp_theta = get_data(info)
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= 0.1

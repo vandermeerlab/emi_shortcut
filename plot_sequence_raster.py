@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import vdmlab as vdm
 
-from load_data import get_pos, get_lfp, get_spikes
+from loading_data import get_data
 from analyze_tuning_curves import get_tc_1d, find_ideal, get_odd_firing_idx
 
 import info.R063d2_info as r063d2
@@ -54,9 +54,7 @@ for info in infos:
         tc_filename = info.session_id + '_tuning_1d.pkl'
         pickled_tc = os.path.join(pickle_filepath, tc_filename)
 
-        position = get_pos(info.pos_mat, info.pxl_to_cm)
-        lfp = get_lfp(info.good_swr[0])
-        spikes = get_spikes(info.spike_mat)
+        events, position, spikes, lfp, lfp_theta = get_data(info)
 
         speed = position.speed(t_smooth=0.5)
         run_idx = np.squeeze(speed.data) >= info.run_threshold

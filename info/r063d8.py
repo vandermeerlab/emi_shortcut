@@ -1,7 +1,9 @@
+import os
 import numpy as np
 import vdmlab as vdm
 from startup import convert_to_cm
 
+rat_id = 'R063_EI'
 session_id = 'R063d8'
 session = 'R063-2015-03-27'
 
@@ -10,13 +12,29 @@ behavior = 'shortcut'
 target = 'dCA1'
 experimenter = 'Emily Irvine'
 
-pos_mat = session + '-vt.mat'
-event_mat = session + '-event.mat'
-# spike_mat = session + '-spike.mat'
+event_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-Events.nev')
+event_labels = dict(led1='TTL Output on AcqSystem1_0 board 0 port 2 value (0x0001).',
+                    led2='TTL Output on AcqSystem1_0 board 0 port 2 value (0x0002).',
+                    ledoff='TTL Output on AcqSystem1_0 board 0 port 2 value (0x0000).',
+                    pb1id='TTL Input on AcqSystem1_0 board 0 port 1 value (0x0040).',
+                    pb2id='TTL Input on AcqSystem1_0 board 0 port 1 value (0x0020).',
+                    pboff='TTL Input on AcqSystem1_0 board 0 port 1 value (0x0000).',
+                    feeder1='TTL Output on AcqSystem1_0 board 0 port 0 value (0x0004).',
+                    feeder2='TTL Output on AcqSystem1_0 board 0 port 0 value (0x0040).',
+                    feederoff='TTL Output on AcqSystem1_0 board 0 port 0 value (0x0000).')
 
-good_lfp = [session + '-csc13a.ncs']
-good_swr = [session + '-csc13.mat']
-good_theta = [session + '-csc09.mat']
+position_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-VT1.nvt')
+
+lfp_swr_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC13a.ncs')
+lfp_theta_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC09a.ncs')
+
+spikes_filepath = os.path.join('data-working', rat_id, session + '_recording')
+
+pickled_events = session + '-event.pkl'
+pickled_position = session + '-position.pkl'
+pickled_lfp_swr = session + '-lfp_swr.pkl'
+pickled_lfp_theta = session + '-lfp_theta.pkl'
+pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
 task_times['prerecord'] = vdm.Epoch(np.array([1393.0, 1696.4]))

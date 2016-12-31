@@ -4,7 +4,7 @@ import pickle
 
 import vdmlab as vdm
 
-from load_data import get_pos, get_spikes, get_lfp
+from loading_data import get_data
 from analyze_fields import get_unique_fields, categorize_fields
 from analyze_maze import find_zones
 from analyze_cooccur import analyze

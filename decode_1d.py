@@ -6,7 +6,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 
 import vdmlab as vdm
 
-from load_data import get_pos, get_spikes
+from loading_data import get_data
 from analyze_tuning_curves import get_tc_1d, find_ideal
 from analyze_decode import get_edges
 
@@ -33,8 +33,8 @@ infos = [r063d3]
 
 for info in infos:
     print(info.session_id)
-    position = get_pos(info.pos_mat, info.pxl_to_cm)
-    spikes = get_spikes(info.spike_mat)
+
+    events, position, spikes, lfp, lfp_theta = get_data(info)
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= info.run_threshold
