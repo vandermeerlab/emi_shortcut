@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-from load_data import get_pos
+from loading_data import get_data
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -21,7 +21,7 @@ def get_outputs(infos, num=10):
 def plot(info, tuning_curve, num=10):
     print('plotting tuning curve:', info.session_id)
 
-    position = get_pos(info.pos_mat, info.pxl_to_cm)
+    events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
     binsize = 3
     xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)

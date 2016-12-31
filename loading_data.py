@@ -1,7 +1,26 @@
 import os
 import pickle
+import vdmlab as vdm
 
-from startup import load_data
+from startup import load_shortcut_position
+
+
+def load_data(info):
+    thisdir = os.path.dirname(os.path.realpath(__file__))
+    dataloc = os.path.abspath(os.path.join(thisdir, 'cache', 'data'))
+
+    events = vdm.load_events(os.path.join(dataloc, info.event_filename), info.event_labels)
+
+    position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events)
+
+    spikes = vdm.load_spikes(os.path.join(dataloc, info.spikes_filepath))
+
+    lfp_swr = vdm.load_lfp(os.path.join(dataloc, info.lfp_swr_filename))
+
+    lfp_theta = vdm.load_lfp(os.path.join(dataloc, info.lfp_theta_filename))
+
+    return events, position, spikes, lfp_swr, lfp_theta
+
 
 def save_data(info):
     thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -76,5 +95,6 @@ if __name__ == "__main__":
     infos = spike_sorted_infos
 
     for info in infos:
+        print(info.session_id)
         save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)

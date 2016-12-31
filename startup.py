@@ -13,23 +13,6 @@ def convert_to_cm(path_pts, xy_conversion):
     return path_pts
 
 
-def load_data(info):
-    thisdir = os.path.dirname(os.path.realpath(__file__))
-    dataloc = os.path.abspath(os.path.join(thisdir, 'cache', 'data'))
-
-    events = vdm.load_events(os.path.join(dataloc, info.event_filename), info.event_labels)
-
-    position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events)
-
-    spikes = vdm.load_spikes(os.path.join(dataloc, info.spikes_filepath))
-
-    lfp_swr = vdm.load_lfp(os.path.join(dataloc, info.lfp_swr_filename))
-
-    lfp_theta = vdm.load_lfp(os.path.join(dataloc, info.lfp_theta_filename))
-
-    return events, position, spikes, lfp_swr, lfp_theta
-
-
 def extract_xy(target, info):
     """Extracts x and y from neuralynx target. Converts to cm.
 
@@ -92,8 +75,9 @@ def load_shortcut_position(info, filename, events):
 
     # This correction method assumes we are working with two targets
     # (eg. subtracts the two targets, averages over two targets, etc.)
-    if xs.shape[1] != 2 or ys.shape[1] != 2:
-        raise ValueError("must have two targets for x and y")
+    # if xs.shape[1] != 2 or ys.shape[1] != 2:
+    #     raise ValueError("must have two targets for x and y")
+    print(xs.shape[1], ys.shape[1])
 
     # Put the LED events in the same array, sorted by time
     leds = []
