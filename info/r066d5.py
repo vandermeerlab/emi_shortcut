@@ -46,7 +46,7 @@ task_times['phase3'] = vdm.Epoch(np.array([5578.7, 8584.7]))
 task_times['postrecord'] = vdm.Epoch(np.array([8674.2, 8976.3]))
 
 pxl_to_cm = (7.2408, 7.1628)
-scale_targets = (3.6, 3.6)
+scale_targets = (3.65, 3.5)
 
 fs = 2000
 

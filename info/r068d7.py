@@ -1,7 +1,9 @@
+import os
 import numpy as np
 import vdmlab as vdm
 from startup import convert_to_cm
 
+rat_id = 'R068_EI'
 session_id = 'R068d7'
 session = 'R068-2014-12-09'
 
@@ -10,13 +12,29 @@ behavior = 'shortcut'
 target = 'dCA1'
 experimenter = 'Emily Irvine'
 
-pos_mat = session + '-vt.mat'
-event_mat = session + '-event.mat'
-# spike_mat = session + '-spike.mat'
+event_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-Events.nev')
+event_labels = dict(led1='TTL Output on AcqSystem1_0 board 0 port 2 value (0x0001).',
+                    led2='TTL Output on AcqSystem1_0 board 0 port 2 value (0x0002).',
+                    ledoff='TTL Output on AcqSystem1_0 board 0 port 2 value (0x0000).',
+                    pb1id='TTL Input on AcqSystem1_0 board 0 port 1 value (0x0040).',
+                    pb2id='TTL Input on AcqSystem1_0 board 0 port 1 value (0x0020).',
+                    pboff='TTL Input on AcqSystem1_0 board 0 port 1 value (0x0000).',
+                    feeder1='TTL Output on AcqSystem1_0 board 0 port 0 value (0x0004).',
+                    feeder2='TTL Output on AcqSystem1_0 board 0 port 0 value (0x0040).',
+                    feederoff='TTL Output on AcqSystem1_0 board 0 port 0 value (0x0000).')
 
-good_lfp = [session + '-csc14c.ncs']
-good_swr = [session + '-csc14.mat']
-good_theta = [session + '-csc03.mat']
+position_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-VT1.nvt')
+
+lfp_swr_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC03c.ncs')
+lfp_theta_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC15c.ncs')
+
+spikes_filepath = os.path.join('data-working', rat_id, session + '_recording')
+
+pickled_events = session + '-event.pkl'
+pickled_position = session + '-position.pkl'
+pickled_lfp_swr = session + '-lfp_swr.pkl'
+pickled_lfp_theta = session + '-lfp_theta.pkl'
+pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
 task_times['prerecord'] = vdm.Epoch(np.array([672.6674, 1000.1]))
@@ -28,6 +46,7 @@ task_times['phase3'] = vdm.Epoch(np.array([5497.3, 8238.8]))
 task_times['postrecord'] = vdm.Epoch(np.array([8262.5, 8619.6]))
 
 pxl_to_cm = (7.1911, 6.8155)
+scale_targets = (3.6, 3.5)
 
 fs = 2000
 
