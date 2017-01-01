@@ -78,7 +78,7 @@ def sort_led_locations(info, events, times):
     return feeder_x_location, feeder_y_location
 
 
-def correct_targets(subset_x, subset_y, feeder_x, feeder_y):
+def correct_targets(subset_x, subset_y, feeder_x, feeder_y, contamination_thresh=3):
     col_idx = (np.sum(subset_x == 0, axis=0) == subset_x.shape[0]) & (
     np.sum(subset_y == 0, axis=0) == subset_y.shape[0])
     subset_x = subset_x[:, ~col_idx]
@@ -92,7 +92,6 @@ def correct_targets(subset_x, subset_y, feeder_x, feeder_y):
     target_y_var = np.var(subset_y, axis=1)
 
     # Contaminated samples are using the feeder LED instead of the implant LEDs
-    contamination_thresh = 5
     contaminated_idx = (target_x_var > contamination_thresh) | (target_y_var > contamination_thresh)
 
     # Non contaminated implant LED samples with targets get averaged
@@ -156,7 +155,7 @@ def median_filter(x, y, kernel=3):
     return x, y
 
 
-def load_shortcut_position(info, filename):
+def load_shortcut_position(info, filename, events):
     """Loads and corrects shortcut position.
 
     Parameters
