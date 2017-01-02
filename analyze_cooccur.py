@@ -105,10 +105,9 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     infos = spike_sorted_infos
 
-    all_tracks_tc = False
+    all_tracks_tc = True
 
-    experiment_times = ['pauseA', 'pauseB']
-    # experiment_times = ['prerecord', 'postrecord']
+    experiment_times = ['prerecord', 'postrecord', 'pauseA', 'pauseB']
     for experiment_time in experiment_times:
         print(experiment_time)
         for info in infos:

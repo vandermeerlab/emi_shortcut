@@ -4,20 +4,9 @@ import pickle
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_fields import unique_fields
-from analyze_tuning_curves import get_tc_1d
+from analyze_fields import get_unique_fields
+from analyze_tuning_curves import analyze
 from analyze_plotting import plot_fields
-
-import info.R063d2_info as r063d2
-import info.R063d3_info as r063d3
-import info.R063d4_info as r063d4
-import info.R063d5_info as r063d5
-import info.R063d6_info as r063d6
-import info.R066d1_info as r066d1
-import info.R066d2_info as r066d2
-import info.R066d3_info as r066d3
-import info.R066d4_info as r066d4
-import info.R067d1_info as r067d1
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -26,19 +15,19 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'fields')
 
 
-# infos = [r063d4]
-infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
+from run import spike_sorted_infos
+infos = spike_sorted_infos
 
 for info in infos:
-    print(info.session_id)
+    print('place_fields:', info.session_id)
 
-    tc_filename = info.session_id + '_tuning_1d.pkl'
-    pickled_tc = os.path.join(pickle_filepath, tc_filename)
+    # tc_filename = info.session_id + '_tuning_curve.pkl'
+    # pickled_tc = os.path.join(pickle_filepath, tc_filename)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
 
     speed = position.speed(t_smooth=0.5)
-    run_idx = np.squeeze(speed.data) >= info.run_threshold
+    run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
     t_start = info.task_times['phase3'].start
@@ -48,7 +37,13 @@ for info in infos:
 
     sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
-    tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc, binsize=3)
+    tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+    pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+    if os.path.isfile(pickled_tuning_curve):
+        with open(pickled_tuning_curve, 'rb') as fileobj:
+            tuning_curve = pickle.load(fileobj)
+    else:
+        tuning_curves = analyze(info)
 
     heatmap_filename = info.session_id + '_spike_heatmaps.pkl'
     pickled_spike_heatmaps = os.path.join(pickle_filepath, heatmap_filename)
@@ -72,9 +67,9 @@ for info in infos:
     novel_compare = vdm.find_fields(tuning_curves['novel'], hz_thresh=3, min_length=1,
                                     max_length=len(tuning_curves['novel']), max_mean_firing=10)
 
-    u_fields_unique = unique_fields(u_fields, shortcut_compare, novel_compare)
-    shortcut_fields_unique = unique_fields(shortcut_fields, u_compare, novel_compare)
-    novel_fields_unique = unique_fields(novel_fields, u_compare, shortcut_compare)
+    u_fields_unique = get_unique_fields(u_fields, shortcut_compare, novel_compare)
+    shortcut_fields_unique = get_unique_fields(shortcut_fields, u_compare, novel_compare)
+    novel_fields_unique = get_unique_fields(novel_fields, u_compare, shortcut_compare)
 
     u_fields_single = vdm.get_single_field(u_fields_unique)
     shortcut_fields_single = vdm.get_single_field(shortcut_fields_unique)

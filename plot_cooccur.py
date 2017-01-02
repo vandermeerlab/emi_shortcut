@@ -224,11 +224,7 @@ if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos
     infos = spike_sorted_infos
 
-    # all_tracks_tc = True
-    # plot_prepost(infos, exp_times=['prerecord', 'postrecord'])
-
     all_tracks_tc = True
-    if all_tracks_tc:
-        plot(infos, all_tracks_tc)
-    else:
-        plot(infos)
+    plot_prepost(infos, exp_times=['prerecord', 'postrecord'], all_tracks_tc=all_tracks_tc)
+
+    plot(infos, all_tracks_tc=all_tracks_tc)

@@ -497,24 +497,24 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
 
     """
     plots_per_fig = row * col
-    num_figures = range(int(np.ceil(len(swrs) / plots_per_fig)))
+    n_figures = range(int(np.ceil(swrs.n_epochs / plots_per_fig)))
 
-    for fig in num_figures:
-        print('figure', fig, 'of', np.max(list(num_figures)))
+    for fig in n_figures:
+        print('figure', fig, 'of', np.max(list(n_figures)))
         plt.figure(fig)
 
         stop_idx = plots_per_fig * (fig + 1)
         start_idx = stop_idx - plots_per_fig
-        if stop_idx > len(swrs):
-            stop_idx = len(swrs) + 1
+        if stop_idx > swrs.n_epochs:
+            stop_idx = swrs.n_epochs + 1
 
-        for i, swr in enumerate(swrs[start_idx:stop_idx]):
-            start = vdm.find_nearest_idx(lfp.time, swr.time[0])
-            stop = vdm.find_nearest_idx(lfp.time, swr.time[-1])
-            plt.subplot(row, col, i + 1)
+        for i, (starts, stops) in enumerate(zip(swrs.starts[start_idx:stop_idx], swrs.stops[start_idx:stop_idx])):
+            start = vdm.find_nearest_idx(lfp.time, starts)
+            stop = vdm.find_nearest_idx(lfp.time, stops)
+            plt.subplot(row, col, i+1)
 
             plt.plot(lfp.time[start-buffer:stop+buffer], lfp.data[start-buffer:stop+buffer], 'k')
-            plt.plot(swr.time, swr.data, 'r')
+            plt.plot(lfp.time[start:stop], lfp.data[start:stop], 'r')
 
             plt.axis('off')
 

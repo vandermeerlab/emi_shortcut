@@ -3,23 +3,14 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pickle
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_tuning_curves import get_tc_1d, find_ideal, get_odd_firing_idx
+from analyze_tuning_curves import analyze, find_ideal, get_odd_firing_idx
 
-import info.R063d2_info as r063d2
-import info.R063d3_info as r063d3
-import info.R063d4_info as r063d4
-import info.R063d5_info as r063d5
-import info.R063d6_info as r063d6
-import info.R066d1_info as r066d1
-import info.R066d2_info as r066d2
-import info.R066d3_info as r066d3
-import info.R066d4_info as r066d4
-import info.R067d1_info as r067d1
-
-import info.R068d1_info as r068d1
+from run import spike_sorted_infos
+infos = spike_sorted_infos
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -28,10 +19,6 @@ output_filepath = os.path.join(thisdir, 'plots', 'sequence')
 
 sns.set_style('white')
 sns.set_style('ticks')
-
-
-infos = [r063d2]
-# infos = [r063d2, r063d3, r063d4, r063d5, r063d6, r066d1, r066d2, r066d3, r066d4, r067d1]
 
 colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
            '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
@@ -49,10 +36,7 @@ for info in infos:
 
     for trajectory in ['u', 'shortcut']:
 
-        print(info.session_id, trajectory)
-
-        tc_filename = info.session_id + '_tuning_1d.pkl'
-        pickled_tc = os.path.join(pickle_filepath, tc_filename)
+        print('sequence:', info.session_id, trajectory)
 
         events, position, spikes, lfp, lfp_theta = get_data(info)
 
@@ -67,7 +51,13 @@ for info in infos:
 
         sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
 
-        tuning_curves = get_tc_1d(info, sliced_pos, sliced_spikes, pickled_tc, binsize=3)
+        tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+        pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+        if os.path.isfile(pickled_tuning_curve):
+            with open(pickled_tuning_curve, 'rb') as fileobj:
+                tuning_curves = pickle.load(fileobj)
+        else:
+            tuning_curves = analyze(info)
 
         # filename = info.session_id + '_spike_heatmaps.pkl'
         # pickled_spike_heatmaps = os.path.join(pickle_filepath, filename)
@@ -116,10 +106,10 @@ for info in infos:
                     field_spikes.append(spikes[idx])
                     field_tc.append(tuning_curves[trajectory][idx])
 
-        for i, (run_start, run_stop, swr_start, swr_stop) in enumerate(zip(sequence['run'].starts,
-                                                                               sequence['run'].stops,
-                                                                               sequence['swr'].starts,
-                                                                               sequence['swr'].stops)):
+        for i, (run_start, run_stop, swr_start, swr_stop) in enumerate(zip(info.sequence['run'].starts,
+                                                                           info.sequence['run'].stops,
+                                                                           info.sequence['swr'].starts,
+                                                                           info.sequence['swr'].stops)):
             rows = len(field_spikes) + 2
             cols = 7
             fig = plt.figure()
@@ -187,8 +177,8 @@ for info in infos:
 
             plt.tight_layout()
             fig.subplots_adjust(hspace=0, wspace=0.1)
-            plt.show()
-            # filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
-            # savepath = os.path.join(output_filepath, filename)
-            # plt.savefig(savepath, dpi=300, bbox_inches='tight')
-            # plt.close()
+            # plt.show()
+            filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
+            savepath = os.path.join(output_filepath, filename)
+            plt.savefig(savepath, dpi=300, bbox_inches='tight')
+            plt.close()

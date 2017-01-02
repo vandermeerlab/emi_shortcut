@@ -290,29 +290,16 @@ if __name__ == "__main__":
     by_trajectory = False
 
     all_tracks_tc = False
-    if all_tracks_tc:
-        tuning_curves = []
-        for info in infos:
-            tuning_curve_filename = info.session_id + '_tuning-curve_all-phases.pkl'
-            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curves.append(pickle.load(fileobj))
 
-        plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc)
-        plot_pauses(infos, tuning_curves, all_tracks_tc)
-        plot_phases(infos, tuning_curves, all_tracks_tc)
-        plot_normalized(infos, tuning_curves, all_tracks_tc)
+    tuning_curves = []
+    for info in infos:
+        tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+        pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+        with open(pickled_tuning_curve, 'rb') as fileobj:
+            tuning_curves.append(pickle.load(fileobj))
 
-    else:
-        tuning_curves = []
-        for info in infos:
-            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curves.append(pickle.load(fileobj))
-
-        # plot_errors(infos, tuning_curves, by_trajectory)
-        # plot_pauses(infos, tuning_curves)
-        # plot_phases(infos, tuning_curves)
-        # plot_normalized(infos, tuning_curves)
-        plot_all_times(infos, tuning_curves)
+    plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc=all_tracks_tc)
+    plot_pauses(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
+    plot_phases(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
+    plot_normalized(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
+    plot_all_times(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
