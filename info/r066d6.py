@@ -86,3 +86,11 @@ shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2']
 
 novel_trajectory = [path_pts['novel1'], path_pts['novel2']]
 
+default = task_times['postrecord'].start
+
+sequence = dict(u=dict(), shortcut=dict())
+sequence['u']['swr'] = vdm.Epoch(np.array([[25074, 25077]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[23100, 23150]]))
+
+sequence['shortcut']['swr'] = vdm.Epoch(np.array([[29837, 29840]]))
+sequence['shortcut']['run'] = vdm.Epoch(np.array([[29046, 29111]]))

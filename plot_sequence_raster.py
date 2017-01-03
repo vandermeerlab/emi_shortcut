@@ -1,16 +1,15 @@
 import os
-
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
+from shapely.geometry import Point, LineString
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_tuning_curves import analyze, find_ideal, get_odd_firing_idx
-
-from run import spike_sorted_infos
-infos = spike_sorted_infos
+from analyze_maze import find_zones
+from analyze_fields import categorize_fields
+from analyze_tuning_curves import get_odd_firing_idx
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -20,165 +19,111 @@ output_filepath = os.path.join(thisdir, 'plots', 'sequence')
 sns.set_style('white')
 sns.set_style('ticks')
 
-colours = ['#bd0026', '#fc4e2a', '#ef3b2c', '#ec7014', '#fe9929',
-           '#78c679', '#41ab5d', '#238443', '#66c2a4', '#41b6c4',
-           '#1d91c0', '#8c6bb1', '#225ea8', '#88419d', '#ae017e',
-           '#dd3497', '#f768a1', '#fcbba1', '#fc9272', '#fb6a4a',
-           '#e31a1c', '#fb6a4a', '#993404', '#b30000', '#800026',
-           '#bd0026', '#fc4e2a', '#fb6a4a', '#ef3b2c', '#ec7014',
-           '#fe9929', '#78c679', '#41ab5d', '#238443', '#66c2a4',
-           '#41b6c4', '#1d91c0', '#8c6bb1', '#225ea8', '#88419d',
-           '#ae017e', '#dd3497', '#f768a1', '#fcbba1', '#fc9272',
-           '#fb6a4a', '#e31a1c', '#fb6a4a', '#993404', '#b30000',
-           '#800026']
 
-for info in infos:
+def plot_sequence(ordered_spikes, lfp, start_time, stop_time, savepath=None):
+    rows = len(ordered_spikes)
+
+    ms = 132. / rows
+    mew = 0.6
+    spike_loc = 1
+
+    fig = plt.figure(figsize=(2, 3))
+    ax1 = plt.subplot2grid((rows, 1), (0, 0), rowspan=rows)
+
+    for idx, neuron_spikes in enumerate(ordered_spikes):
+        ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time))+(idx*spike_loc)-1, '|',
+                 color='k', ms=ms, mew=mew)
+    ax1.set_xticks([])
+    ax1.set_xlim([start_time, stop_time])
+    ax1.set_ylim([-0.5, len(ordered_spikes)*spike_loc])
+
+    vdm.add_scalebar(ax1, matchy=False, bbox_transform=fig.transFigure,
+                     bbox_to_anchor=(0.9, 0.03), units='s')
+
+    sns.despine(bottom=True)
+    plt.tight_layout(h_pad=0.003)
+
+    if savepath is not None:
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
+        plt.close()
+    else:
+        plt.show()
+
+
+def analyze(info, output_filepath=output_filepath, savefig=True):
+    print(info.session_id)
+
+    events, position, spikes, lfp, lfp_theta = get_data(info)
+
+    times = info.task_times['phase3']
+
+    sliced_spikes = [spiketrain.time_slice(times.start, times.stop) for spiketrain in spikes]
+    sliced_pos = position.time_slice(times.start, times.stop)
+
+    binsize = 3
+    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
+    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
+
+    tc_filename = info.session_id + '_tuning-curve.pkl'
+    pickled_tuning_curve = os.path.join(pickle_filepath, tc_filename)
+    with open(pickled_tuning_curve, 'rb') as fileobj:
+        tuning_curves = pickle.load(fileobj)
+
+    xcenters = (xedges[1:] + xedges[:-1]) / 2.
+    ycenters = (yedges[1:] + yedges[:-1]) / 2.
+    xy_centers = vdm.cartesian(xcenters, ycenters)
+
+    zones = find_zones(info, expand_by=4)
+
+    field_thresh = 1.0
+    fields_tunings = categorize_fields(tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
+
+    u_line = LineString(info.u_trajectory)
+    shortcut_line = LineString(info.shortcut_trajectory)
+    novel_line = LineString(info.novel_trajectory)
+
+    u_dist = []
+    for neuron in fields_tunings['u']:
+        yy = ycenters[np.where(fields_tunings['u'][neuron] == fields_tunings['u'][neuron].max())[0][0]]
+        xx = xcenters[np.where(fields_tunings['u'][neuron] == fields_tunings['u'][neuron].max())[1][0]]
+
+        pt = Point(xx, yy)
+        if zones['u'].contains(pt):
+            u_dist.append((u_line.project(pt), neuron))
+
+    ordered_dist_u = sorted(u_dist, key=lambda x:x[0])
+    sort_idx = []
+    for neuron in ordered_dist_u:
+        sort_idx.append(neuron[1])
+
+    sort_spikes = []
+    sort_tuning_curves = []
+    for neuron in sort_idx:
+        sort_tuning_curves.append(fields_tunings['u'][neuron])
+        sort_spikes.append(spikes[neuron])
+
+
+    odd_firing_idx = get_odd_firing_idx(sort_tuning_curves, max_mean_firing=2)
+    ordered_spikes = []
+    ordered_fields =[]
+    for i, neuron in enumerate(sort_spikes):
+        if i not in odd_firing_idx:
+            ordered_spikes.append(neuron)
+            ordered_fields.append(sort_tuning_curves[i])
 
     for trajectory in ['u', 'shortcut']:
-
-        print('sequence:', info.session_id, trajectory)
-
-        events, position, spikes, lfp, lfp_theta = get_data(info)
-
-        speed = position.speed(t_smooth=0.5)
-        run_idx = np.squeeze(speed.data) >= info.run_threshold
-        run_pos = position[run_idx]
-
-        t_start = info.task_times['phase3'].start
-        t_stop = info.task_times['phase3'].stop
-
-        sliced_pos = run_pos.time_slice(t_start, t_stop)
-
-        sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
-
-        tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-        pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-        if os.path.isfile(pickled_tuning_curve):
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curves = pickle.load(fileobj)
-        else:
-            tuning_curves = analyze(info)
-
-        # filename = info.session_id + '_spike_heatmaps.pkl'
-        # pickled_spike_heatmaps = os.path.join(pickle_filepath, filename)
-        # if os.path.isfile(pickled_spike_heatmaps):
-        #     with open(pickled_spike_heatmaps, 'rb') as fileobj:
-        #         spike_heatmaps = pickle.load(fileobj)
-        # else:
-        #     spikes = info.get_spikes()
-        #
-        #     all_neurons = list(range(1, len(spikes['time'])))
-        #     spike_heatmaps = vdm.get_heatmaps(all_neurons, spikes, run_pos)
-        #     with open(pickled_spike_heatmaps, 'wb') as fileobj:
-        #         pickle.dump(spike_heatmaps, fileobj)
-
-        t_start = info.task_times['prerecord'].start
-        t_stop = info.task_times['postrecord'].stop
-
-        t_start_idx = vdm.find_nearest_idx(run_pos.time, t_start)
-        t_stop_idx = vdm.find_nearest_idx(run_pos.time, t_stop)
-
-        sliced_pos = run_pos[t_start_idx:t_stop_idx]
-        linear, zone = find_ideal(info, sliced_pos, expand_by=2)
-
-        # swr_times, swr_idx, filtered_butter = vdm.detect_swr_hilbert(csc, fs=info.fs)
-
-        sort_idx = vdm.get_sort_idx(tuning_curves[trajectory])
-
-        odd_firing_idx = get_odd_firing_idx(tuning_curves[trajectory], max_mean_firing=10)
-
-        fields = vdm.find_fields(tuning_curves[trajectory])
-
-        with_fields = vdm.get_single_field(fields)
-
-        sequence = info.sequence[trajectory]
-        this_linear = linear[trajectory]
-
-        these_fields = []
-        for key in with_fields:
-            these_fields.append(key)
-
-        field_spikes = []
-        field_tc = []
-        for idx in sort_idx:
-            if idx not in odd_firing_idx:
-                if idx in these_fields:
-                    field_spikes.append(spikes[idx])
-                    field_tc.append(tuning_curves[trajectory][idx])
-
-        for i, (run_start, run_stop, swr_start, swr_stop) in enumerate(zip(info.sequence['run'].starts,
-                                                                           info.sequence['run'].stops,
-                                                                           info.sequence['swr'].starts,
-                                                                           info.sequence['swr'].stops)):
-            rows = len(field_spikes) + 2
-            cols = 7
-            fig = plt.figure()
-
-            run_linear = this_linear.time_slice(run_start, run_stop)
-
-            ax1 = plt.subplot2grid((rows, cols), (rows-2, 1), rowspan=2, colspan=4)
-            ax1.plot(run_linear.time, np.zeros(len(run_linear.time)), color='#bdbdbd', lw=1)
-            ax1.plot(run_linear.time, -run_linear.x, 'b.', ms=3)
-            # ax1.set_xlim([run_start, run_stop])
-            plt.setp(ax1, xticks=[], xticklabels=[], yticks=[])
-            sns.despine(ax=ax1)
-
-            run_spikes = []
-            for spiketrain in field_spikes:
-                run_spikes.append(spiketrain.time_slice(run_start, run_stop))
-
-            for ax_loc in range(len(field_spikes)):
-                ax = plt.subplot2grid((rows, cols), (ax_loc, 1), colspan=4, sharex=ax1)
-                ax.plot(run_spikes[ax_loc].time, np.ones(len(run_spikes[ax_loc].time)), '|',
-                        color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
-                # ax.set_xlim([run_start, run_stop])
-                if ax_loc == 0:
-                    vdm.add_scalebar(ax, matchy=False, bbox_transform=ax.transAxes, bbox_to_anchor=(0.9, 1.1))
-                if ax_loc == len(field_spikes)-1:
-                    sns.despine(ax=ax)
+        for time in ['run', 'swr']:
+            for i, (start, stop) in enumerate(zip(info.sequence[trajectory][time].starts, info.sequence[trajectory][time].stops)):
+                savepath = output_filepath + info.session_id + '_' + time + '-' + trajectory + str(i) + '.pdf'
+                if savefig:
+                    plot_sequence(ordered_spikes, lfp, start, stop, savepath)
                 else:
-                    sns.despine(ax=ax, bottom=True)
-                plt.setp(ax, xticks=[], xticklabels=[], yticks=[])
+                    plot_sequence(ordered_spikes, lfp, start, stop)
 
-            ax2 = plt.subplot2grid((rows, cols), (rows-2, 5), rowspan=2, colspan=2)
-            ax2.plot(lfp.time_slice(swr_start, swr_stop).time, lfp.time_slice(swr_start, swr_stop).data, 'k', lw=1)
-            # ax2.set_xlim([swr_start, swr_stop])
-            plt.setp(ax2, xticks=[], xticklabels=[], yticks=[])
-            sns.despine(ax=ax2)
 
-            swr_spikes = []
-            for spiketrain in field_spikes:
-                swr_spikes.append(spiketrain.time_slice(swr_start, swr_stop))
+if __name__ == "__main__":
+    from run import spike_sorted_infos
+    infos = spike_sorted_infos
 
-            for ax_loc in range(len(swr_spikes)):
-                ax = plt.subplot2grid((rows, cols), (ax_loc, 5), colspan=2, sharex=ax2)
-                ax.plot(swr_spikes[ax_loc].time, np.ones(len(swr_spikes[ax_loc].time)), '|',
-                        color=colours[ax_loc % len(colours)], ms=sequence['ms'], mew=0.7)
-                # ax.set_xlim([swr_start, swr_stop])
-                if ax_loc == 0:
-                    vdm.add_scalebar(ax, matchy=False, bbox_transform=ax.transAxes, bbox_to_anchor=(0.9, 1.1))
-                if ax_loc == len(field_spikes)-1:
-                    sns.despine(ax=ax)
-                else:
-                    sns.despine(ax=ax, bottom=True)
-                plt.setp(ax, xticks=[], xticklabels=[], yticks=[])
-
-            x = list(range(0, np.shape(field_tc)[1]))
-
-            for ax_loc in range(len(field_tc)):
-                ax = plt.subplot2grid((rows, cols), (ax_loc, 0))
-                ax.plot(field_tc[ax_loc], color=colours[ax_loc % len(colours)])
-                ax.fill_between(x, 0, field_tc[ax_loc], facecolor=colours[ax_loc % len(colours)])
-                max_loc = np.where(field_tc[ax_loc] == np.max(field_tc[ax_loc]))[0][0]
-                ax.text(max_loc, np.max(field_tc[ax_loc])*0.2,
-                        str(int(np.ceil(np.max(field_tc[ax_loc])))), fontsize=8)
-                plt.setp(ax, xticks=[], xticklabels=[], yticks=[])
-                sns.despine(ax=ax, bottom=True, left=True)
-
-            plt.tight_layout()
-            fig.subplots_adjust(hspace=0, wspace=0.1)
-            # plt.show()
-            filename = info.session_id + '_sequence-' + trajectory + str(i) + '.png'
-            savepath = os.path.join(output_filepath, filename)
-            plt.savefig(savepath, dpi=300, bbox_inches='tight')
-            plt.close()
+    for info in infos:
+        analyze(info)

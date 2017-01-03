@@ -99,3 +99,10 @@ shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2']
 
 novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
                     path_pts['novel2']]
+
+sequence = dict(u=dict(), shortcut=dict())
+sequence['u']['swr'] = vdm.Epoch(np.array([[21643, 21647]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[21345, 21377]]))
+
+sequence['shortcut']['swr'] = vdm.Epoch(np.array([[22255, 22257]]))
+sequence['shortcut']['run'] = vdm.Epoch(np.array([[18567, 18607]]))

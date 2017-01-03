@@ -183,8 +183,8 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     track_pos = run_pos.time_slices(track_starts, track_stops)
 
     binsize = 3
-    xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
-    yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
+    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
+    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
 
     track_starts = [info.task_times['phase3'].start]
     track_stops = [info.task_times['phase3'].stop]

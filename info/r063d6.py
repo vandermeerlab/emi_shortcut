@@ -102,12 +102,8 @@ sequence['u']['swr'] = vdm.Epoch(np.array([[9741.2, 9741.4],
                                            [9717, 9717.8]]))
 sequence['u']['run'] = vdm.Epoch(np.array([[7155, 7185],
                                            [3042, 3064]]))
-sequence['u']['ms'] = 10
 
 sequence['shortcut']['swr'] = vdm.Epoch(np.array([[9276.93, 9277.21],
                                                   [9702, 9702.8]]))
 sequence['shortcut']['run'] = vdm.Epoch(np.array([[6710, 6730],
                                                   [7392, 7422]]))
-sequence['shortcut']['ms'] = 10
-
-
