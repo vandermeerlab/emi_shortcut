@@ -233,8 +233,8 @@ def analyze(info, use_all_tracks=False):
     track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
     binsize = 3
-    xedges = np.arange(track_pos.x.min(), track_pos.x.max() + binsize, binsize)
-    yedges = np.arange(track_pos.y.min(), track_pos.y.max() + binsize, binsize)
+    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
+    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
 
     tuning_curves = vdm.tuning_curve_2d(tc_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
 

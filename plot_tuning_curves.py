@@ -29,7 +29,7 @@ def plot(info, tuning_curve, num=10):
     xx, yy = np.meshgrid(xedges, yedges)
 
     for i, neuron in enumerate(tuning_curve[0:num]):
-        pp = plt.pcolormesh(xx, yy, neuron, cmap='YlGn')
+        pp = plt.pcolormesh(xx, yy, neuron, cmap='pink_r')
         plt.colorbar(pp)
         plt.axis('off')
         savepath = os.path.join(output_filepath, info.session_id + '_tuning-curves_' + str(i) + '.png')

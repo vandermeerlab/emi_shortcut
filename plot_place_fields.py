@@ -41,7 +41,7 @@ for info in infos:
     pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
     if os.path.isfile(pickled_tuning_curve):
         with open(pickled_tuning_curve, 'rb') as fileobj:
-            tuning_curve = pickle.load(fileobj)
+            tuning_curves = pickle.load(fileobj)
     else:
         tuning_curves = analyze(info)
 
