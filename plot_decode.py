@@ -1,9 +1,8 @@
 import os
-import numpy as np
 import pickle
 
-from analyze_decode import analyze, compare_rates, compare_lengths, combine_decode
-from analyze_plotting import (plot_decoded, plot_decoded_pause, plot_decoded_errors,
+from analyze_decode import compare_rates, compare_lengths, combine_decode
+from utils_plotting import (plot_decoded, plot_decoded_pause, plot_decoded_errors,
                                 plot_compare_decoded_pauses, plot_compare_decoded)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))

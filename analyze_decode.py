@@ -7,7 +7,7 @@ from shapely.geometry import Point, LineString
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_maze import find_zones
+from utils_maze import find_zones
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')

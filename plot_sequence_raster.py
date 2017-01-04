@@ -7,8 +7,8 @@ from shapely.geometry import Point, LineString
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_maze import find_zones
-from analyze_fields import categorize_fields
+from utils_maze import find_zones
+from utils_fields import categorize_fields
 from analyze_tuning_curves import get_odd_firing_idx
 
 thisdir = os.path.dirname(os.path.realpath(__file__))

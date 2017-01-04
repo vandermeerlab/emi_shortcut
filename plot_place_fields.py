@@ -4,9 +4,9 @@ import pickle
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_fields import get_unique_fields
+from utils_fields import get_unique_fields
 from analyze_tuning_curves import analyze
-from analyze_plotting import plot_fields
+from utils_plotting import plot_fields
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))

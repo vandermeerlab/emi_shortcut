@@ -2,15 +2,9 @@ import os
 import numpy as np
 import pickle
 
-import vdmlab as vdm
-
-from loading_data import get_data
-from analyze_fields import get_unique_fields, categorize_fields
-from analyze_maze import find_zones
-from analyze_cooccur import analyze
-from analyze_plotting import (plot_cooccur,
-                              plot_cooccur_combined,
-                              plot_cooccur_weighted_pauses)
+from utils_plotting import (plot_cooccur,
+                            plot_cooccur_combined,
+                            plot_cooccur_weighted_pauses)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 

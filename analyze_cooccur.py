@@ -5,8 +5,8 @@ import pickle
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_fields import get_unique_fields, categorize_fields
-from analyze_maze import find_zones
+from utils_fields import get_unique_fields, categorize_fields
+from utils_maze import find_zones
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 

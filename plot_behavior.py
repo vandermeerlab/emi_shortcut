@@ -3,8 +3,8 @@ import numpy as np
 import scipy
 
 from loading_data import get_data
-from analyze_maze import get_trial_idx, get_zones
-from analyze_plotting import plot_proportions, plot_bydurations, plot_bytrial
+from utils_maze import get_trial_idx, get_zones
+from utils_plotting import plot_proportions, plot_bydurations, plot_bytrial
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 

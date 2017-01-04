@@ -2,7 +2,7 @@ import os
 import vdmlab as vdm
 
 from loading_data import get_data
-from analyze_plotting import plot_swrs
+from utils_plotting import plot_swrs
 
 from run import spike_sorted_infos
 infos = spike_sorted_infos
