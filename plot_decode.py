@@ -87,7 +87,7 @@ def plot_pauses(infos, tuning_curves, all_tracks_tc=False):
     if all_tracks_tc == True:
         filename = 'combined-pauses_decoded_all-tracks.png'
     else:
-        filename = 'combined6-pauses_decoded.pdf'
+        filename = 'combined-pauses_decoded.pdf'
     savepath = os.path.join(output_filepath, filename)
     plot_compare_decoded_pauses(decoded_pausea['combined_decoded'], decoded_pausea['total_times'],
                                 decoded_pauseb['combined_decoded'], decoded_pauseb['total_times'],
@@ -157,8 +157,6 @@ def plot_all_times(infos, tuning_curves, all_tracks_tc=False):
     all_decoded.append(get_summary(decoded_phase1['combined_decoded'], decoded_phase1['total_times']))
     all_labels.append('Phase 1')
 
-    print('phase1:', decoded_phase1['total_times'])
-
     experiment_time = 'pauseA'
     print('getting decoded', experiment_time)
     decoded_pausea = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
@@ -166,28 +164,26 @@ def plot_all_times(infos, tuning_curves, all_tracks_tc=False):
     all_decoded.append(get_summary(decoded_pausea['combined_decoded'], decoded_pausea['total_times']))
     all_labels.append('Pause A')
 
-    print('pauseA:', decoded_pausea['total_times'])
+    experiment_time = 'phase2'
+    print('getting decoded', experiment_time)
+    decoded_phase2 = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
+                                    shuffle_id=False, tuning_curves=tuning_curves)
+    all_decoded.append(get_summary(decoded_phase2['combined_decoded'], decoded_phase2['total_times']))
+    all_labels.append('Phase 2')
 
-    # experiment_time = 'phase2'
-    # print('getting decoded', experiment_time)
-    # decoded_phase2 = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
-    #                                 shuffle_id=False, tuning_curves=tuning_curves)
-    # all_decoded.append(get_summary(decoded_phase2['combined_decoded'], decoded_phase2['total_times']))
-    # all_labels.append('Phase 2')
-    #
-    # experiment_time = 'pauseB'
-    # print('getting decoded', experiment_time)
-    # decoded_pauseb = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
-    #                                 shuffle_id=False, tuning_curves=tuning_curves)
-    # all_decoded.append(get_summary(decoded_pauseb['combined_decoded'], decoded_pauseb['total_times']))
-    # all_labels.append('Pause B')
-    #
-    # experiment_time = 'phase3'
-    # print('getting decoded', experiment_time)
-    # decoded_phase3 = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
-    #                                 shuffle_id=False, tuning_curves=tuning_curves)
-    # all_decoded.append(get_summary(decoded_phase3['combined_decoded'], decoded_phase3['total_times']))
-    # all_labels.append('Phase 3')
+    experiment_time = 'pauseB'
+    print('getting decoded', experiment_time)
+    decoded_pauseb = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
+                                    shuffle_id=False, tuning_curves=tuning_curves)
+    all_decoded.append(get_summary(decoded_pauseb['combined_decoded'], decoded_pauseb['total_times']))
+    all_labels.append('Pause B')
+
+    experiment_time = 'phase3'
+    print('getting decoded', experiment_time)
+    decoded_phase3 = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
+                                    shuffle_id=False, tuning_curves=tuning_curves)
+    all_decoded.append(get_summary(decoded_phase3['combined_decoded'], decoded_phase3['total_times']))
+    all_labels.append('Phase 3')
 
     experiment_time = 'postrecord'
     print('getting decoded', experiment_time)
@@ -201,15 +197,9 @@ def plot_all_times(infos, tuning_curves, all_tracks_tc=False):
     else:
         filename = 'combined-all_decoded.png'
 
-    print(len(all_decoded))
-
+    savepath = os.path.join(output_filepath, filename)
     ylabel = 'Proportion of time'
     plot_compare_decoded(all_decoded, all_labels, ylabel)
-
-    savepath = os.path.join(output_filepath, filename)
-    # plot_compare_decoded_pauses(decoded_phase2['combined_decoded'], decoded_phase2['total_times'],
-    #                             decoded_phase3['combined_decoded'], decoded_phase3['total_times'],
-    #                             ['Pause A', 'Pause B'], savepath=savepath)
 
 
 def plot_normalized(infos, tuning_curves, all_tracks_tc=False):
@@ -283,7 +273,7 @@ def get_outputs_normalized(infos, all_tracks_tc=False):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, days123_infos, days456_infos, r068_infos
+    from run import spike_sorted_infos, days123_infos, days456_infos, r063_infos
     infos = spike_sorted_infos
 
     by_trajectory = False

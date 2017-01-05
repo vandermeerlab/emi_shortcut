@@ -210,6 +210,8 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
         epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=3)
+        if epochs_interest.n_epochs == 0:
+            epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=1)
 
     counts_binsize = 0.025
     time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
@@ -239,7 +241,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     else:
         raise ValueError("decoded cannot be empty.")
 
-    zones = find_zones(info, expand_by=7)
+    zones = find_zones(info, expand_by=3)
     decoded_zones = point_in_zones(decoded, zones)
 
     keys = ['u', 'shortcut', 'novel']
@@ -344,8 +346,8 @@ if __name__ == "__main__":
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
             with open(pickled_tuning_curve, 'rb') as fileobj:
                 tuning_curve = pickle.load(fileobj)
-            # experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
-            experiment_times = ['pauseA', 'pauseB']
+            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+            # experiment_times = ['pauseA', 'pauseB']
             for experiment_time in experiment_times:
                 analyze(info, tuning_curve, experiment_time)
 
