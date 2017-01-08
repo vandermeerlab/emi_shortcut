@@ -110,9 +110,10 @@ if __name__ == "__main__":
     from run import (behavior_infos,
                      days1234_infos, days5678_infos,
                      r063_infos, r066_infos, r067_infos, r068_infos,
-                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
+                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos,
+                     spike_sorted_infos)
 
-    analyze(behavior_infos, 'all_behaviour', figsize='small')
+    analyze(spike_sorted_infos, 'all_behaviour', figsize='small')
     analyze(days1234_infos, 'early_behaviour', figsize='small')
     analyze(days5678_infos, 'late_behaviour', figsize='small')
 

@@ -548,7 +548,7 @@ def plot_decoded(decoded, y_label, savepath=None):
 
     plt.figure(figsize=(5, 4))
     ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
-    sns.axlabel(xlabel=' ', ylabel=y_label, fontsize=16)
+    ax.set(xlabel=' ', ylabel=y_label)
 
     sns.despine()
     plt.tight_layout()
@@ -589,7 +589,7 @@ def plot_decoded_pause(decode, total_times, savepath=None):
 
     plt.figure(figsize=(2.5, 2))
     ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
-    sns.axlabel(xlabel=' ', ylabel="Proportion of time", fontsize=16)
+    ax.set(xlabel=' ', ylabel="Proportion of time")
 
     sns.despine()
     plt.tight_layout()
@@ -653,7 +653,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
             line.set_mfc(edge_colour)
             line.set_mec(edge_colour)
 
-    sns.axlabel(xlabel=' ', ylabel="Error (cm)")
+    ax.set(xlabel=' ', ylabel="Error (cm)")
 
     plt.tight_layout()
     sns.despine()
