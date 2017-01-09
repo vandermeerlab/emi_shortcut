@@ -1,5 +1,5 @@
 # Data files
 
-There is currently no loader of Neuralynx data to python-readable output. We go through MATLAB as an intermediate and save those data files as a *.mat in this directory that can be read by Python. These files are ignored by `git` so they do not get committed to the repository.
+These files are ignored by `git` so they do not get committed to the repository.
 
-It is possible to generate these files with the shortcut data and MATLAB code in code-matlab.
+To conserve space, we store data from each session as a *.pkl file. On machines with space, the raw data is in a `data-working' folder here.

@@ -19,22 +19,23 @@ Getting started for this project
 Workflow
 ========
 
-* Get sorted data from server. Put in a location that is convenient - 
-  this location will need to be modified in the following code to 
-  point to where the data is located on your machine.
-* [MATLAB] run `emi_loading_data.m` to save the data 
-  (cscs, poss, events, spikes) in a format that can be read in Python.
+* Get sorted data from server. Put the data in `cache/data/data-working'. 
+  The info files give path instructions assuming the daa is here and each rat has 
+  a separate folder, with separate folders for each session within that folder.
+* [Python] run `loading_data.py` to save the data 
+  (lfps, positions, events, spikes) as a *.pkl.
 * [Python] run analysis scripts (see below for details).
 
 ## Specific analyses
 
 This code contains analyses for:
-* Behavior: `shortcut_behavior.py`
-* Tuning curves: `shortcut_tuning_curves.py`
-* Sharp-wave ripple detection: `shortcut_swr.py`
-* Place field detection: `shortcut_place_fields.py`
-* Co-occurrence: `shortcut_cooccur.py`
-* Plot sequences: `shortcut_plot_sequence.py`
+* Tuning curves: `analyze_tuning_curves.py`
+* Co-occurrence: `analyze_cooccur.py` and `plot_cooccur'
+* Decoding: `analyze_decode.py' and `plot_decode'
+* Behavior: `plot_behavior.py`
+* Sharp-wave ripple detection: `plot_swr.py`
+* Place field detection: `plot_place_fields.py`
+* Plot sequences: `plot_sequence_raster.py`
 
 
 Shortcut task description
