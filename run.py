@@ -16,7 +16,7 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 
 spike_sorted_infos = [
     info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6, info.r063d7,
-    info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5, info.r066d6,
+    info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5, info.r066d6, info.r066d7,
     info.r067d1, info.r067d2, info.r067d3, info.r067d4, info.r067d5, info.r067d6,
     info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6]
 

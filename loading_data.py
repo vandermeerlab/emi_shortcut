@@ -91,8 +91,8 @@ def get_data(info):
     return events, position, spikes, lfp_swr, lfp_theta
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-    infos = spike_sorted_infos
+    from run import spike_sorted_infos, info
+    infos = [info.r066d7]
 
     for info in infos:
         print(info.session_id)
