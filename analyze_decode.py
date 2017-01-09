@@ -173,14 +173,14 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 
-    track_starts = [info.task_times['phase1'].start,
-                    info.task_times['phase2'].start,
-                    info.task_times['phase3'].start]
-    track_stops = [info.task_times['phase1'].stop,
-                   info.task_times['phase2'].stop,
-                   info.task_times['phase3'].stop]
+    # track_starts = [info.task_times['phase1'].start,
+    #                 info.task_times['phase2'].start,
+    #                 info.task_times['phase3'].start]
+    # track_stops = [info.task_times['phase1'].stop,
+    #                info.task_times['phase2'].stop,
+    #                info.task_times['phase3'].stop]
 
-    track_pos = run_pos.time_slices(track_starts, track_stops)
+    # track_pos = run_pos.time_slices(track_starts, track_stops)
 
     binsize = 3
     xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
@@ -241,7 +241,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     else:
         raise ValueError("decoded cannot be empty.")
 
-    zones = find_zones(info, expand_by=3)
+    zones = find_zones(info, expand_by=7)
     decoded_zones = point_in_zones(decoded, zones)
 
     keys = ['u', 'shortcut', 'novel']
