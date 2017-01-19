@@ -331,3 +331,44 @@ def trajectory_fields(tuning_curves, spikes, zone, xedges, yedges, field_thresh)
                     fields_neuron['pedestal'].append(spikes[i])
 
     return fields_tc, fields_neuron
+
+
+def get_xyedges(position, binsize=3):
+    """Gets edges based on position min and max.
+
+    Parameters
+    ----------
+    position: 2D vdm.Position
+    binsize: int
+
+    Returns
+    -------
+    xedges: np.array
+    yedges: np.array
+
+    """
+    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
+    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
+
+    return xedges, yedges
+
+
+def speed_threshold(position, t_smooth=0.5, speed_limit=0.1):
+    """Finds positions above a certain speed threshold
+
+    Parameters
+    ----------
+    position: vdm.Position
+    t_smooth: int
+    speed_limit: int
+
+    Returns
+    -------
+    position_run: vdm.Position
+
+    """
+
+    speed = position.speed(t_smooth)
+    run_idx = np.squeeze(speed.data) >= speed_limit
+
+    return position[run_idx]
