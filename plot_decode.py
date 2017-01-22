@@ -36,13 +36,13 @@ def normalized_time_spent(combined_decoded, n_sessions, lengths, filenames):
 
 
 def plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc=False):
-    experiment_time = 'tracks'
+    experiment_time = 'phase3'
     print('getting decoded', experiment_time)
     decoded = combine_decode(infos, '_decode-tracks.pkl', experiment_time=experiment_time,
                              shuffle_id=False, tuning_curves=tuning_curves)
 
     print('getting decoded', experiment_time, 'shuffled')
-    decoded_shuffle = combine_decode(infos, '_decode-tracks-shuffled.pkl', experiment_time='tracks',
+    decoded_shuffle = combine_decode(infos, '_decode-tracks-shuffled.pkl', experiment_time=experiment_time,
                                      shuffle_id=True, tuning_curves=tuning_curves)
 
     if all_tracks_tc and by_trajectory:
@@ -96,7 +96,7 @@ def plot_pauses(infos, tuning_curves, all_tracks_tc=False):
 
 def plot_phases(infos, tuning_curves, all_tracks_tc=False):
     # Plot proportion of phase2 and phase3 spent in each trajectory
-    experiment_time = 'phase2'
+    experiment_time = 'phase1'
     print('getting decoded', experiment_time)
     decoded_phase2 = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
                                     shuffle_id=False, tuning_curves=tuning_curves)
@@ -273,8 +273,8 @@ def get_outputs_normalized(infos, all_tracks_tc=False):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, days123_infos, days456_infos, test_infos
-    infos = test_infos
+    from run import spike_sorted_infos, days123_infos, days456_infos
+    infos = spike_sorted_infos
 
     by_trajectory = False
 

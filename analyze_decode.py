@@ -7,7 +7,7 @@ from shapely.geometry import Point, LineString
 import vdmlab as vdm
 
 from loading_data import get_data
-from utils_maze import find_zones
+from utils_maze import find_zones, get_xyedges, speed_threshold
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -167,41 +167,35 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     """
     print('decoding:', info.session_id)
 
+    track_times = ['phase1', 'phase2', 'phase3', 'tracks']
+    pedestal_times = ['pauseA', 'pauseB', 'prerecord', 'postrecord']
+
     events, position, spikes, lfp, lfp_theta = get_data(info)
+    xedges, yedges = get_xyedges(position)
 
-    speed = position.speed(t_smooth=0.5)
-    run_idx = np.squeeze(speed.data) >= 0.1
-    run_pos = position[run_idx]
+    if experiment_time in track_times:
+        run_pos = speed_threshold(position, speed_limit=0.4)
+    else:
+        run_pos = position
 
-    # track_starts = [info.task_times['phase1'].start,
-    #                 info.task_times['phase2'].start,
-    #                 info.task_times['phase3'].start]
-    # track_stops = [info.task_times['phase1'].stop,
-    #                info.task_times['phase2'].stop,
-    #                info.task_times['phase3'].stop]
-
-    # track_pos = run_pos.time_slices(track_starts, track_stops)
-
-    binsize = 3
-    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
-    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
-
-    track_starts = [info.task_times['phase3'].start]
-    track_stops = [info.task_times['phase3'].stop]
+    track_starts = [info.task_times[experiment_time].start]
+    track_stops = [info.task_times[experiment_time].stop]
 
     track_pos = run_pos.time_slices(track_starts, track_stops)
 
     if shuffle_id:
         random.shuffle(tuning_curve)
 
-    if experiment_time == 'tracks':
-        decode_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
-        epochs_interest = vdm.Epoch(np.hstack([np.array(track_starts), np.array(track_stops)]))
+    start = np.array([info.task_times[experiment_time].start])
+    stop = np.array([info.task_times[experiment_time].stop])
 
-    else:
-        decode_spikes = [spiketrain.time_slice(info.task_times[experiment_time].start,
-                                               info.task_times[experiment_time].stop) for spiketrain in spikes]
-        sliced_lfp = lfp.time_slice(info.task_times[experiment_time].start, info.task_times[experiment_time].stop)
+    decode_spikes = [spiketrain.time_slices(start, stop) for spiketrain in spikes]
+
+    if experiment_time in track_times:
+        epochs_interest = vdm.Epoch(np.hstack([start, stop]))
+    elif experiment_time in pedestal_times:
+        sliced_lfp = lfp.time_slice(start, stop)
+
         z_thresh = 3.0
         power_thresh = 5.0
         merge_thresh = 0.02
@@ -212,15 +206,16 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
         epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=3)
         if epochs_interest.n_epochs == 0:
             epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=1)
+    else:
+        raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
+                         "'pauseB', phase3', 'postrecord'].")
 
     counts_binsize = 0.025
-    time_edges = get_edges(run_pos, counts_binsize, lastbin=True)
+    time_edges = get_edges(track_pos, counts_binsize, lastbin=True)
     counts = vdm.get_counts(decode_spikes, time_edges, gaussian_std=0.005)
 
-    decoding_tc = []
-    for tuning in tuning_curve:
-        decoding_tc.append(np.ravel(tuning))
-    decoding_tc = np.array(decoding_tc)
+    tc_shape = tuning_curve.shape
+    decoding_tc = tuning_curve.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
     likelihood = vdm.bayesian_prob(counts, decoding_tc, counts_binsize)
 
@@ -236,18 +231,18 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
 
     if not decoded.isempty:
         sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=3)
-        decoded_epochs = sequences.intersect(epochs_interest, boundaries=False)
+        decoded_epochs = sequences.intersect(epochs_interest)
         decoded = vdm.epoch_position(decoded, decoded_epochs)
     else:
         raise ValueError("decoded cannot be empty.")
 
-    zones = find_zones(info, expand_by=7)
+    zones = find_zones(info, expand_by=8)
     decoded_zones = point_in_zones(decoded, zones)
 
     keys = ['u', 'shortcut', 'novel']
     errors = dict()
     actual_position = dict()
-    if experiment_time == 'tracks':
+    if experiment_time in ['phase1', 'phase2', 'phase3', 'tracks']:
         for trajectory in keys:
             actual_x = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.x)
             actual_y = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.y)

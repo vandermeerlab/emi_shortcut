@@ -353,14 +353,14 @@ def get_xyedges(position, binsize=3):
     return xedges, yedges
 
 
-def speed_threshold(position, t_smooth=0.5, speed_limit=0.1):
+def speed_threshold(position, t_smooth=0.5, speed_limit=0.4):
     """Finds positions above a certain speed threshold
 
     Parameters
     ----------
     position: vdm.Position
-    t_smooth: int
-    speed_limit: int
+    t_smooth: float
+    speed_limit: float
 
     Returns
     -------
