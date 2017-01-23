@@ -290,5 +290,5 @@ if __name__ == "__main__":
     plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc=all_tracks_tc)
     plot_pauses(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
     plot_phases(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
-    plot_normalized(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
-    plot_all_times(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
+    # plot_normalized(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
+    # plot_all_times(infos, tuning_curves, all_tracks_tc=all_tracks_tc)

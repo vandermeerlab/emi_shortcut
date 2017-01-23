@@ -173,6 +173,15 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     events, position, spikes, lfp, lfp_theta = get_data(info)
     xedges, yedges = vdm.get_xyedges(position)
 
+    # Filtering tuning curves with too low or too high overall firing rates
+    low_thresh = 1
+    high_thresh = 3000
+    tc_sums = np.sum(np.sum(tuning_curve, axis=2), axis=1)
+    keep_neurons = (tc_sums > low_thresh) & (tc_sums < high_thresh)
+    tuning_curve = tuning_curve[keep_neurons]
+
+    spikes = spikes[keep_neurons]
+
     if experiment_time in track_times:
         run_pos = speed_threshold(position, speed_limit=0.4)
     else:
