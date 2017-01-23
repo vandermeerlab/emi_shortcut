@@ -7,7 +7,7 @@ from shapely.geometry import Point, LineString
 import vdmlab as vdm
 
 from loading_data import get_data
-from utils_maze import find_zones, get_xyedges, speed_threshold
+from utils_maze import find_zones, speed_threshold
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -171,7 +171,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     pedestal_times = ['pauseA', 'pauseB', 'prerecord', 'postrecord']
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
-    xedges, yedges = get_xyedges(position)
+    xedges, yedges = vdm.get_xyedges(position)
 
     if experiment_time in track_times:
         run_pos = speed_threshold(position, speed_limit=0.4)
@@ -232,7 +232,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     if not decoded.isempty:
         sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=3)
         decoded_epochs = sequences.intersect(epochs_interest)
-        decoded = vdm.epoch_position(decoded, decoded_epochs)
+        decoded = decoded[decoded_epochs]
     else:
         raise ValueError("decoded cannot be empty.")
 

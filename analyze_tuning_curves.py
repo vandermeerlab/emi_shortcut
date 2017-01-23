@@ -6,7 +6,7 @@ from shapely.geometry import Point, LineString
 import vdmlab as vdm
 
 from loading_data import get_data
-from utils_maze import spikes_by_position
+from utils_maze import spikes_by_position, speed_threshold
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -209,10 +209,9 @@ def analyze(info, use_all_tracks=False):
     print('tuning curves:', info.session_id)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
+    xedges, yedges = vdm.get_xyedges(position)
 
-    speed = position.speed(t_smooth=0.5)
-    run_idx = np.squeeze(speed.data) >= 0.1
-    run_pos = position[run_idx]
+    run_pos = speed_threshold(position, speed_limit=0.4)
 
     track_starts = [info.task_times['phase1'].start,
                     info.task_times['phase2'].start,
@@ -231,10 +230,6 @@ def analyze(info, use_all_tracks=False):
         tc_pos = run_pos.time_slices(track_starts, track_stops)
 
     track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
-
-    binsize = 3
-    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
-    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
 
     tuning_curves = vdm.tuning_curve_2d(tc_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
 
