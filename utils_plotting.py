@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import SymLogNorm
 import scipy.stats as stats
+from collections import OrderedDict
 import seaborn as sns
 import pandas as pd
 
@@ -525,83 +526,8 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.show()
 
 
-def plot_decoded(decoded, y_label, savepath=None):
-    """Plots barplot.
-
-    Parameters
-    ----------
-    decoded: dict
-        With u, shortcut, novel as keys, each a vdmlab.Position object.
-    y_label: str
-    savepath : str or None
-        Location and filename for the saved plot.
-
-    """
-    u_dict = dict(total=decoded['u'], trajectory='U')
-    shortcut_dict = dict(total=decoded['shortcut'], trajectory='Shortcut')
-    novel_dict = dict(total=decoded['novel'], trajectory='Novel')
-
-    u = pd.DataFrame(u_dict)
-    shortcut = pd.DataFrame(shortcut_dict)
-    novel = pd.DataFrame(novel_dict)
-    data = pd.concat([u, shortcut, novel])
-
-    plt.figure(figsize=(5, 4))
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
-    ax.set(xlabel=' ', ylabel=y_label)
-
-    sns.despine()
-    plt.tight_layout()
-
-    if savepath is not None:
-        plt.savefig(savepath, transparent=True)
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_decoded_pause(decode, total_times, savepath=None):
-    """Plots barplot of time decoded in each trajectory by total time.
-
-    Parameters
-    ----------
-    decode: dict
-        With u, shortcut, novel as keys.
-    total_times: list
-        Number of total time bins for each session.
-    savepath : str or None
-        Location and filename for the saved plot.
-
-    """
-    normalized = dict(u=[], shortcut=[], novel=[])
-    for key in normalized:
-        for session in range(len(total_times)):
-            normalized[key].append(len(decode[key][session].time)/total_times[session])
-
-    u_dict = dict(total=normalized['u'], trajectory='U')
-    shortcut_dict = dict(total=normalized['shortcut'], trajectory='Shortcut')
-    novel_dict = dict(total=normalized['novel'], trajectory='Novel')
-
-    u = pd.DataFrame(u_dict)
-    shortcut = pd.DataFrame(shortcut_dict)
-    novel = pd.DataFrame(novel_dict)
-    data = pd.concat([u, shortcut, novel])
-
-    plt.figure(figsize=(2.5, 2))
-    ax = sns.barplot(x='trajectory', y='total', data=data, palette='colorblind')
-    ax.set(xlabel=' ', ylabel="Proportion of time")
-
-    sns.despine()
-    plt.tight_layout()
-
-    if savepath is not None:
-        plt.savefig(savepath, transparent=True)
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fliersize=1, savepath=None):
+def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, by_trajectory=False, fliersize=1,
+                        savepath=None):
     """Plots boxplot distance between decoded and actual position for decoded and shuffled_id.
 
     Parameters
@@ -617,25 +543,31 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
 
     """
     if by_trajectory:
-        decoded_u = pd.DataFrame(dict(error=decode_errors['u'], shuffled='Decoded_u'))
-        decoded_shortcut = pd.DataFrame(dict(error=decode_errors['shortcut'], shuffled='Decoded_shortcut'))
-        decoded_novel = pd.DataFrame(dict(error=decode_errors['novel'], shuffled='Decoded_novel'))
-        shuffled_u = pd.DataFrame(dict(error=shuffled_errors['u'], shuffled='ID-shuffle decoded_u'))
-        shuffled_shortcut = pd.DataFrame(dict(error=shuffled_errors['shortcut'], shuffled='ID-shuffle decoded_shortcut'))
-        shuffled_novel = pd.DataFrame(dict(error=shuffled_errors['novel'], shuffled='ID-shuffle decoded_novel'))
+        decoded_u = pd.DataFrame(dict(error=decode_errors[experiment_time]['u'], shuffled='Decoded_u'))
+        decoded_shortcut = pd.DataFrame(
+            dict(error=decode_errors[experiment_time]['shortcut'], shuffled='Decoded_shortcut'))
+        decoded_novel = pd.DataFrame(dict(error=decode_errors[experiment_time]['novel'], shuffled='Decoded_novel'))
+
+        shuffled_u = pd.DataFrame(dict(error=shuffled_errors[experiment_time]['u'], shuffled='ID-shuffle decoded_u'))
+        shuffled_shortcut = pd.DataFrame(
+            dict(error=shuffled_errors[experiment_time]['shortcut'], shuffled='ID-shuffle decoded_shortcut'))
+        shuffled_novel = pd.DataFrame(
+            dict(error=shuffled_errors[experiment_time]['novel'], shuffled='ID-shuffle decoded_novel'))
 
         data = pd.concat([shuffled_u, decoded_u, shuffled_shortcut, decoded_shortcut, shuffled_novel, decoded_novel])
         colours = 'colorblind'
     else:
-        decoded_dict = dict(error=decode_errors['together'], shuffled='Decoded')
-        shuffled_dict = dict(error=shuffled_errors['together'], shuffled='ID-shuffle decoded')
+        decoded_dict = dict(error=decode_errors[experiment_time]['together'], shuffled='Decoded')
+        shuffled_dict = dict(error=shuffled_errors[experiment_time]['together'], shuffled='ID-shuffle decoded')
         decoded = pd.DataFrame(decoded_dict)
         shuffled = pd.DataFrame(shuffled_dict)
         data = pd.concat([shuffled, decoded])
         colours = ['#ffffff', '#bdbdbd']
 
-        print('actual:', np.mean(decode_errors['together']), stats.sem(decode_errors['together']))
-        print('shuffle:', np.mean(shuffled_errors['together']), stats.sem(shuffled_errors['together']))
+        print('actual:', np.mean(decode_errors[experiment_time]['together']),
+              stats.sem(decode_errors[experiment_time]['together']))
+        print('shuffle:', np.mean(shuffled_errors[experiment_time]['together']),
+              stats.sem(shuffled_errors[experiment_time]['together']))
 
     plt.figure(figsize=(3, 2))
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
@@ -647,7 +579,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, by_trajectory=False, fli
         artist.set_edgecolor(edge_colour)
         artist.set_facecolor(colours[i])
 
-        for j in range(i*6, i*6+6):
+        for j in range(i * 6, i * 6 + 6):
             line = ax.lines[j]
             line.set_color(edge_colour)
             line.set_mfc(edge_colour)
@@ -719,77 +651,29 @@ def set_size(fig):
     plt.tight_layout()
 
 
-def plot_compare_decoded_pauses(decoded_1, times_1, decoded_2, times_2, labels, savepath=None):
-    """Plots barplot comparing decoded during two phases
+def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None):
+    """Plots barplot comparing decoded during experiment phases
 
     Parameters
     ----------
-    decoded_1: dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
-    times_1: list of floats
-    decoded_2: dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
-    times_2: list of floats
-    labels: list of str
+    decodes: list of dict
+        With experiment_time as keys, each a dict.
+        The keys of that dict are u, shortcut, novel, other, each a vdmlab.Position object.
+    ylabel: str
     savepath : str or None
         Location and filename for the saved plot.
 
     """
-    decode_1 = dict(u=[], shortcut=[], novel=[])
-    for key in decode_1:
-        for session in range(len(times_1)):
-            decode_1[key].append(len(decoded_1[key][session].time)/times_1[session])
+    labels = decodes[0].keys()
 
-    u_dict1 = dict(total=decode_1['u'], trajectory='U', exp_time=labels[0])
-    shortcut_dict1 = dict(total=decode_1['shortcut'], trajectory='Shortcut', exp_time=labels[0])
-    novel_dict1 = dict(total=decode_1['novel'], trajectory='Novel', exp_time=labels[0])
+    decode = OrderedDict()
+    for experimental_time in decodes[0].keys():
+        decode[experimental_time] = dict(u=[], shortcut=[], novel=[], other=[])
 
-    u1 = pd.DataFrame(u_dict1)
-    shortcut1 = pd.DataFrame(shortcut_dict1)
-    novel1 = pd.DataFrame(novel_dict1)
-
-    decode_2 = dict(u=[], shortcut=[], novel=[])
-    for key in decode_2:
-        for session in range(len(times_2)):
-            decode_2[key].append(len(decoded_2[key][session].time)/times_2[session])
-
-    u_dict2 = dict(total=decode_2['u'], trajectory='U', exp_time=labels[1])
-    shortcut_dict2 = dict(total=decode_2['shortcut'], trajectory='Shortcut', exp_time=labels[1])
-    novel_dict2 = dict(total=decode_2['novel'], trajectory='Novel', exp_time=labels[1])
-
-    u2 = pd.DataFrame(u_dict2)
-    shortcut2 = pd.DataFrame(shortcut_dict2)
-    novel2 = pd.DataFrame(novel_dict2)
-    data = pd.concat([u1, shortcut1, novel1, u2, shortcut2, novel2])
-
-    set_style()
-    fig, axes = plot_v3(data, labels)
-    set_labels(fig, axes, labels, 'Proportion of time')
-    color_bars(axes)
-    set_size(fig)
-
-    if savepath is not None:
-        plt.savefig(savepath, transparent=True)
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_compare_decoded(decoded, labels, ylabel, savepath=None):
-    """Plots barplot comparing decoded during two phases
-
-    Parameters
-    ----------
-    means: list of dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
-    sems: list of dict
-    labels: list of str
-    savepath : str or None
-        Location and filename for the saved plot.
-
-    """
-    if len(decoded) != len(labels):
-        raise ValueError('decoded and labels must be the same length')
+    for session in decodes:
+        for experimental_time in session.keys():
+            for trajectory in ['u', 'shortcut', 'novel']:
+                decode[experimental_time][trajectory].append(session[experimental_time][trajectory])
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(4.5, 2.5))
 
@@ -800,10 +684,10 @@ def plot_compare_decoded(decoded, labels, ylabel, savepath=None):
 
     for ax, trajectory in zip([ax1, ax2, ax3], ['u', 'shortcut', 'novel']):
         count = 0
-        for decode in decoded:
-            ax.bar(ind+(count*width), np.mean(decode[trajectory]), width, color=colours[trajectory],
-                   yerr=stats.sem(decode[trajectory]), ecolor='k')
-            xtick_loc.append(ind + (count*width) + (0.5*width))
+        for key in decode:
+            ax.bar(ind + (count * width), np.mean(decode[key][trajectory]), width, color=colours[trajectory],
+                   yerr=stats.sem(decode[key][trajectory]), ecolor='k')
+            xtick_loc.append(ind + (count * width) + (0.5 * width))
             count += 1
 
     for ax in [ax2, ax3]:
@@ -815,11 +699,17 @@ def plot_compare_decoded(decoded, labels, ylabel, savepath=None):
         ax.spines['top'].set_visible(False)
         ax.set_xlabel(trajectory)
         ax.set_xticks(xtick_loc)
-        ax.set_xticklabels(labels)
+        ax.set_xticklabels(labels, rotation=85)
         ax.xaxis.set_ticks_position('bottom')
 
     ax1.set_ylabel(ylabel)
     ax1.yaxis.set_ticks_position('left')
+
+    ax3.text(0.95, 0.65, 'n_sessions = ' + str(len(decodes)),
+             verticalalignment='bottom',
+             horizontalalignment='right',
+             transform=ax3.transAxes,
+             color='k', fontsize=10)
 
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.08)
@@ -829,7 +719,6 @@ def plot_compare_decoded(decoded, labels, ylabel, savepath=None):
         plt.close()
     else:
         plt.show()
-
 
 
 def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, labels, prob, ylabel, savepath=None):
