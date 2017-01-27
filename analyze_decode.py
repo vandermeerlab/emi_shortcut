@@ -182,7 +182,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     keep_neurons = (tc_sums > low_thresh) & (tc_sums < high_thresh)
     tuning_curve = tuning_curve[keep_neurons]
 
-    spikes = spikes[keep_neurons]
+    spikes = np.array(spikes)[keep_neurons]
 
     if experiment_time in track_times:
         run_pos = speed_threshold(position, speed_limit=0.4)
@@ -273,16 +273,10 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     output['actual'] = actual_position
     output['decoded'] = decoded
 
-    if experiment_time == 'tracks':
-        if shuffle_id:
-            filename = info.session_id + '_decode-tracks-shuffled.pkl'
-        else:
-            filename = info.session_id + '_decode-tracks.pkl'
+    if shuffle_id:
+        filename = info.session_id + '_decode-shuffled-' + experiment_time + '.pkl'
     else:
-        if shuffle_id:
-            filename = info.session_id + '_decode-pauses-shuffled.pkl'
-        else:
-            filename = info.session_id + '_decode-' + experiment_time + '.pkl'
+        filename = info.session_id + '_decode-' + experiment_time + '.pkl'
 
     pickled_path = os.path.join(pickle_filepath, filename)
 
@@ -292,62 +286,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     return output
 
 
-def get_zone_proportion(decoded, experiment_time):
-    """Computes the proportion of n_samples in each zone
 
-    Parameters
-    ----------
-    decoded: vdmlab.Position
-
-    Returns: dict
-
-    """
-    if experiment_time not in ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']:
-        raise ValueError("experiment time is not recognized as a shortcut experiment time.")
-
-    zones = decoded['zones'].keys()
-    n_total = decoded['decoded'].n_samples
-
-    decoded_proportions = dict()
-    for zone in zones:
-        decoded_proportions[zone] = decoded['zones'][zone].n_samples / n_total
-
-    return decoded_proportions
-
-
-def get_decoded_proportions(info, experiment_times, pickle_filepath):
-    """Finds the proportion of decoded positions in each zone
-
-    Parameters
-    ----------
-    info: module
-    experiment_times: list of str
-    pickle_filepath: str
-
-    Returns
-    -------
-    decode_together: OrderedDict
-        With experiment_time as keys, each a dict
-        with u, shortcut, novel, other as keys.
-
-    """
-
-    decode_together = OrderedDict()
-
-    for experiment_time in experiment_times:
-        filename = '_decode-' + experiment_time + '.pkl'
-        decode_filename = info.session_id + filename
-        pickled_decoded = os.path.join(pickle_filepath, decode_filename)
-
-        if os.path.isfile(pickled_decoded):
-            with open(pickled_decoded, 'rb') as fileobj:
-                decoded = pickle.load(fileobj)
-        else:
-            raise ValueError("pickled decoded not found for " + info.session_id)
-
-        decode_together[experiment_time] = get_zone_proportion(decoded)
-
-    return decode_together
 
 
 def combine_decode(infos, filename, experiment_time, shuffle_id, tuning_curves=None):
@@ -400,11 +339,12 @@ def combine_decode(infos, filename, experiment_time, shuffle_id, tuning_curves=N
 # outputs_tracks = []
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
+    from run import spike_sorted_infos, info
 
-    infos = spike_sorted_infos
+    infos = [info.r068d8]
 
-    if 1:
+
+    if 0:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
@@ -415,27 +355,12 @@ if __name__ == "__main__":
             for experiment_time in experiment_times:
                 analyze(info, tuning_curve, experiment_time)
 
-    # if 0:
-    #     tuning_curves = []
-    #     for info in infos:
-    #         tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-    #         pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-    #         with open(pickled_tuning_curve, 'rb') as fileobj:
-    #             tuning_curves.append(pickle.load(fileobj))
-    #     decoded_tracks = combine_decode(infos, '_decode-tracks.pkl', experiment_time='tracks',
-    #                                     shuffle_id=False, tuning_curves=tuning_curves)
-    #     decoded_tracks_shuffled = combine_decode(infos, '_decode-tracks_shuffled.pkl', experiment_time='tracks',
-    #                                              shuffle_id=True, tuning_curves=tuning_curves)
-    #
-    # if 0:
-    #     for info in infos:
-    #         tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-    #         pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-    #         with open(pickled_tuning_curve, 'rb') as fileobj:
-    #             tuning_curve = pickle.load(fileobj)
-    #         experiment_time = 'pauseA'
-    #         decoded_pausea = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
-    #                                         shuffle_id=False, tuning_curves=tuning_curve)
-    #         experiment_time = 'pauseB'
-    #         decoded_pauseb = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
-    #                                         shuffle_id=False, tuning_curves=tuning_curve)
+    if 1:
+        for info in infos:
+            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
+            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
+            with open(pickled_tuning_curve, 'rb') as fileobj:
+                tuning_curve = pickle.load(fileobj)
+            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+            for experiment_time in experiment_times:
+                analyze(info, tuning_curve, experiment_time, shuffle_id=True)

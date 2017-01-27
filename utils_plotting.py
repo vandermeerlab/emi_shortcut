@@ -526,9 +526,8 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.show()
 
 
-def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, by_trajectory=False, fliersize=1,
-                        savepath=None):
-    """Plots boxplot distance between decoded and actual position for decoded and shuffled_id.
+def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersize=1, savepath=None):
+    """Plots boxplot distance between decoded and actual position for decoded and shuffled_id
 
     Parameters
     ----------
@@ -536,40 +535,24 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, by_traj
         With u, shortcut, novel, other, and together as keys.
     shuffled_errors: dict of lists
         With u, shortcut, novel, other, and together as keys.
-    by_trajectory: boolean
     fliersize: int
     savepath : str or None
         Location and filename for the saved plot.
 
     """
-    if by_trajectory:
-        decoded_u = pd.DataFrame(dict(error=decode_errors[experiment_time]['u'], shuffled='Decoded_u'))
-        decoded_shortcut = pd.DataFrame(
-            dict(error=decode_errors[experiment_time]['shortcut'], shuffled='Decoded_shortcut'))
-        decoded_novel = pd.DataFrame(dict(error=decode_errors[experiment_time]['novel'], shuffled='Decoded_novel'))
+    decoded_dict = dict(error=decode_errors[experiment_time]['together'], shuffled='Decoded')
+    shuffled_dict = dict(error=shuffled_errors[experiment_time]['together'], shuffled='ID-shuffle decoded')
+    decoded = pd.DataFrame(decoded_dict)
+    shuffled = pd.DataFrame(shuffled_dict)
+    data = pd.concat([shuffled, decoded])
+    colours = ['#ffffff', '#bdbdbd']
 
-        shuffled_u = pd.DataFrame(dict(error=shuffled_errors[experiment_time]['u'], shuffled='ID-shuffle decoded_u'))
-        shuffled_shortcut = pd.DataFrame(
-            dict(error=shuffled_errors[experiment_time]['shortcut'], shuffled='ID-shuffle decoded_shortcut'))
-        shuffled_novel = pd.DataFrame(
-            dict(error=shuffled_errors[experiment_time]['novel'], shuffled='ID-shuffle decoded_novel'))
+    print('actual:', np.mean(decode_errors[experiment_time]['together']),
+          stats.sem(decode_errors[experiment_time]['together']))
+    print('shuffle:', np.mean(shuffled_errors[experiment_time]['together']),
+          stats.sem(shuffled_errors[experiment_time]['together']))
 
-        data = pd.concat([shuffled_u, decoded_u, shuffled_shortcut, decoded_shortcut, shuffled_novel, decoded_novel])
-        colours = 'colorblind'
-    else:
-        decoded_dict = dict(error=decode_errors[experiment_time]['together'], shuffled='Decoded')
-        shuffled_dict = dict(error=shuffled_errors[experiment_time]['together'], shuffled='ID-shuffle decoded')
-        decoded = pd.DataFrame(decoded_dict)
-        shuffled = pd.DataFrame(shuffled_dict)
-        data = pd.concat([shuffled, decoded])
-        colours = ['#ffffff', '#bdbdbd']
-
-        print('actual:', np.mean(decode_errors[experiment_time]['together']),
-              stats.sem(decode_errors[experiment_time]['together']))
-        print('shuffle:', np.mean(shuffled_errors[experiment_time]['together']),
-              stats.sem(shuffled_errors[experiment_time]['together']))
-
-    plt.figure(figsize=(3, 2))
+    plt.figure(figsize=(6, 4))
     flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
     # ax = sns.boxplot(x='shuffled', y='error', data=data, palette=colours, flierprops=flierprops)
     ax = sns.boxplot(x='shuffled', y='error', data=data, flierprops=flierprops)
@@ -579,7 +562,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, by_traj
         artist.set_edgecolor(edge_colour)
         artist.set_facecolor(colours[i])
 
-        for j in range(i * 6, i * 6 + 6):
+        for j in range(i*6, i*6+6):
             line = ax.lines[j]
             line.set_color(edge_colour)
             line.set_mfc(edge_colour)
@@ -587,8 +570,8 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, by_traj
 
     ax.set(xlabel=' ', ylabel="Error (cm)")
 
-    plt.tight_layout()
     sns.despine()
+    plt.tight_layout()
 
     if savepath is not None:
         plt.savefig(savepath, transparent=True)
@@ -675,7 +658,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None):
             for trajectory in ['u', 'shortcut', 'novel']:
                 decode[experimental_time][trajectory].append(session[experimental_time][trajectory])
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(4.5, 2.5))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(8, 5))
 
     ind = np.arange(1)
     width = 0.5

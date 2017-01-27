@@ -1,6 +1,8 @@
 import os
+import pickle
+from collections import OrderedDict
 
-from analyze_decode import compare_rates, compare_lengths, combine_decode, get_decoded_proportions
+from analyze_decode import compare_rates, compare_lengths, combine_decode
 from utils_plotting import plot_decoded_errors, plot_decoded_compare
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -33,27 +35,115 @@ def normalized_time_spent(combined_decoded, n_sessions, lengths, filenames):
     plot_decoded(decoded_length, y_label=y_label, savepath=savepath)
 
 
-# def plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc=False):
-#     experiment_time = 'phase3'
-#     print('getting decoded', experiment_time)
-#     decoded = combine_decode(infos, '_decode-tracks.pkl', experiment_time=experiment_time,
-#                              shuffle_id=False, tuning_curves=tuning_curves)
-#
-#     print('getting decoded', experiment_time, 'shuffled')
-#     decoded_shuffle = combine_decode(infos, '_decode-tracks-shuffled.pkl', experiment_time=experiment_time,
-#                                      shuffle_id=True, tuning_curves=tuning_curves)
-#
-#     if all_tracks_tc and by_trajectory:
-#         filename = 'combined-errors_decoded_all-tracks_by-trajectory.png'
-#     elif all_tracks_tc and not by_trajectory:
-#         filename = 'combined-errors_decoded_all-tracks.png'
-#     elif not all_tracks_tc and by_trajectory:
-#         filename = 'combined-errors_decoded_by-trajectory.png'
-#     else:
-#         filename = 'combined-errors_decoded.pdf'
-#     savepath = os.path.join(output_filepath, filename)
-#     plot_decoded_errors(decoded['combined_errors'], decoded_shuffle['combined_errors'], by_trajectory, fliersize=2,
-#                         savepath=savepath)
+def get_zone_proportion(decoded, experiment_time):
+    """Computes the proportion of n_samples in each zone
+
+    Parameters
+    ----------
+    decoded: vdmlab.Position
+
+    Returns: dict
+
+    """
+    if experiment_time not in ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']:
+        raise ValueError("experiment time is not recognized as a shortcut experiment time.")
+
+    zones = decoded['zones'].keys()
+    n_total = decoded['decoded'].n_samples
+
+    decoded_proportions = dict()
+    for zone in zones:
+        decoded_proportions[zone] = decoded['zones'][zone].n_samples / n_total
+
+    return decoded_proportions
+
+
+def get_decoded(info, experiment_times, pickle_filepath, f_combine, shuffled=False):
+    """Combines decoded outputs
+
+    Parameters
+    ----------
+    info: module
+    experiment_times: list of str
+    pickle_filepath: str
+    f_combine: function
+        Either get_zone_proportion or get_errors
+
+    Returns
+    -------
+    decode_together: OrderedDict
+        With experiment_time as keys, each a dict
+        with u, shortcut, novel, other as keys.
+
+    """
+
+    decode_together = OrderedDict()
+
+    for experiment_time in experiment_times:
+        if shuffled:
+            filename = '_decode-shuffled-' + experiment_time + '.pkl'
+        else:
+            filename = '_decode-' + experiment_time + '.pkl'
+        decode_filename = info.session_id + filename
+        pickled_decoded = os.path.join(pickle_filepath, decode_filename)
+
+        if os.path.isfile(pickled_decoded):
+            with open(pickled_decoded, 'rb') as fileobj:
+                decoded = pickle.load(fileobj)
+        else:
+            raise ValueError("pickled decoded not found for " + info.session_id)
+
+        decode_together[experiment_time] = f_combine(decoded, experiment_time)
+
+    return decode_together
+
+
+def get_errors(decoded, experiment_time):
+    """Computes the error of decoded position compared to actual position
+
+    Parameters
+    ----------
+    decoded: vdmlab.Position
+
+    Returns: dict
+
+    """
+    decoded_error = dict()
+    for key in decoded['actual'].keys():
+        if experiment_time in ['phase1', 'phase2', 'phase3']:
+            decoded_error[key] = decoded['zones'][key].distance(decoded['actual'][key])
+        else:
+            decoded_error[key] = 0
+
+    return decoded_error
+
+
+def combine_errors(errors):
+    """Combines errors from  multiple sessions
+
+    Parameters
+    ----------
+    errors: list of OrderedDicts
+        With experiment times as keys, each a dict
+        with u, shortcut, novel as keys.
+
+    Returns
+    -------
+    combine_errors: OrderedDict
+        With experiment times as keys, each a dict
+        with u, shortcut, novel, together as keys.
+
+    """
+    combine_errors = OrderedDict()
+
+    for key in errors[0].keys():
+        combine_errors[key] = dict(u=[], shortcut=[], novel=[], together=[])
+        for error in errors:
+            for trajectory in error[key].keys():
+                combine_errors[key][trajectory].extend(error[key][trajectory])
+                combine_errors[key]['together'].extend(error[key][trajectory])
+
+    return combine_errors
 
 
 def get_summary(decoded, times):
@@ -81,109 +171,69 @@ def plot_normalized(infos, tuning_curves, all_tracks_tc=False):
                           filenames)
 
 
-def get_outputs_errors(infos, all_tracks_tc):
-    outputs = []
-    if all_tracks_tc:
-        for info in infos:
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-tracks_all-tracks.png'))
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-tracks-shuffled_all-tracks.png'))
-    else:
-        for info in infos:
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-tracks.png'))
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-tracks-shuffled.png'))
-    return outputs
-
-
-def get_outputs_pauses(infos, all_tracks_tc):
-    outputs = []
-    if all_tracks_tc:
-        for info in infos:
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-pauseA_all-tracks.png'))
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-pauseB_all-tracks.png'))
-        outputs.append(os.path.join(output_filepath, 'combined-pauses_decoded.png'))
-    else:
-        for info in infos:
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-pauseA.png'))
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-pauseB.png'))
-        outputs.append(os.path.join(output_filepath, 'combined-pauses_decoded.png'))
-    return outputs
-
-
-def get_outputs_phases(infos, all_tracks_tc):
-    outputs = []
-    if all_tracks_tc:
-        for info in infos:
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-phase2_all-tracks.png'))
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-phase3_all-tracks.png'))
-        outputs.append(os.path.join(output_filepath, 'combined-phases_decoded.png'))
-    else:
-        for info in infos:
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-phase2.png'))
-            outputs.append(os.path.join(output_filepath, info.session_id + '_decode-phase3.png'))
-        outputs.append(os.path.join(output_filepath, 'combined-phases_decoded.png'))
-    return outputs
-
-
-def get_outputs_normalized(infos, all_tracks_tc=False):
-    if all_tracks_tc:
-        outputs = [os.path.join(output_filepath, 'combined-time-norm_tracks_decoded_all-tracks.png'),
-                   os.path.join(output_filepath, 'combined-length-norm_tracks_decoded_all-tracks.png')]
-    else:
-        outputs = [os.path.join(output_filepath, 'combined-time-norm_tracks_decoded.png'),
-                   os.path.join(output_filepath, 'combined-length-norm_tracks_decoded.png')]
-    return outputs
-
-
 if __name__ == "__main__":
-    from run import spike_sorted_infos, days123_infos, days456_infos
+    from run import spike_sorted_infos, days123_infos, days456_infos, error_infos
     infos = spike_sorted_infos
 
-    if 1:
+    if 0:
         experiment_times = ['pauseA', 'pauseB']
+
         decodes = []
+
         for info in infos:
-            decodes.append(get_decoded_proportions(info, experiment_times, pickle_filepath))
+            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+
         filename = os.path.join(output_filepath, 'decode_pauses.png')
         plot_decoded_compare(decodes, savepath=filename)
 
-    if 1:
+
         experiment_times = ['phase1', 'phase2', 'phase3']
+
         decodes = []
+
         for info in infos:
-            decodes.append(get_decoded_proportions(info, experiment_times, pickle_filepath))
+            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+
         filename = os.path.join(output_filepath, 'decode_phases.png')
         plot_decoded_compare(decodes, savepath=filename)
 
-    if 1:
         experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+
         decodes = []
+
         for info in infos:
-            decodes.append(get_decoded_proportions(info, experiment_times, pickle_filepath))
+            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+
         filename = os.path.join(output_filepath, 'decode_all.png')
         plot_decoded_compare(decodes, savepath=filename)
 
-    if 1:
+
         experiment_times = ['prerecord', 'postrecord']
+
         decodes = []
+
         for info in infos:
-            decodes.append(get_decoded_proportions(info, experiment_times, pickle_filepath))
+            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+
         filename = os.path.join(output_filepath, 'decode_prepost.png')
         plot_decoded_compare(decodes, savepath=filename)
 
+    # plot errors
+    if 0:
+        experiment_times = ['phase1', 'phase2', 'phase3']
 
-    # by_trajectory = False
-    #
-    # all_tracks_tc = False
-    #
-    # tuning_curves = []
-    # for info in infos:
-    #     tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-    #     pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-    #     with open(pickled_tuning_curve, 'rb') as fileobj:
-    #         tuning_curves.append(pickle.load(fileobj))
-    #
-    # plot_errors(infos, tuning_curves, by_trajectory, all_tracks_tc=all_tracks_tc)
-    # plot_pauses(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
-    # plot_phases(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
-    # plot_normalized(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
-    # plot_all_times(infos, tuning_curves, all_tracks_tc=all_tracks_tc)
+        errors = []
+        errors_shuffled = []
+
+        for info in infos:
+            errors.append(get_decoded(info, experiment_times, pickle_filepath, get_errors))
+            errors_shuffled.append(get_decoded(info, experiment_times, pickle_filepath, get_errors, shuffled=True))
+
+        combine_error = combine_errors(errors)
+        combine_error_shuffled = combine_errors(errors_shuffled)
+        filename = os.path.join(output_filepath, 'errors_phase1.png')
+        plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase1', savepath=filename)
+        filename = os.path.join(output_filepath, 'errors_phase2.png')
+        plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase2', savepath=filename)
+        filename = os.path.join(output_filepath, 'errors_phase3.png')
+        plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase3', savepath=filename)
