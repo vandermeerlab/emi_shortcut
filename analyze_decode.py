@@ -92,60 +92,60 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def compare_rates(zones, jump=0.1):
-    """Compare position normalized by time spent in zone.
-
-    Parameters
-    ----------
-    zones: dict
-        With u, shortcut, novel, other as keys.
-    jump: float
-        Any duration above this amount will not be included.
-
-    Returns
-    -------
-    normalized : dict
-        With u, shortcut, novel as keys.
-
-    """
-    u_linger = np.diff(zones['u'].time)
-    shortcut_linger = np.diff(zones['shortcut'].time)
-    novel_linger = np.diff(zones['novel'].time)
-
-    u_linger = np.sum(u_linger[u_linger < jump])
-    shortcut_linger = np.sum(shortcut_linger[shortcut_linger < jump])
-    novel_linger = np.sum(novel_linger[novel_linger < jump])
-
-    normalized = dict()
-    normalized['u'] = len(zones['u'].time) / u_linger
-    normalized['shortcut'] = len(zones['shortcut'].time) / shortcut_linger
-    normalized['novel'] = len(zones['novel'].time) / novel_linger
-
-    return normalized
-
-
-def compare_lengths(zones, lengths):
-    """Compare position normalized by time spent in zone.
-
-    Parameters
-    ----------
-    zones: dict
-        With u, shortcut, novel, other as keys.
-    lengths: dict
-        With u, shortcut, novel as keys.
-
-    Returns
-    -------
-    normalized : dict
-        With u, shortcut, novel as keys.
-
-    """
-    normalized = dict()
-    normalized['u'] = len(zones['u'].time) / lengths['u']
-    normalized['shortcut'] = len(zones['shortcut'].time) / lengths['shortcut']
-    normalized['novel'] = len(zones['novel'].time) / lengths['novel']
-
-    return normalized
+# def compare_rates(zones, jump=0.1):
+#     """Compare position normalized by time spent in zone.
+#
+#     Parameters
+#     ----------
+#     zones: dict
+#         With u, shortcut, novel, other as keys.
+#     jump: float
+#         Any duration above this amount will not be included.
+#
+#     Returns
+#     -------
+#     normalized : dict
+#         With u, shortcut, novel as keys.
+#
+#     """
+#     u_linger = np.diff(zones['u'].time)
+#     shortcut_linger = np.diff(zones['shortcut'].time)
+#     novel_linger = np.diff(zones['novel'].time)
+#
+#     u_linger = np.sum(u_linger[u_linger < jump])
+#     shortcut_linger = np.sum(shortcut_linger[shortcut_linger < jump])
+#     novel_linger = np.sum(novel_linger[novel_linger < jump])
+#
+#     normalized = dict()
+#     normalized['u'] = len(zones['u'].time) / u_linger
+#     normalized['shortcut'] = len(zones['shortcut'].time) / shortcut_linger
+#     normalized['novel'] = len(zones['novel'].time) / novel_linger
+#
+#     return normalized
+#
+#
+# def compare_lengths(zones, lengths):
+#     """Compare position normalized by time spent in zone.
+#
+#     Parameters
+#     ----------
+#     zones: dict
+#         With u, shortcut, novel, other as keys.
+#     lengths: dict
+#         With u, shortcut, novel as keys.
+#
+#     Returns
+#     -------
+#     normalized : dict
+#         With u, shortcut, novel as keys.
+#
+#     """
+#     normalized = dict()
+#     normalized['u'] = len(zones['u'].time) / lengths['u']
+#     normalized['shortcut'] = len(zones['shortcut'].time) / lengths['shortcut']
+#     normalized['novel'] = len(zones['novel'].time) / lengths['novel']
+#
+#     return normalized
 
 
 def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
@@ -286,65 +286,61 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     return output
 
 
-
-
-
-def combine_decode(infos, filename, experiment_time, shuffle_id, tuning_curves=None):
-    total_times = []
-    combined_errors = []
-    combined_lengths = dict(u=[], shortcut=[], novel=[], other=[], together=[])
-    combined_decoded = dict(u=[], shortcut=[], novel=[], other=[], together=[])
-
-    for i, info in enumerate(infos):
-        decode_filename = info.session_id + filename
-        pickled_decoded = os.path.join(pickle_filepath, decode_filename)
-
-        if os.path.isfile(pickled_decoded):
-            with open(pickled_decoded, 'rb') as fileobj:
-                decoded = pickle.load(fileobj)
-        else:
-            if tuning_curves is None:
-                raise ValueError("tuning curves required when generating decoded")
-            decoded = analyze(info, tuning_curves[i], experiment_time=experiment_time, shuffle_id=shuffle_id)
-
-        total_times.append(decoded['times'])
-
-        combined_lengths['u'].append(LineString(info.u_trajectory).length)
-        combined_lengths['shortcut'].append(LineString(info.shortcut_trajectory).length)
-        combined_lengths['novel'].append(LineString(info.novel_trajectory).length)
-
-        combined_decoded['u'].append(decoded['zones']['u'])
-        combined_decoded['shortcut'].append(decoded['zones']['shortcut'])
-        combined_decoded['novel'].append(decoded['zones']['novel'])
-        combined_decoded['other'].append(decoded['zones']['other'])
-        combined_decoded['together'].append(len(decoded['zones']['u'].time) +
-                                            len(decoded['zones']['shortcut'].time) +
-                                            len(decoded['zones']['novel'].time) +
-                                            len(decoded['zones']['other'].time))
-
-        keys = ['u', 'shortcut', 'novel']
-        combined_errors = dict(u=[], shortcut=[], novel=[], together=[])
-        for trajectory in keys:
-            combined_errors[trajectory].extend(decoded['errors'][trajectory])
-            combined_errors['together'].extend(decoded['errors'][trajectory])
-
-    output = dict()
-    output['combined_decoded'] = combined_decoded
-    output['combined_errors'] = combined_errors
-    output['total_times'] = total_times
-    output['combined_lengths'] = combined_lengths
-
-    return output
+# def combine_decode(infos, filename, experiment_time, shuffle_id, tuning_curves=None):
+#     total_times = []
+#     combined_errors = []
+#     combined_lengths = dict(u=[], shortcut=[], novel=[], other=[], together=[])
+#     combined_decoded = dict(u=[], shortcut=[], novel=[], other=[], together=[])
+#
+#     for i, info in enumerate(infos):
+#         decode_filename = info.session_id + filename
+#         pickled_decoded = os.path.join(pickle_filepath, decode_filename)
+#
+#         if os.path.isfile(pickled_decoded):
+#             with open(pickled_decoded, 'rb') as fileobj:
+#                 decoded = pickle.load(fileobj)
+#         else:
+#             if tuning_curves is None:
+#                 raise ValueError("tuning curves required when generating decoded")
+#             decoded = analyze(info, tuning_curves[i], experiment_time=experiment_time, shuffle_id=shuffle_id)
+#
+#         total_times.append(decoded['times'])
+#
+#         combined_lengths['u'].append(LineString(info.u_trajectory).length)
+#         combined_lengths['shortcut'].append(LineString(info.shortcut_trajectory).length)
+#         combined_lengths['novel'].append(LineString(info.novel_trajectory).length)
+#
+#         combined_decoded['u'].append(decoded['zones']['u'])
+#         combined_decoded['shortcut'].append(decoded['zones']['shortcut'])
+#         combined_decoded['novel'].append(decoded['zones']['novel'])
+#         combined_decoded['other'].append(decoded['zones']['other'])
+#         combined_decoded['together'].append(len(decoded['zones']['u'].time) +
+#                                             len(decoded['zones']['shortcut'].time) +
+#                                             len(decoded['zones']['novel'].time) +
+#                                             len(decoded['zones']['other'].time))
+#
+#         keys = ['u', 'shortcut', 'novel']
+#         combined_errors = dict(u=[], shortcut=[], novel=[], together=[])
+#         for trajectory in keys:
+#             combined_errors[trajectory].extend(decoded['errors'][trajectory])
+#             combined_errors['together'].extend(decoded['errors'][trajectory])
+#
+#     output = dict()
+#     output['combined_decoded'] = combined_decoded
+#     output['combined_errors'] = combined_errors
+#     output['total_times'] = total_times
+#     output['combined_lengths'] = combined_lengths
+#
+#     return output
 
 # outputs_tracks = []
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info
+    from run import spike_sorted_infos
 
-    infos = [info.r068d8]
+    infos = spike_sorted_infos
 
-
-    if 0:
+    if 1:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
@@ -355,7 +351,8 @@ if __name__ == "__main__":
             for experiment_time in experiment_times:
                 analyze(info, tuning_curve, experiment_time)
 
-    if 1:
+    # shuffled_id
+    if 0:
         for info in infos:
             tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
             pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)

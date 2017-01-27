@@ -1,8 +1,9 @@
 import os
+import numpy as np
 import pickle
 from collections import OrderedDict
 
-from analyze_decode import compare_rates, compare_lengths, combine_decode
+# from analyze_decode import compare_rates, compare_lengths, combine_decode
 from utils_plotting import plot_decoded_errors, plot_decoded_compare
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -11,28 +12,28 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'decode')
 
 
-def normalized_time_spent(combined_decoded, n_sessions, lengths, filenames):
-    decoded_linger = dict(u=[], shortcut=[], novel=[])
-    decoded_length = dict(u=[], shortcut=[], novel=[])
-    for val in range(n_sessions):
-        decode = dict()
-        length = dict()
-        for key in decoded_linger:
-            decode[key] = combined_decoded[key][val]
-            length[key] = lengths[key][val]
-        norm_decoded = compare_rates(decode)
-        len_decoded = compare_lengths(decode, length)
-        for key in decoded_linger:
-            decoded_linger[key].append(norm_decoded[key])
-            decoded_length[key].append(len_decoded[key])
-
-    savepath = os.path.join(output_filepath, filenames[0])
-    y_label = 'Points normalized by time spent'
-    plot_decoded(decoded_linger, y_label=y_label, savepath=savepath)
-
-    savepath = os.path.join(output_filepath, filenames[1])
-    y_label = 'Points normalized by track length'
-    plot_decoded(decoded_length, y_label=y_label, savepath=savepath)
+# def normalized_time_spent(combined_decoded, n_sessions, lengths, filenames):
+#     decoded_linger = dict(u=[], shortcut=[], novel=[])
+#     decoded_length = dict(u=[], shortcut=[], novel=[])
+#     for val in range(n_sessions):
+#         decode = dict()
+#         length = dict()
+#         for key in decoded_linger:
+#             decode[key] = combined_decoded[key][val]
+#             length[key] = lengths[key][val]
+#         norm_decoded = compare_rates(decode)
+#         len_decoded = compare_lengths(decode, length)
+#         for key in decoded_linger:
+#             decoded_linger[key].append(norm_decoded[key])
+#             decoded_length[key].append(len_decoded[key])
+#
+#     savepath = os.path.join(output_filepath, filenames[0])
+#     y_label = 'Points normalized by time spent'
+#     plot_decoded(decoded_linger, y_label=y_label, savepath=savepath)
+#
+#     savepath = os.path.join(output_filepath, filenames[1])
+#     y_label = 'Points normalized by track length'
+#     plot_decoded(decoded_length, y_label=y_label, savepath=savepath)
 
 
 def get_zone_proportion(decoded, experiment_time):
@@ -146,29 +147,70 @@ def combine_errors(errors):
     return combine_errors
 
 
-def get_summary(decoded, times):
-    decode = dict(u=[], shortcut=[], novel=[])
-    for key in decode:
-        for session in range(len(times)):
-            decode[key].append(len(decoded[key][session].time)/times[session])
-    return decode
+# def get_summary(decoded, times):
+#     decode = dict(u=[], shortcut=[], novel=[])
+#     for key in decode:
+#         for session in range(len(times)):
+#             decode[key].append(len(decoded[key][session].time)/times[session])
+#     return decode
 
 
-def plot_normalized(infos, tuning_curves, all_tracks_tc=False):
-    # Plot decoding normalized by time spent
-    experiment_time = 'phase3'
-    print('getting decoded', experiment_time)
-    decoded_phase3 = combine_decode(infos, '_decode-' + experiment_time + '.pkl', experiment_time=experiment_time,
-                                    shuffle_id=False, tuning_curves=tuning_curves)
-    print('normalizing ...')
-    n_sessions = len(infos)
-    if all_tracks_tc:
-        filenames = ['combined-time-norm_tracks_decoded_all-tracks.png',
-                     'combined-length-norm_tracks_decoded_all-tracks.png']
-    else:
-        filenames = ['combined-time-norm_tracks_decoded.png', 'combined-length-norm_tracks_decoded.png']
-    normalized_time_spent(decoded_phase3['combined_decoded'], n_sessions, decoded_phase3['combined_lengths'],
-                          filenames)
+def compare_rates(combined_zones, jump=0.1):
+    """Compare position normalized by time spent in zone
+
+    Parameters
+    ----------
+    combined_zones: list of OrderedDict of dict of lists
+        With experiment_time as keys and inner dict
+        has u, shortcut, novel as keys.
+    jump: float
+        Any duration above this amount will not be included.
+
+    Returns
+    -------
+    normalized : dict
+        With u, shortcut, novel as keys.
+
+    """
+    rates = []
+
+    for session in combined_zones:
+        normalized = OrderedDict()
+        for experiment_time in combined_zones[0].keys():
+            normalized[experiment_time] = dict()
+
+        for experiment_time in session.keys():
+            for trajectory in session[experiment_time].keys():
+                linger = np.diff(session[experiment_time][trajectory].time)
+                linger = np.sum(linger[linger < jump])
+                normalized[experiment_time][trajectory] = session[experiment_time][trajectory].n_samples / linger
+
+        rates.append(normalized)
+
+    return rates
+
+
+def get_combined(infos, experiment_times):
+    sessions = []
+
+    for info in infos:
+        combined = OrderedDict()
+        for experiment_time in experiment_times:
+
+            combined[experiment_time] = dict()
+
+            filename = '_decode-' + experiment_time + '.pkl'
+            decode_filename = info.session_id + filename
+            pickled_decoded = os.path.join(pickle_filepath, decode_filename)
+
+            with open(pickled_decoded, 'rb') as fileobj:
+                decoded = pickle.load(fileobj)
+
+            for key in ['u', 'shortcut', 'novel']:
+                combined[experiment_time][key] = decoded['zones'][key]
+
+        sessions.append(combined)
+    return sessions
 
 
 if __name__ == "__main__":
@@ -237,3 +279,11 @@ if __name__ == "__main__":
         plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase2', savepath=filename)
         filename = os.path.join(output_filepath, 'errors_phase3.png')
         plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase3', savepath=filename)
+
+    # plot by rate
+    if 1:
+        experiment_times = ['phase1', 'phase2', 'phase3']
+        sessions = get_combined(infos, experiment_times)
+        norm = compare_rates(sessions)
+        filename = os.path.join(output_filepath, 'rate_phases.png')
+        plot_decoded_compare(norm, ylabel='Total firing rate', savepath=filename)
