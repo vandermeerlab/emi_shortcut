@@ -526,7 +526,7 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             plt.show()
 
 
-def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersize=1, savepath=None):
+def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersize=1, savepath=None, transparent=False):
     """Plots boxplot distance between decoded and actual position for decoded and shuffled_id
 
     Parameters
@@ -568,13 +568,19 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersi
             line.set_mfc(edge_colour)
             line.set_mec(edge_colour)
 
+    ax.text(0.9, 1., 'n_sessions = ' + str(len(decode_errors)),
+            verticalalignment='bottom',
+            horizontalalignment='right',
+            transform=ax.transAxes,
+            color='k', fontsize=10)
+
     ax.set(xlabel=' ', ylabel="Error (cm)")
 
     sns.despine()
     plt.tight_layout()
 
     if savepath is not None:
-        plt.savefig(savepath, transparent=True)
+        plt.savefig(savepath, transparent=transparent)
         plt.close()
     else:
         plt.show()
@@ -634,7 +640,7 @@ def set_size(fig):
     plt.tight_layout()
 
 
-def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None):
+def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparent=False):
     """Plots barplot comparing decoded during experiment phases
 
     Parameters
@@ -688,7 +694,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None):
     ax1.set_ylabel(ylabel)
     ax1.yaxis.set_ticks_position('left')
 
-    ax3.text(0.95, 0.65, 'n_sessions = ' + str(len(decodes)),
+    ax3.text(0.65, 0.9, 'n_sessions = ' + str(len(decodes)),
              verticalalignment='bottom',
              horizontalalignment='right',
              transform=ax3.transAxes,
@@ -698,7 +704,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None):
     plt.subplots_adjust(wspace=0.08)
 
     if savepath is not None:
-        plt.savefig(savepath, transparent=True)
+        plt.savefig(savepath, transparent=transparent)
         plt.close()
     else:
         plt.show()

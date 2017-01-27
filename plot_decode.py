@@ -2,38 +2,14 @@ import os
 import numpy as np
 import pickle
 from collections import OrderedDict
+from shapely.geometry import LineString
 
-# from analyze_decode import compare_rates, compare_lengths, combine_decode
 from utils_plotting import plot_decoded_errors, plot_decoded_compare
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'decode')
-
-
-# def normalized_time_spent(combined_decoded, n_sessions, lengths, filenames):
-#     decoded_linger = dict(u=[], shortcut=[], novel=[])
-#     decoded_length = dict(u=[], shortcut=[], novel=[])
-#     for val in range(n_sessions):
-#         decode = dict()
-#         length = dict()
-#         for key in decoded_linger:
-#             decode[key] = combined_decoded[key][val]
-#             length[key] = lengths[key][val]
-#         norm_decoded = compare_rates(decode)
-#         len_decoded = compare_lengths(decode, length)
-#         for key in decoded_linger:
-#             decoded_linger[key].append(norm_decoded[key])
-#             decoded_length[key].append(len_decoded[key])
-#
-#     savepath = os.path.join(output_filepath, filenames[0])
-#     y_label = 'Points normalized by time spent'
-#     plot_decoded(decoded_linger, y_label=y_label, savepath=savepath)
-#
-#     savepath = os.path.join(output_filepath, filenames[1])
-#     y_label = 'Points normalized by track length'
-#     plot_decoded(decoded_length, y_label=y_label, savepath=savepath)
 
 
 def get_zone_proportion(decoded, experiment_time):
@@ -147,14 +123,6 @@ def combine_errors(errors):
     return combine_errors
 
 
-# def get_summary(decoded, times):
-#     decode = dict(u=[], shortcut=[], novel=[])
-#     for key in decode:
-#         for session in range(len(times)):
-#             decode[key].append(len(decoded[key][session].time)/times[session])
-#     return decode
-
-
 def compare_rates(combined_zones, jump=0.1):
     """Compare position normalized by time spent in zone
 
@@ -168,11 +136,11 @@ def compare_rates(combined_zones, jump=0.1):
 
     Returns
     -------
-    normalized : dict
+    by_linger : dict
         With u, shortcut, novel as keys.
 
     """
-    rates = []
+    by_linger = []
 
     for session in combined_zones:
         normalized = OrderedDict()
@@ -185,9 +153,49 @@ def compare_rates(combined_zones, jump=0.1):
                 linger = np.sum(linger[linger < jump])
                 normalized[experiment_time][trajectory] = session[experiment_time][trajectory].n_samples / linger
 
-        rates.append(normalized)
+        by_linger.append(normalized)
 
-    return rates
+    return by_linger
+
+
+def compare_lengths(infos, combined_zones):
+    """Compare position normalized by time spent in zone.
+
+    Parameters
+    ----------
+    infos: list of modules
+    combined_zones: list of OrderedDict of dict of lists
+        With experiment_time as keys and inner dict
+        has u, shortcut, novel as keys.
+
+    Returns
+    -------
+    by_track_length : dict
+        With u, shortcut, novel as keys.
+
+    """
+
+    lengths = dict(u=[], shortcut=[], novel=[])
+    for info in infos:
+        lengths['u'].append(LineString(info.u_trajectory).length)
+        lengths['shortcut'].append(LineString(info.shortcut_trajectory).length)
+        lengths['novel'].append(LineString(info.novel_trajectory).length)
+
+    by_track_length = []
+
+    for i, session in enumerate(combined_zones):
+        normalized = OrderedDict()
+        for experiment_time in combined_zones[0].keys():
+            normalized[experiment_time] = dict()
+
+        for experiment_time in session.keys():
+            for trajectory in session[experiment_time].keys():
+                normalized[experiment_time][trajectory] = session[experiment_time][trajectory].n_samples / \
+                                                          lengths[trajectory][i]
+
+        by_track_length.append(normalized)
+
+    return by_track_length
 
 
 def get_combined(infos, experiment_times):
@@ -217,7 +225,7 @@ if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, error_infos
     infos = spike_sorted_infos
 
-    if 0:
+    if 1:
         experiment_times = ['pauseA', 'pauseB']
 
         decodes = []
@@ -280,10 +288,32 @@ if __name__ == "__main__":
         filename = os.path.join(output_filepath, 'errors_phase3.png')
         plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase3', savepath=filename)
 
-    # plot by rate
+    # Plot by time spent
     if 1:
         experiment_times = ['phase1', 'phase2', 'phase3']
         sessions = get_combined(infos, experiment_times)
-        norm = compare_rates(sessions)
+        norm_time = compare_rates(sessions)
         filename = os.path.join(output_filepath, 'rate_phases.png')
-        plot_decoded_compare(norm, ylabel='Total firing rate', savepath=filename)
+        plot_decoded_compare(norm_time, ylabel='Total firing rate', savepath=filename)
+
+    # Plot by track length
+    if 1:
+        experiment_times = ['phase1', 'phase2', 'phase3']
+        sessions = get_combined(infos, experiment_times)
+        norm_length = compare_lengths(infos, sessions)
+        filename = os.path.join(output_filepath, 'track-length_phases.png')
+        plot_decoded_compare(norm_length, ylabel='Number of decoded positions by track length', savepath=filename)
+
+    if 1:
+        experiment_times = ['pauseA', 'pauseB']
+        sessions = get_combined(infos, experiment_times)
+        norm_length = compare_lengths(infos, sessions)
+        filename = os.path.join(output_filepath, 'track-length_pauses.png')
+        plot_decoded_compare(norm_length, ylabel='Number of decoded positions by track length', savepath=filename)
+
+    if 1:
+        experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+        sessions = get_combined(infos, experiment_times)
+        norm_length = compare_lengths(infos, sessions)
+        filename = os.path.join(output_filepath, 'track-length_all.png')
+        plot_decoded_compare(norm_length, ylabel='Number of decoded positions by track length', savepath=filename)
