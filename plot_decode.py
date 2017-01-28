@@ -158,7 +158,7 @@ def compare_rates(combined_zones, jump=0.1):
     return by_linger
 
 
-def compare_lengths(infos, combined_zones):
+def compare_lengths(infos, combined_zones, timebin=0.025):
     """Compare position normalized by time spent in zone.
 
     Parameters
@@ -170,11 +170,11 @@ def compare_lengths(infos, combined_zones):
 
     Returns
     -------
-    by_track_length : dict
-        With u, shortcut, novel as keys.
+    by_track_length : list
+        Of OrderedDict with experiment_times as keys,
+        each a dict with u, shortcut, novel as keys.
 
     """
-
     lengths = dict(u=[], shortcut=[], novel=[])
     for info in infos:
         lengths['u'].append(LineString(info.u_trajectory).length)
@@ -185,17 +185,57 @@ def compare_lengths(infos, combined_zones):
 
     for i, session in enumerate(combined_zones):
         normalized = OrderedDict()
-        for experiment_time in combined_zones[0].keys():
-            normalized[experiment_time] = dict()
+        for exp in combined_zones[0].keys():
+            normalized[exp] = dict()
 
-        for experiment_time in session.keys():
-            for trajectory in session[experiment_time].keys():
-                normalized[experiment_time][trajectory] = session[experiment_time][trajectory].n_samples / \
-                                                          lengths[trajectory][i]
+        for exp in session.keys():
+            for trajectory in session[exp].keys():
+                normalized[exp][trajectory] = (session[exp][trajectory].n_samples * timebin) / lengths[trajectory][i]
 
         by_track_length.append(normalized)
 
     return by_track_length
+
+
+def get_proportions(norm):
+    """Computes the proportion of normalized decoded positions
+
+    Parameters
+    ----------
+    norm : list
+        Of OrderedDict with experiment_times as keys,
+        each a dict with u, shortcut, novel as keys.
+
+    Returns
+    -------
+    proportion : list
+        Of OrderedDict with experiment_times as keys,
+        each a dict with u, shortcut, novel as keys.
+
+    """
+
+    proportion = []
+
+    for i, session in enumerate(norm):
+        session_proportion = OrderedDict()
+        n_total = OrderedDict()
+
+        for exp in norm[0].keys():
+            session_proportion[exp] = dict()
+            n_total[exp] = dict()
+
+        for exp in session.keys():
+            n_total[exp] = 0
+            for trajectory in session[exp].keys():
+                n_total[exp] += norm[i][exp][trajectory]
+
+        for exp in session.keys():
+            for trajectory in session[exp].keys():
+                session_proportion[exp][trajectory] = norm[i][exp][trajectory] / n_total[exp]
+
+        proportion.append(session_proportion)
+
+    return proportion
 
 
 def get_combined(infos, experiment_times):
@@ -203,8 +243,8 @@ def get_combined(infos, experiment_times):
 
     for info in infos:
         combined = OrderedDict()
-        for experiment_time in experiment_times:
 
+        for experiment_time in experiment_times:
             combined[experiment_time] = dict()
 
             filename = '_decode-' + experiment_time + '.pkl'
@@ -218,6 +258,7 @@ def get_combined(infos, experiment_times):
                 combined[experiment_time][key] = decoded['zones'][key]
 
         sessions.append(combined)
+
     return sessions
 
 
@@ -225,7 +266,7 @@ if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, error_infos
     infos = spike_sorted_infos
 
-    if 1:
+    if 0:
         experiment_times = ['pauseA', 'pauseB']
 
         decodes = []
@@ -256,7 +297,6 @@ if __name__ == "__main__":
 
         filename = os.path.join(output_filepath, 'decode_all.png')
         plot_decoded_compare(decodes, savepath=filename)
-
 
         experiment_times = ['prerecord', 'postrecord']
 
@@ -289,7 +329,7 @@ if __name__ == "__main__":
         plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase3', savepath=filename)
 
     # Plot by time spent
-    if 1:
+    if 0:
         experiment_times = ['phase1', 'phase2', 'phase3']
         sessions = get_combined(infos, experiment_times)
         norm_time = compare_rates(sessions)
@@ -301,19 +341,30 @@ if __name__ == "__main__":
         experiment_times = ['phase1', 'phase2', 'phase3']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
+        proportion = get_proportions(norm_length)
         filename = os.path.join(output_filepath, 'track-length_phases.png')
-        plot_decoded_compare(norm_length, ylabel='Number of decoded positions by track length', savepath=filename)
+        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
+        proportion = get_proportions(norm_length)
         filename = os.path.join(output_filepath, 'track-length_pauses.png')
-        plot_decoded_compare(norm_length, ylabel='Number of decoded positions by track length', savepath=filename)
+        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
 
     if 1:
         experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
+        proportion = get_proportions(norm_length)
         filename = os.path.join(output_filepath, 'track-length_all.png')
-        plot_decoded_compare(norm_length, ylabel='Number of decoded positions by track length', savepath=filename)
+        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
+
+    if 1:
+        experiment_times = ['prerecord', 'postrecord']
+        sessions = get_combined(infos, experiment_times)
+        norm_length = compare_lengths(infos, sessions)
+        proportion = get_proportions(norm_length)
+        filename = os.path.join(output_filepath, 'track-length_prepost.png')
+        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)

@@ -645,8 +645,8 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
 
     Parameters
     ----------
-    decodes: list of dict
-        With experiment_time as keys, each a dict.
+    decodes: list
+        Of OrderedDict with experiment_time as keys, each a dict.
         The keys of that dict are u, shortcut, novel, other, each a vdmlab.Position object.
     ylabel: str
     savepath : str or None

@@ -91,6 +91,8 @@ path_pts['pedestal'] = [368, 188]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
+# u_trajectory = [path_pts[i] for i in ['feeder1', 'point1']]
+
 u_trajectory = [path_pts['feeder1'], path_pts['point1'], path_pts['point2'], path_pts['turn1'],
                 path_pts['point3'], path_pts['point4'], path_pts['point5'], path_pts['point6a'], path_pts['point6'],
                 path_pts['point7'], path_pts['point8'], path_pts['turn2'], path_pts['point9'],
