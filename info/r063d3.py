@@ -57,22 +57,22 @@ track_length['novel'] = 45.19157442807024
 
 path_pts = dict()
 path_pts['feeder1'] = [547, 457]
-path_pts['point1'] = [558, 451]
-path_pts['point2'] = [545, 401]
+path_pts['pt1'] = [558, 451]
+path_pts['pt2'] = [545, 401]
 path_pts['turn1'] = [542, 374]
-path_pts['point3'] = [511, 380]
-path_pts['point4'] = [443, 399]
-path_pts['point5'] = [362, 418]
-path_pts['point6a'] = [340, 407]
-path_pts['point6'] = [310, 385]
-path_pts['point7'] = [292, 404]
-path_pts['point8'] = [255, 379]
+path_pts['pt3'] = [511, 380]
+path_pts['pt4'] = [443, 399]
+path_pts['pt5'] = [362, 418]
+path_pts['pt6a'] = [340, 407]
+path_pts['pt6'] = [310, 385]
+path_pts['pt7'] = [292, 404]
+path_pts['pt8'] = [255, 379]
 path_pts['turn2'] = [217, 375]
-path_pts['point9'] = [217, 316]
-path_pts['point10'] = [236, 84]
+path_pts['pt9'] = [217, 316]
+path_pts['pt10'] = [236, 84]
 path_pts['turn3'] = [249, 59]
-path_pts['point11'] = [289, 51]
-path_pts['point12'] = [532, 47]
+path_pts['pt11'] = [289, 51]
+path_pts['pt12'] = [532, 47]
 path_pts['feeder2'] = [670, 56]
 path_pts['shortcut1'] = [446, 391]
 path_pts['spt1'] = [438, 334]
@@ -91,20 +91,16 @@ path_pts['pedestal'] = [368, 188]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
-# u_trajectory = [path_pts[i] for i in ['feeder1', 'point1']]
+full_u_trajectory = [path_pts[i] for i in ['feeder1', 'pt1', 'pt2', 'turn1', 'pt3', 'pt4', 'pt5', 'pt6a', 'pt6',
+                                           'pt7', 'pt8', 'turn2', 'pt9', 'pt10', 'turn3', 'pt11', 'pt12', 'feeder2']]
 
-u_trajectory = [path_pts['feeder1'], path_pts['point1'], path_pts['point2'], path_pts['turn1'],
-                path_pts['point3'], path_pts['point4'], path_pts['point5'], path_pts['point6a'], path_pts['point6'],
-                path_pts['point7'], path_pts['point8'], path_pts['turn2'], path_pts['point9'],
-                path_pts['point10'], path_pts['turn3'], path_pts['point11'], path_pts['point12'],
-                path_pts['feeder2']]
+u_trajectory = [path_pts[i] for i in ['pt4', 'pt5', 'pt6a', 'pt6', 'pt7', 'pt8', 'turn2',
+                                      'pt9', 'pt10', 'turn3', 'pt11', 'pt12', 'feeder2']]
 
-shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'],
-                       path_pts['spt3'], path_pts['spt4'], path_pts['spt5'], path_pts['spt6'],
-                       path_pts['spt7'], path_pts['shortcut2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4',
+                                             'spt5', 'spt6', 'spt7', 'shortcut2']]
 
-novel_trajectory = [path_pts['novel1'], path_pts['npt1'],
-                    path_pts['npt2'], path_pts['novel2']]
+novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['swr'] = vdm.Epoch(np.array([[9692.2, 9692.5],

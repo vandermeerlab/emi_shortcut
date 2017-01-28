@@ -51,18 +51,19 @@ scale_targets = (3.7, 3.8)
 fs = 2000
 
 path_pts = dict()
-path_pts['feeder1'] = [525, 460]
-path_pts['turn1'] = [527, 376]
-path_pts['pt1'] = [456, 383]
-path_pts['pt2'] = [369, 398]
-path_pts['turn2'] = [200, 351]
+path_pts['feeder1'] = [525, 445]
+path_pts['turn1'] = [527, 360]
+path_pts['pt1'] = [456, 365]
+path_pts['pt2'] = [369, 380]
+path_pts['pt2a'] = [304, 375]
+path_pts['turn2'] = [200, 335]
 path_pts['pt3'] = [198, 211]
 path_pts['turn3'] = [213, 73]
 path_pts['pt4'] = [254, 54]
 path_pts['pt5'] = [361, 48]
 path_pts['pt6'] = [534, 60]
 path_pts['feeder2'] = [629, 60]
-path_pts['shortcut1'] = [304, 383]
+path_pts['shortcut1'] = [304, 375]
 path_pts['spt1'] = [308, 310]
 path_pts['spt2'] = [334, 277]
 path_pts['spt3'] = [414, 274]
@@ -70,18 +71,17 @@ path_pts['spt4'] = [508, 268]
 path_pts['spt5'] = [528, 241]
 path_pts['spt6'] = [535, 164]
 path_pts['shortcut2'] = [534, 60]
-path_pts['novel1'] = [200, 351]
-path_pts['novel2'] = [193, 473]
+path_pts['novel1'] = [200, 335]
+path_pts['novel2'] = [193, 455]
 path_pts['pedestal'] = [351, 157]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
-u_trajectory = [path_pts['feeder1'], path_pts['turn1'], path_pts['pt1'],
-                path_pts['pt2'], path_pts['turn2'], path_pts['pt3'], path_pts['turn3'], path_pts['pt4'],
-                path_pts['pt5'], path_pts['pt6'], path_pts['feeder2']]
+full_u_trajectory = [path_pts[i] for i in ['feeder1', 'turn1', 'pt1', 'pt2', 'pt2a', 'turn2', 'pt3', 'turn3',
+                                           'pt4', 'pt5', 'pt6', 'feeder2']]
 
-shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'],
-                       path_pts['spt3'], path_pts['spt4'], path_pts['spt5'],
-                       path_pts['spt6'], path_pts['shortcut2']]
+u_trajectory = [path_pts[i] for i in ['pt2a', 'turn2', 'pt3', 'turn3', 'pt4', 'pt5', 'pt6']]
 
-novel_trajectory = [path_pts['novel1'], path_pts['novel2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4', 'spt5', 'spt6', 'shortcut2']]
+
+novel_trajectory = [path_pts[i] for i in ['novel1', 'novel2']]

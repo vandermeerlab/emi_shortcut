@@ -57,7 +57,7 @@ path_pts['turn1'] = [540, 378]
 path_pts['pt2'] = [509, 379]
 path_pts['pt3'] = [438, 394]
 path_pts['pt4'] = [391, 409]
-path_pts['pt5'] = [247, 367]
+path_pts['pt5'] = [327, 382]
 path_pts['pt6'] = [325, 397]
 path_pts['turn2'] = [228, 352]
 path_pts['pt7'] = [222, 328]
@@ -66,7 +66,7 @@ path_pts['pt9'] = [221, 111]
 path_pts['turn3'] = [225, 65]
 path_pts['pt10'] = [274, 54]
 path_pts['pt11'] = [477, 44]
-path_pts['pt12'] = [585, 60]
+path_pts['pt12'] = [560, 52]
 path_pts['feeder2'] = [659, 70]
 path_pts['shortcut1'] = [327, 382]
 path_pts['spt1'] = [325, 333]
@@ -84,18 +84,14 @@ path_pts['pedestal'] = [380, 156]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
-u_trajectory = [path_pts['feeder1'], path_pts['pt1'], path_pts['turn1'],
-                path_pts['pt2'], path_pts['pt3'], path_pts['pt4'], path_pts['pt5'],
-                path_pts['pt6'], path_pts['turn2'], path_pts['pt7'],
-                path_pts['pt8'], path_pts['pt9'], path_pts['turn3'],
-                path_pts['pt10'], path_pts['pt11'], path_pts['pt12'], path_pts['feeder2']]
+full_u_trajectory = [path_pts[i] for i in ['feeder1', 'pt1', 'turn1', 'pt2', 'pt3', 'pt4', 'pt5', 'pt6', 'turn2',
+                                           'pt7', 'pt8', 'pt9', 'turn3', 'pt10', 'pt11', 'pt12', 'feeder2']]
 
-shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'],
-                       path_pts['spt3'], path_pts['spt4'], path_pts['spt5'],
-                       path_pts['spt6'], path_pts['shortcut2']]
+u_trajectory = [path_pts[i] for i in ['pt5', 'pt6', 'turn2', 'pt7', 'pt8', 'pt9', 'turn3', 'pt10', 'pt11', 'pt12']]
 
-novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'],
-                    path_pts['novel2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4', 'spt5', 'spt6', 'shortcut2']]
+
+novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['swr'] = vdm.Epoch(np.array([[9741.2, 9741.4],

@@ -55,6 +55,7 @@ path_pts['feeder1'] = [525, 460]
 path_pts['turn1'] = [527, 376]
 path_pts['pt1'] = [456, 383]
 path_pts['pt2'] = [369, 398]
+path_pts['pt2a'] = [304, 383]
 path_pts['turn2'] = [200, 351]
 path_pts['pt3'] = [198, 211]
 path_pts['turn3'] = [210, 88]
@@ -76,11 +77,11 @@ path_pts['pedestal'] = [606, 288]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
-u_trajectory = [path_pts['feeder1'], path_pts['turn1'], path_pts['pt1'],
-                path_pts['pt2'], path_pts['turn2'], path_pts['pt3'], path_pts['turn3'], path_pts['pt4'],
-                path_pts['pt5'], path_pts['pt6'], path_pts['feeder2']]
+full_u_trajectory = [path_pts[i] for i in ['feeder1', 'turn1', 'pt1', 'pt2', 'pt2a', 'turn2', 'pt3', 'turn3',
+                                           'pt4', 'pt5', 'pt6', 'feeder2']]
 
-shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'],
-                       path_pts['spt3'], path_pts['spt4'], path_pts['shortcut2']]
+u_trajectory = [path_pts[i] for i in ['pt2a', 'turn2', 'pt3', 'turn3', 'pt4', 'pt5', 'pt6']]
 
-novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['npt2'], path_pts['novel2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4', 'shortcut2']]
+
+novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'novel2']]

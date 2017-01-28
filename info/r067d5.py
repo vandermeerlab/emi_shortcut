@@ -57,7 +57,7 @@ path_pts['turn1'] = [525, 374]
 path_pts['pt2'] = [461, 377]
 path_pts['pt3'] = [385, 388]
 path_pts['pt4'] = [328, 394]
-path_pts['pt5'] = [303, 388]
+path_pts['pt5'] = [304, 379]
 path_pts['pt6'] = [221, 360]
 path_pts['turn2'] = [199, 356]
 path_pts['pt7'] = [197, 323]
@@ -66,6 +66,7 @@ path_pts['pt9'] = [206, 89]
 path_pts['turn3'] = [207, 65]
 path_pts['pt10'] = [231, 56]
 path_pts['pt11'] = [322, 43]
+path_pts['pt11a'] = [407, 53]
 path_pts['pt12'] = [512, 46]
 path_pts['feeder2'] = [629, 60]
 path_pts['shortcut1'] = [304, 379]
@@ -79,19 +80,15 @@ path_pts['shortcut2'] = [407, 53]
 path_pts['novel1'] = [207, 65]
 path_pts['npt1'] = [97, 77]
 path_pts['novel2'] = [97, 193]
-path_pts['pedestal'] = [540, 248]
+path_pts['pedestal'] = [545, 248]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
-u_trajectory = [path_pts['feeder1'], path_pts['pt1'], path_pts['turn1'],
-                path_pts['pt2'], path_pts['pt3'], path_pts['pt4'],
-                path_pts['pt5'], path_pts['pt6'], path_pts['turn2'],
-                path_pts['pt7'], path_pts['pt8'], path_pts['pt9'],
-                path_pts['turn3'], path_pts['pt10'], path_pts['pt11'],
-                path_pts['pt12'], path_pts['feeder2']]
+full_u_trajectory = [path_pts[i] for i in ['feeder1', 'pt1', 'turn1', 'pt2', 'pt3', 'pt4', 'pt5', 'pt6',
+                                           'turn2', 'pt7', 'pt8', 'pt9', 'turn3', 'pt10', 'pt11', 'pt12', 'feeder2']]
 
-shortcut_trajectory = [path_pts['shortcut1'], path_pts['spt1'], path_pts['spt2'],
-                       path_pts['spt3'], path_pts['spt4'], path_pts['spt5'],
-                       path_pts['spt6'], path_pts['shortcut2']]
+u_trajectory = [path_pts[i] for i in ['pt5', 'pt6', 'turn2', 'pt7', 'pt8', 'pt9', 'turn3', 'pt10', 'pt11', 'pt11a']]
 
-novel_trajectory = [path_pts['novel1'], path_pts['npt1'], path_pts['novel2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4', 'spt5', 'spt6', 'shortcut2']]
+
+novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'novel2']]
