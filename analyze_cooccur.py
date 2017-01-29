@@ -36,7 +36,7 @@ def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
     xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
     yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
 
-    zones = find_zones(info)
+    zones = find_zones(info, remove_feeder=False)
 
     field_thresh = 1.0
     fields_tunings = categorize_fields(tuning_curve, zones, xedges, yedges, field_thresh=field_thresh)

@@ -73,7 +73,7 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
     xy_centers = vdm.cartesian(xcenters, ycenters)
 
-    zones = find_zones(info, expand_by=4)
+    zones = find_zones(info, remove_feeder=False, expand_by=4)
 
     field_thresh = 1.0
     fields_tunings = categorize_fields(tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)

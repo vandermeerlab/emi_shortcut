@@ -230,12 +230,13 @@ def expand_line(start_pt, stop_pt, line, expand_by):
     return zone
 
 
-def find_zones(info, expand_by=6):
+def find_zones(info, remove_feeder, expand_by=6):
     """Finds zones from ideal trajectories.
 
     Parameters
     ----------
     info : shortcut module
+    remove_feeder: boolean
     expand_by : int or float
         Amount to expand the line.
 
@@ -259,17 +260,30 @@ def find_zones(info, expand_by=6):
     novel_stop = Point(info.novel_trajectory[-1])
     pedestal_center = Point(info.path_pts['pedestal'][0], info.path_pts['pedestal'][1])
     pedestal = pedestal_center.buffer(expand_by*2.2)
+    feeder1_center = Point(info.path_pts['feeder1'][0], info.path_pts['feeder1'][1])
+    feeder1 = feeder1_center.buffer(expand_by * 1.2)
+    feeder2_center = Point(info.path_pts['feeder2'][0], info.path_pts['feeder2'][1])
+    feeder2 = feeder2_center.buffer(expand_by * 1.2)
+
+    zone_u = expand_line(u_start, u_stop, u_line, expand_by)
+    zone_shortcut = expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
+    zone_novel = expand_line(novel_start, novel_stop, novel_line, expand_by)
 
     zone = dict()
-    zone['u'] = expand_line(u_start, u_stop, u_line, expand_by)
-    zone['shortcut'] = expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
-    zone['novel'] = expand_line(novel_start, novel_stop, novel_line, expand_by)
-    zone['ushort'] = zone['u'].intersection(zone['shortcut'])
-    zone['unovel'] = zone['u'].intersection(zone['novel'])
-    zone['uped'] = zone['u'].intersection(pedestal)
-    zone['shortped'] = zone['shortcut'].intersection(pedestal)
-    zone['novelped'] = zone['novel'].intersection(pedestal)
-    zone['pedestal'] = pedestal
+    zone['u'] = zone_u
+    zone['shortcut'] = zone_shortcut.difference(zone_u)
+    zone['shortcut'] = zone['shortcut'].difference(zone_novel)
+    zone['novel'] = zone_novel.difference(zone_u)
+    zone['pedestal'] = pedestal.difference(zone_u)
+    zone['pedestal'] = zone['pedestal'].difference(zone_shortcut)
+    zone['pedestal'] = zone['pedestal'].difference(zone_novel)
+
+    if remove_feeder:
+        for feeder in [feeder1, feeder2]:
+            zone['u'] = zone['u'].difference(feeder)
+            zone['shortcut'] = zone['shortcut'].difference(feeder)
+            zone['novel'] = zone['novel'].difference(feeder)
+            zone['pedestal'] = zone['pedestal'].difference(feeder)
 
     return zone
 

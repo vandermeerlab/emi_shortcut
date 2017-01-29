@@ -47,7 +47,7 @@ def point_in_zones(position, zones):
     ----------
     position : vdmlab.Position
     zones : dict
-        With u, ushort, unovel, shortcut, shortped, novel, novelped, pedestal as keys
+        With u, shortcut, novel, pedestal as keys
 
     Returns
     -------
@@ -66,15 +66,15 @@ def point_in_zones(position, zones):
 
     for x, y, time in zip(position.x, position.y, position.time):
         point = Point([x, y])
-        if zones['u'].contains(point) or zones['ushort'].contains(point) or zones['unovel'].contains(point):
+        if zones['u'].contains(point):
             u_data.append([x, y])
             u_times.append(time)
             continue
-        elif zones['shortcut'].contains(point) or zones['shortped'].contains(point):
+        elif zones['shortcut'].contains(point):
             shortcut_data.append([x, y])
             shortcut_times.append(time)
             continue
-        elif zones['novel'].contains(point) or zones['novelped'].contains(point):
+        elif zones['novel'].contains(point):
             novel_data.append([x, y])
             novel_times.append(time)
             continue
@@ -190,7 +190,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     else:
         raise ValueError("decoded cannot be empty.")
 
-    zones = find_zones(info, expand_by=8)
+    zones = find_zones(info, remove_feeder=True, expand_by=8)
     decoded_zones = point_in_zones(decoded, zones)
 
     keys = ['u', 'shortcut', 'novel']
