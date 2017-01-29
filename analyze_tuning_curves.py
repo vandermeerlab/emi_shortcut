@@ -205,13 +205,13 @@ def get_outputs_all(infos):
     return outputs
 
 
-def analyze(info, use_all_tracks=False):
+def analyze(info, speed_limit=0.4, use_all_tracks=False):
     print('tuning curves:', info.session_id)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
     xedges, yedges = vdm.get_xyedges(position)
 
-    run_pos = speed_threshold(position, speed_limit=0.4)
+    run_pos = speed_threshold(position, speed_limit=speed_limit)
 
     track_starts = [info.task_times['phase1'].start,
                     info.task_times['phase2'].start,

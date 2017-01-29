@@ -91,23 +91,21 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_id=False):
+def get_decoded(info, tuning_curve, experiment_time, speed_limit=0.4, shuffle_id=False):
     """Finds decoded for each session.
 
     Parameters
     ----------
     info: module
-    tuning_curves: np.array
+    tuning_curve: np.array
     experiment_time: str
     shuffle_id: bool
         Defaults to False (not shuffled)
 
     Returns
     -------
-    combined_decoded: dict of vdmlab.Position objects
-        With u, shortcut, novel, other, together as keys.
-    combined_errors: list of np.arrays
-    total_times: list
+    decoded: dict of vdmlab.Position objects
+        With u, shortcut, novel, other as keys.
 
     """
     print('decoding:', info.session_id)
@@ -119,7 +117,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_
     xedges, yedges = vdm.get_xyedges(position)
 
     # Filtering tuning curves with too low or too high overall firing rates
-    low_thresh = 1
+    low_thresh = 0.1
     high_thresh = 3000
     tc_sums = np.sum(np.sum(tuning_curve, axis=2), axis=1)
     keep_neurons = (tc_sums > low_thresh) & (tc_sums < high_thresh)
@@ -128,7 +126,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_
     spikes = np.array(spikes)[keep_neurons]
 
     if experiment_time in track_times:
-        run_pos = speed_threshold(position, speed_limit=0.4)
+        run_pos = speed_threshold(position, speed_limit=speed_limit)
     else:
         run_pos = position
 
@@ -182,6 +180,37 @@ def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_
     decoded = vdm.decode_location(likelihood, xy_centers, time_centers)
     nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
     decoded = decoded[~nan_idx]
+
+    output = dict()
+    output['decoded'] = decoded
+    output['epochs_interest'] = epochs_interest
+    output['time_centers'] = time_centers
+    output['track_pos'] = track_pos
+
+    return output
+
+
+def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_id=False):
+    """Evaluates decoded analysis
+
+    Parameters
+    ----------
+    info: module
+    tuning_curve: np.array
+    experiment_time: str
+    shuffle_id: bool
+        Defaults to False (not shuffled)
+
+    Returns
+    -------
+    decoded_output: dict
+
+    """
+    decode = get_decoded(info, tuning_curve, experiment_time, shuffle_id=False)
+    decoded = decode['decoded']
+    epochs_interest = decode['epochs_interest']
+    time_centers = decode['time_centers']
+    track_pos = decode['track_pos']
 
     if not decoded.isempty:
         sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=min_length)
