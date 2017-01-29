@@ -271,12 +271,13 @@ def find_zones(info, remove_feeder, expand_by=6):
 
     zone = dict()
     zone['u'] = zone_u
+    zone['u'] = zone['u'].difference(pedestal)
     zone['shortcut'] = zone_shortcut.difference(zone_u)
     zone['shortcut'] = zone['shortcut'].difference(zone_novel)
+    zone['shortcut'] = zone['shortcut'].difference(pedestal)
     zone['novel'] = zone_novel.difference(zone_u)
-    zone['pedestal'] = pedestal.difference(zone_u)
-    zone['pedestal'] = zone['pedestal'].difference(zone_shortcut)
-    zone['pedestal'] = zone['pedestal'].difference(zone_novel)
+    zone['novel'] = zone['novel'].difference(pedestal)
+    zone['pedestal'] = pedestal
 
     if remove_feeder:
         for feeder in [feeder1, feeder2]:

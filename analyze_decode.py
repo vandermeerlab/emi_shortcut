@@ -91,7 +91,7 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
+def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_id=False):
     """Finds decoded for each session.
 
     Parameters
@@ -184,7 +184,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     decoded = decoded[~nan_idx]
 
     if not decoded.isempty:
-        sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=3)
+        sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=min_length)
         decoded_epochs = sequences.intersect(epochs_interest)
         decoded = decoded[decoded_epochs]
     else:
@@ -203,6 +203,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
             actual_position[trajectory] = vdm.Position(np.hstack((actual_x[..., np.newaxis],
                                                                   actual_y[..., np.newaxis])),
                                                        decoded_zones[trajectory].time)
+
             errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
     else:
         for trajectory in decoded_zones:
@@ -229,54 +230,6 @@ def analyze(info, tuning_curve, experiment_time='tracks', shuffle_id=False):
     return output
 
 
-# def combine_decode(infos, filename, experiment_time, shuffle_id, tuning_curves=None):
-#     total_times = []
-#     combined_errors = []
-#     combined_lengths = dict(u=[], shortcut=[], novel=[], other=[], together=[])
-#     combined_decoded = dict(u=[], shortcut=[], novel=[], other=[], together=[])
-#
-#     for i, info in enumerate(infos):
-#         decode_filename = info.session_id + filename
-#         pickled_decoded = os.path.join(pickle_filepath, decode_filename)
-#
-#         if os.path.isfile(pickled_decoded):
-#             with open(pickled_decoded, 'rb') as fileobj:
-#                 decoded = pickle.load(fileobj)
-#         else:
-#             if tuning_curves is None:
-#                 raise ValueError("tuning curves required when generating decoded")
-#             decoded = analyze(info, tuning_curves[i], experiment_time=experiment_time, shuffle_id=shuffle_id)
-#
-#         total_times.append(decoded['times'])
-#
-#         combined_lengths['u'].append(LineString(info.u_trajectory).length)
-#         combined_lengths['shortcut'].append(LineString(info.shortcut_trajectory).length)
-#         combined_lengths['novel'].append(LineString(info.novel_trajectory).length)
-#
-#         combined_decoded['u'].append(decoded['zones']['u'])
-#         combined_decoded['shortcut'].append(decoded['zones']['shortcut'])
-#         combined_decoded['novel'].append(decoded['zones']['novel'])
-#         combined_decoded['other'].append(decoded['zones']['other'])
-#         combined_decoded['together'].append(len(decoded['zones']['u'].time) +
-#                                             len(decoded['zones']['shortcut'].time) +
-#                                             len(decoded['zones']['novel'].time) +
-#                                             len(decoded['zones']['other'].time))
-#
-#         keys = ['u', 'shortcut', 'novel']
-#         combined_errors = dict(u=[], shortcut=[], novel=[], together=[])
-#         for trajectory in keys:
-#             combined_errors[trajectory].extend(decoded['errors'][trajectory])
-#             combined_errors['together'].extend(decoded['errors'][trajectory])
-#
-#     output = dict()
-#     output['combined_decoded'] = combined_decoded
-#     output['combined_errors'] = combined_errors
-#     output['total_times'] = total_times
-#     output['combined_lengths'] = combined_lengths
-#
-#     return output
-
-# outputs_tracks = []
 
 if __name__ == "__main__":
     from run import spike_sorted_infos
