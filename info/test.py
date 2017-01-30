@@ -34,7 +34,7 @@ scale_targets = (3.6, 3.5)
 fs = 2000
 
 path_pts = dict()
-path_pts['feeder1'] = [0, 0]
+path_pts['feeder1'] = [0, 100]
 path_pts['pt1'] = [10, 10]
 path_pts['pt2'] = [20, 10]
 path_pts['feeder2'] = [100, 100]
@@ -42,7 +42,7 @@ path_pts['shortcut1'] = [40, 10]
 path_pts['shortcut2'] = [50, 10]
 path_pts['novel1'] = [70, 10]
 path_pts['novel2'] = [80, 10]
-path_pts['pedestal'] = [1, 1]
+path_pts['pedestal'] = [110, 110]
 
 # path_pts = convert_to_cm(path_pts, pxl_to_cm)
 

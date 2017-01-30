@@ -190,7 +190,8 @@ def compare_lengths(infos, combined_zones, timebin=0.025):
 
         for exp in session.keys():
             for trajectory in session[exp].keys():
-                normalized[exp][trajectory] = (session[exp][trajectory].n_samples * timebin) / lengths[trajectory][i]
+                # normalized[exp][trajectory] = (session[exp][trajectory].n_samples * timebin) / lengths[trajectory][i]
+                normalized[exp][trajectory] = (session[exp][trajectory].n_samples) / lengths[trajectory][i]
 
         by_track_length.append(normalized)
 

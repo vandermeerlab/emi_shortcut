@@ -91,7 +91,7 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_decoded(info, tuning_curve, experiment_time, speed_limit=0.4, shuffle_id=False):
+def get_decoded(info, tuning_curve, experiment_time, speed_limit, shuffle_id=False):
     """Finds decoded for each session.
 
     Parameters
@@ -190,7 +190,7 @@ def get_decoded(info, tuning_curve, experiment_time, speed_limit=0.4, shuffle_id
     return output
 
 
-def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_id=False):
+def analyze(info, tuning_curve, experiment_time, min_length=3, speed_limit=0.4, shuffle_id=False):
     """Evaluates decoded analysis
 
     Parameters
@@ -206,7 +206,7 @@ def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_
     decoded_output: dict
 
     """
-    decode = get_decoded(info, tuning_curve, experiment_time, shuffle_id=False)
+    decode = get_decoded(info, tuning_curve, experiment_time, speed_limit=speed_limit, shuffle_id=False)
     decoded = decode['decoded']
     epochs_interest = decode['epochs_interest']
     time_centers = decode['time_centers']
@@ -233,7 +233,8 @@ def analyze(info, tuning_curve, experiment_time='tracks', min_length=3, shuffle_
                                                                   actual_y[..., np.newaxis])),
                                                        decoded_zones[trajectory].time)
 
-            errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
+            if actual_position[trajectory].n_samples > 0:
+                errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
     else:
         for trajectory in decoded_zones:
             errors[trajectory] = []
