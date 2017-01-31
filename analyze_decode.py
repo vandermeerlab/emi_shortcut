@@ -91,7 +91,7 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_decoded(info, tuning_curve, experiment_time, speed_limit, shuffle_id=False):
+def get_decoded(info, tuning_curve, experiment_time, speed_limit, min_n_spikes=100, shuffle_id=False):
     """Finds decoded for each session.
 
     Parameters
@@ -113,17 +113,13 @@ def get_decoded(info, tuning_curve, experiment_time, speed_limit, shuffle_id=Fal
     track_times = ['phase1', 'phase2', 'phase3', 'tracks']
     pedestal_times = ['pauseA', 'pauseB', 'prerecord', 'postrecord']
 
-    events, position, spikes, lfp, lfp_theta = get_data(info)
+    events, position, all_spikes, lfp, lfp_theta = get_data(info)
     xedges, yedges = vdm.get_xyedges(position)
 
-    # Filtering tuning curves with too low or too high overall firing rates
-    low_thresh = 0.1
-    high_thresh = 3000
-    tc_sums = np.sum(np.sum(tuning_curve, axis=2), axis=1)
-    keep_neurons = (tc_sums > low_thresh) & (tc_sums < high_thresh)
-    tuning_curve = tuning_curve[keep_neurons]
-
-    spikes = np.array(spikes)[keep_neurons]
+    spikes = []
+    for neuron in all_spikes:
+        if len(neuron.time) > min_n_spikes:
+            spikes.append(neuron)
 
     if experiment_time in track_times:
         run_pos = speed_threshold(position, speed_limit=speed_limit)

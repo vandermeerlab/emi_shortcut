@@ -113,7 +113,8 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
 
     for trajectory in ['u', 'shortcut']:
         for time in ['run', 'swr']:
-            for i, (start, stop) in enumerate(zip(info.sequence[trajectory][time].starts, info.sequence[trajectory][time].stops)):
+            for i, (start, stop) in enumerate(zip(info.sequence[trajectory][time].starts,
+                                                  info.sequence[trajectory][time].stops)):
                 savepath = os.path.join(output_filepath, info.session_id + '_' + time + '-' + trajectory + str(i) + '.pdf')
                 if savefig:
                     plot_sequence(ordered_spikes, lfp, start, stop, savepath)

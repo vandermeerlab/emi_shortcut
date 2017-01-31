@@ -205,7 +205,7 @@ def get_outputs_all(infos):
     return outputs
 
 
-def analyze(info, speed_limit=0.4, use_all_tracks=False):
+def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
     print('tuning curves:', info.session_id)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
@@ -231,7 +231,12 @@ def analyze(info, speed_limit=0.4, use_all_tracks=False):
 
     track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
-    tuning_curves = vdm.tuning_curve_2d(tc_pos, track_spikes, xedges, yedges, gaussian_sigma=0.1)
+    tuning_spikes = []
+    for neuron in track_spikes:
+        if len(neuron.time) > min_n_spikes:
+            tuning_spikes.append(neuron)
+
+    tuning_curves = vdm.tuning_curve_2d(tc_pos, tuning_spikes, xedges, yedges, gaussian_sigma=0.1)
 
     if use_all_tracks:
         tc_filename = info.session_id + '_tuning-curve_all-phases.pkl'
@@ -247,8 +252,8 @@ def analyze(info, speed_limit=0.4, use_all_tracks=False):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r068d8]
+    infos = spike_sorted_infos
+    # infos = [info.r068d8]
 
     if 1:
         for info in infos:

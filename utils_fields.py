@@ -101,16 +101,12 @@ def categorize_fields(tuning_curves, zone, xedges, yedges, field_thresh):
 
         for pt in field:
             point = Point([pt[0], pt[1]])
-            if (i not in fields_tc['u']) and (zone['u'].contains(point) or
-                                              zone['ushort'].contains(point) or
-                                              zone['unovel'].contains(point)):
+            if (i not in fields_tc['u']) and (zone['u'].contains(point)):
                 fields_tc['u'][i] = tuning_curves[i]
 
-            if (i not in fields_tc['shortcut']) and (zone['shortcut'].contains(point) or
-                                                     zone['shortped'].contains(point)):
+            if (i not in fields_tc['shortcut']) and (zone['shortcut'].contains(point)):
                 fields_tc['shortcut'][i] = tuning_curves[i]
 
-            if (i not in fields_tc['novel']) and (zone['novel'].contains(point) or
-                                                  zone['novelped'].contains(point)):
+            if (i not in fields_tc['novel']) and (zone['novel'].contains(point)):
                     fields_tc['novel'][i] = tuning_curves[i]
     return fields_tc
