@@ -191,7 +191,7 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=
     plt.ylabel('Proportion of trials')
     # plt.title('Early')
     # ax.set(yticklabels=[], yticks=[])
-    plt.ylim(0, 0.75)
+    plt.ylim(0, 1.)
     sns.despine(left=False)
     plt.xticks(n_groups, ['U', 'Shortcut', 'Novel'])
 
