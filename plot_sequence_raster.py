@@ -64,10 +64,10 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
     xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
     yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
 
-    tc_filename = info.session_id + '_tuning-curve.pkl'
-    pickled_tuning_curve = os.path.join(pickle_filepath, tc_filename)
-    with open(pickled_tuning_curve, 'rb') as fileobj:
-        tuning_curves = pickle.load(fileobj)
+    neurons_filename = info.session_id + '_neurons.pkl'
+    pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
+    with open(pickled_neurons, 'rb') as fileobj:
+        neurons = pickle.load(fileobj)
 
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
@@ -76,7 +76,7 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
     zones = find_zones(info, remove_feeder=False, expand_by=4)
 
     field_thresh = 1.0
-    fields_tunings = categorize_fields(tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
+    fields_tunings = categorize_fields(neurons.tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
 
     u_line = LineString(info.u_trajectory)
     shortcut_line = LineString(info.shortcut_trajectory)

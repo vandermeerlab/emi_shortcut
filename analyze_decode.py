@@ -91,13 +91,13 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_decoded(info, tuning_curve, experiment_time, speed_limit, min_n_spikes=100, shuffle_id=False):
+def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False):
     """Finds decoded for each session.
 
     Parameters
     ----------
     info: module
-    tuning_curve: np.array
+    neurons: vdm.Neurons
     experiment_time: str
     shuffle_id: bool
         Defaults to False (not shuffled)
@@ -108,7 +108,7 @@ def get_decoded(info, tuning_curve, experiment_time, speed_limit, min_n_spikes=1
         With u, shortcut, novel, other as keys.
 
     """
-    print('decoding:', info.session_id)
+    print('decoding:', info.session_id, experiment_time)
 
     track_times = ['phase1', 'phase2', 'phase3', 'tracks']
     pedestal_times = ['pauseA', 'pauseB', 'prerecord', 'postrecord']
@@ -116,33 +116,25 @@ def get_decoded(info, tuning_curve, experiment_time, speed_limit, min_n_spikes=1
     events, position, all_spikes, lfp, lfp_theta = get_data(info)
     xedges, yedges = vdm.get_xyedges(position)
 
-    spikes = []
-    for neuron in all_spikes:
-        if len(neuron.time) > min_n_spikes:
-            spikes.append(neuron)
+    exp_start = info.task_times[experiment_time].start
+    exp_stop = info.task_times[experiment_time].stop
+
+    decode_spikes = neurons.time_slice(exp_start, exp_stop)
 
     if experiment_time in track_times:
-        run_pos = speed_threshold(position, speed_limit=speed_limit)
+        run_position = speed_threshold(position, speed_limit=speed_limit)
     else:
-        run_pos = position
+        run_position = position
 
-    track_starts = [info.task_times[experiment_time].start]
-    track_stops = [info.task_times[experiment_time].stop]
-
-    track_pos = run_pos.time_slices(track_starts, track_stops)
+    exp_position = run_position.time_slice(exp_start, exp_stop)
 
     if shuffle_id:
-        random.shuffle(tuning_curve)
-
-    start = np.array([info.task_times[experiment_time].start])
-    stop = np.array([info.task_times[experiment_time].stop])
-
-    decode_spikes = [spiketrain.time_slices(start, stop) for spiketrain in spikes]
+        random.shuffle(neurons.tuning_curves)
 
     if experiment_time in track_times:
-        epochs_interest = vdm.Epoch(np.hstack([start, stop]))
+        epochs_interest = vdm.Epoch(np.hstack([exp_start, exp_stop]))
     elif experiment_time in pedestal_times:
-        sliced_lfp = lfp.time_slice(start, stop)
+        sliced_lfp = lfp.time_slice(exp_start, exp_stop)
 
         z_thresh = 3.0
         power_thresh = 5.0
@@ -151,7 +143,14 @@ def get_decoded(info, tuning_curve, experiment_time, speed_limit, min_n_spikes=1
         swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-        epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=3)
+        print('sharp-wave ripples, total:', swrs.n_epochs)
+
+        min_involved = 4
+        epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=min_involved)
+
+        print('sharp-wave ripples, min', min_involved, 'neurons :', epochs_interest.n_epochs)
+        print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
+
         if epochs_interest.n_epochs == 0:
             epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=1)
     else:
@@ -159,11 +158,11 @@ def get_decoded(info, tuning_curve, experiment_time, speed_limit, min_n_spikes=1
                          "'pauseB', phase3', 'postrecord'].")
 
     counts_binsize = 0.025
-    time_edges = get_edges(track_pos, counts_binsize, lastbin=True)
+    time_edges = get_edges(exp_position, counts_binsize, lastbin=True)
     counts = vdm.get_counts(decode_spikes, time_edges, gaussian_std=0.005)
 
-    tc_shape = tuning_curve.shape
-    decoding_tc = tuning_curve.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
+    tc_shape = neurons.tuning_curves.shape
+    decoding_tc = neurons.tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
     likelihood = vdm.bayesian_prob(counts, decoding_tc, counts_binsize)
 
@@ -181,18 +180,18 @@ def get_decoded(info, tuning_curve, experiment_time, speed_limit, min_n_spikes=1
     output['decoded'] = decoded
     output['epochs_interest'] = epochs_interest
     output['time_centers'] = time_centers
-    output['track_pos'] = track_pos
+    output['exp_position'] = exp_position
 
     return output
 
 
-def analyze(info, tuning_curve, experiment_time, min_length=3, speed_limit=0.4, shuffle_id=False):
+def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuffle_id=False):
     """Evaluates decoded analysis
 
     Parameters
     ----------
     info: module
-    tuning_curve: np.array
+    neurons: vdm.Neurons
     experiment_time: str
     shuffle_id: bool
         Defaults to False (not shuffled)
@@ -202,11 +201,11 @@ def analyze(info, tuning_curve, experiment_time, min_length=3, speed_limit=0.4, 
     decoded_output: dict
 
     """
-    decode = get_decoded(info, tuning_curve, experiment_time, speed_limit=speed_limit, shuffle_id=False)
+    decode = get_decoded(info, neurons, experiment_time, speed_limit=speed_limit, shuffle_id=False)
     decoded = decode['decoded']
     epochs_interest = decode['epochs_interest']
     time_centers = decode['time_centers']
-    track_pos = decode['track_pos']
+    exp_position = decode['exp_position']
 
     if not decoded.isempty:
         sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=min_length)
@@ -223,8 +222,8 @@ def analyze(info, tuning_curve, experiment_time, min_length=3, speed_limit=0.4, 
     actual_position = dict()
     if experiment_time in ['phase1', 'phase2', 'phase3', 'tracks']:
         for trajectory in keys:
-            actual_x = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.x)
-            actual_y = np.interp(decoded_zones[trajectory].time, track_pos.time, track_pos.y)
+            actual_x = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.x)
+            actual_y = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.y)
             actual_position[trajectory] = vdm.Position(np.hstack((actual_x[..., np.newaxis],
                                                                   actual_y[..., np.newaxis])),
                                                        decoded_zones[trajectory].time)
@@ -258,28 +257,28 @@ def analyze(info, tuning_curve, experiment_time, min_length=3, speed_limit=0.4, 
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-
+    from run import spike_sorted_infos, info
     infos = spike_sorted_infos
+    # infos = [info.r068d1]
 
     if 1:
         for info in infos:
-            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curve = pickle.load(fileobj)
+            neurons_filename = info.session_id + '_neurons.pkl'
+            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
+            with open(pickled_neurons, 'rb') as fileobj:
+                neurons = pickle.load(fileobj)
             experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
             # experiment_times = ['pauseA', 'pauseB']
             for experiment_time in experiment_times:
-                analyze(info, tuning_curve, experiment_time)
+                analyze(info, neurons, experiment_time)
 
     # shuffled_id
-    if 0:
+    if 1:
         for info in infos:
-            tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curve = pickle.load(fileobj)
+            neurons_filename = info.session_id + '_neurons.pkl'
+            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
+            with open(pickled_neurons, 'rb') as fileobj:
+                neurons = pickle.load(fileobj)
             experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
             for experiment_time in experiment_times:
-                analyze(info, tuning_curve, experiment_time, shuffle_id=True)
+                analyze(info, neurons, experiment_time, shuffle_id=True)

@@ -267,7 +267,7 @@ if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, error_infos
     infos = spike_sorted_infos
 
-    if 0:
+    if 1:
         experiment_times = ['pauseA', 'pauseB']
 
         decodes = []

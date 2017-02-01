@@ -1,12 +1,10 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import pickle
 import vdmlab as vdm
 
 from loading_data import get_data
-from utils_fields import get_unique_fields
-from analyze_tuning_curves import analyze
-from utils_plotting import plot_fields
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -21,10 +19,8 @@ infos = spike_sorted_infos
 for info in infos:
     print('place_fields:', info.session_id)
 
-    # tc_filename = info.session_id + '_tuning_curve.pkl'
-    # pickled_tc = os.path.join(pickle_filepath, tc_filename)
-
     events, position, spikes, lfp, lfp_theta = get_data(info)
+    xedges, yedges = vdm.get_xyedges(position)
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= 0.1
@@ -35,15 +31,15 @@ for info in infos:
 
     sliced_pos = run_pos.time_slice(t_start, t_stop)
 
-    sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
-
-    tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-    pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-    if os.path.isfile(pickled_tuning_curve):
-        with open(pickled_tuning_curve, 'rb') as fileobj:
-            tuning_curves = pickle.load(fileobj)
+    neurons_filename = info.session_id + '_neurons.pkl'
+    pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
+    if os.path.isfile(pickled_neurons):
+        with open(pickled_neurons, 'rb') as fileobj:
+            neurons = pickle.load(fileobj)
     else:
-        tuning_curves = analyze(info)
+        raise ValueError("no neuron file found for", info.session_id)
+
+    sliced_spikes = neurons.time_slice(t_start, t_stop)
 
     heatmap_filename = info.session_id + '_spike_heatmaps.pkl'
     pickled_spike_heatmaps = os.path.join(pickle_filepath, heatmap_filename)
@@ -56,51 +52,20 @@ for info in infos:
         with open(pickled_spike_heatmaps, 'wb') as fileobj:
             pickle.dump(spike_heatmaps, fileobj)
 
-    u_fields = vdm.find_fields(tuning_curves['u'])
-    shortcut_fields = vdm.find_fields(tuning_curves['shortcut'])
-    novel_fields = vdm.find_fields(tuning_curves['novel'])
+    fields = vdm.find_fields(neurons.tuning_curves)
 
-    u_compare = vdm.find_fields(tuning_curves['u'], hz_thresh=3, min_length=1, max_length=len(tuning_curves['u']),
-                                max_mean_firing=10)
-    shortcut_compare = vdm.find_fields(tuning_curves['shortcut'], hz_thresh=3, min_length=1,
-                                       max_length=len(tuning_curves['shortcut']), max_mean_firing=10)
-    novel_compare = vdm.find_fields(tuning_curves['novel'], hz_thresh=3, min_length=1,
-                                    max_length=len(tuning_curves['novel']), max_mean_firing=10)
+    fields_single = vdm.get_single_field(fields)
 
-    u_fields_unique = get_unique_fields(u_fields, shortcut_compare, novel_compare)
-    shortcut_fields_unique = get_unique_fields(shortcut_fields, u_compare, novel_compare)
-    novel_fields_unique = get_unique_fields(novel_fields, u_compare, shortcut_compare)
+    all_tuning_curves = np.zeros(neurons.tuning_shape)
+    for i in range(neurons.n_neurons):
+        all_tuning_curves += neurons.tuning_curves[i]
 
-    u_fields_single = vdm.get_single_field(u_fields_unique)
-    shortcut_fields_single = vdm.get_single_field(shortcut_fields_unique)
-    novel_fields_single = vdm.get_single_field(novel_fields_unique)
+    filename = info.session_id + '-fields.png'
+    savepath = os.path.join(output_filepath, filename)
 
-    print('U: Of', str(len(u_fields)), 'fields,',
-          str(len(u_fields_unique)), 'are unique, with',
-          str(len(u_fields_single)), 'with single peaks.')
-    print('Shortcut: Of', str(len(shortcut_fields)), 'fields,',
-          str(len(shortcut_fields_unique)), 'are unique, with',
-          str(len(shortcut_fields_single)), 'with single peaks.')
-    print('Novel: Of', str(len(novel_fields)), 'fields,',
-          str(len(novel_fields_unique)), 'are unique, with',
-          str(len(novel_fields_single)), 'with single peaks.')
+    xx, yy = np.meshgrid(xedges, yedges)
 
-    num_bins = 100
-
-    all_trajectories = dict(u=u_fields, shortcut=shortcut_fields, novel=novel_fields)
-
-    for trajectory in all_trajectories:
-        all_heatmaps = np.zeros((num_bins, num_bins))
-        for key in all_trajectories[trajectory]:
-            all_heatmaps += spike_heatmaps[key]
-        num_neurons = len(all_trajectories[trajectory])
-
-        filename = info.session_id + '-fields_' + str(trajectory) + '.png'
-        savepath = os.path.join(output_filepath, filename)
-        plot_fields(all_heatmaps, position, num_neurons, savepath)
-
-# for key in novel_fields_unique:
-#     print('plotting neuron ' + str(key))
-#     num_neurons = 1
-#     savepath = output_filepath
-#     plot_fields(spike_heatmaps[key], pos, num_neurons, savepath, savefig=False)
+    pp = plt.pcolormesh(xx, yy, all_tuning_curves, cmap='pink_r')
+    plt.colorbar(pp)
+    plt.axis('off')
+    plt.savefig(savepath, transparent=True)

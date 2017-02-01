@@ -213,41 +213,43 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
 
     run_pos = speed_threshold(position, speed_limit=speed_limit)
 
-    track_starts = [info.task_times['phase1'].start,
+    if use_all_tracks:
+        track_starts = [info.task_times['phase1'].start,
                     info.task_times['phase2'].start,
                     info.task_times['phase3'].start]
-    track_stops = [info.task_times['phase1'].stop,
-                   info.task_times['phase2'].stop,
-                   info.task_times['phase3'].stop]
+        track_stops = [info.task_times['phase1'].stop,
+                       info.task_times['phase2'].stop,
+                       info.task_times['phase3'].stop]
+        track_position = run_pos.time_slices(track_starts, track_stops)
 
-    track_pos = run_pos.time_slices(track_starts, track_stops)
-
-    if use_all_tracks:
-        tc_pos = track_pos
+        filename = info.session_id + '_neurons_all-phases.pkl'
     else:
         track_starts = [info.task_times['phase3'].start]
         track_stops = [info.task_times['phase3'].stop]
-        tc_pos = run_pos.time_slices(track_starts, track_stops)
+        track_position = run_pos.time_slices(track_starts, track_stops)
+
+        filename = info.session_id + '_neurons.pkl'
 
     track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
+    filtered_spikes = []
     tuning_spikes = []
-    for neuron in track_spikes:
+    for neuron, neuron_all in zip(track_spikes, spikes):
         if len(neuron.time) > min_n_spikes:
             tuning_spikes.append(neuron)
+            filtered_spikes.append(neuron_all)
 
-    tuning_curves = vdm.tuning_curve_2d(tc_pos, tuning_spikes, xedges, yedges, gaussian_sigma=0.1)
+    tuning_curves = vdm.tuning_curve_2d(track_position, np.array(tuning_spikes),
+                                        xedges, yedges, gaussian_sigma=0.1)
 
-    if use_all_tracks:
-        tc_filename = info.session_id + '_tuning-curve_all-phases.pkl'
-    else:
-        tc_filename = info.session_id + '_tuning-curve.pkl'
-    pickled_tc = os.path.join(pickle_filepath, tc_filename)
+    neurons = vdm.Neurons(np.array(filtered_spikes), tuning_curves)
+
+    pickled_tc = os.path.join(pickle_filepath, filename)
 
     with open(pickled_tc, 'wb') as fileobj:
-        pickle.dump(tuning_curves, fileobj)
+        pickle.dump(neurons, fileobj)
 
-    return tuning_curves
+    return neurons
 
 
 if __name__ == "__main__":

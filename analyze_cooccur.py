@@ -14,7 +14,7 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'cooccur')
 
 
-def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
+def analyze(info, neurons, experiment_time, all_tracks_tc=False):
     print('cooccur:', info.session_id)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
@@ -39,7 +39,7 @@ def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
     zones = find_zones(info, remove_feeder=False)
 
     field_thresh = 1.0
-    fields_tunings = categorize_fields(tuning_curve, zones, xedges, yedges, field_thresh=field_thresh)
+    fields_tunings = categorize_fields(neurons.tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
 
     unique_fields = dict()
     unique_fields['u'] = get_unique_fields(fields_tunings['u'],
@@ -55,14 +55,14 @@ def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
     field_spikes = dict(u=[], shortcut=[], novel=[])
     for field in unique_fields.keys():
         for key in unique_fields[field]:
-            field_spikes[field].append(spikes[key])
+            field_spikes[field].append(neurons.spikes[key])
 
     t_start = info.task_times[experiment_time].start
     t_stop = info.task_times[experiment_time].stop
 
     sliced_lfp = lfp.time_slice(t_start, t_stop)
 
-    sliced_spikes = [spiketrain.time_slice(t_start, t_stop) for spiketrain in spikes]
+    sliced_spikes = neurons.time_slice(t_start, t_stop)
 
     z_thresh = 3.0
     power_thresh = 5.0
@@ -71,7 +71,7 @@ def analyze(info, tuning_curve, experiment_time, all_tracks_tc=False):
     swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                   power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-    multi_swrs = vdm.find_multi_in_epochs(sliced_spikes, swrs, min_involved=3)
+    multi_swrs = vdm.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
 
     count_matrix = dict()
     for key in field_spikes:
@@ -112,10 +112,10 @@ if __name__ == "__main__":
         print(experiment_time)
         for info in infos:
             if all_tracks_tc:
-                tuning_curve_filename = info.session_id + '_tuning-curve_all-phases.pkl'
+                neurons_filename = info.session_id + '_neurons_all-phases.pkl'
             else:
-                tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
-            pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
-            with open(pickled_tuning_curve, 'rb') as fileobj:
-                tuning_curve = pickle.load(fileobj)
-            analyze(info, tuning_curve, experiment_time, all_tracks_tc)
+                neurons_filename = info.session_id + '_neurons.pkl'
+            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
+            with open(pickled_neurons, 'rb') as fileobj:
+                neurons = pickle.load(fileobj)
+            analyze(info, neurons, experiment_time, all_tracks_tc)
