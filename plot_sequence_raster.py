@@ -20,15 +20,17 @@ sns.set_style('white')
 sns.set_style('ticks')
 
 
-def plot_sequence(ordered_spikes, lfp, start_time, stop_time, savepath=None):
+def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=None, position=None, savepath=None):
     rows = len(ordered_spikes)
+    add_rows = int(rows / 8)
 
-    ms = 132. / rows
-    mew = 0.6
+    ms = ms_fraction / rows
+    mew = 0.7
     spike_loc = 1
 
-    fig = plt.figure(figsize=(2, 3))
-    ax1 = plt.subplot2grid((rows, 1), (0, 0), rowspan=rows)
+    fig = plt.figure(figsize=(4, 6))
+    ax1 = plt.subplot2grid((rows+add_rows, 1), (0, 0), rowspan=rows)
+
 
     for idx, neuron_spikes in enumerate(ordered_spikes):
         ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time))+(idx*spike_loc)-1, '|',
@@ -37,14 +39,39 @@ def plot_sequence(ordered_spikes, lfp, start_time, stop_time, savepath=None):
     ax1.set_xlim([start_time, stop_time])
     ax1.set_ylim([-0.5, len(ordered_spikes)*spike_loc])
 
-    vdm.add_scalebar(ax1, matchy=False, bbox_transform=fig.transFigure,
-                     bbox_to_anchor=(0.9, 0.03), units='s')
+    if lfp is not None:
+        ax2 = plt.subplot2grid((rows+add_rows, 1), (rows, 0), rowspan=add_rows, sharex=ax1)
+        start_idx = vdm.find_nearest_idx(lfp.time, start_time)
+        stop_idx = vdm.find_nearest_idx(lfp.time, stop_time)
+        ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], '#4d004b', lw=0.3)
+        ax2.set_xticks([])
+        ax2.set_xlim([start_time, stop_time])
+        ax2.set_yticks([])
+
+        vdm.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
+                         bbox_to_anchor=(0.9, 0.05), units='ms')
+
+    elif position is not None:
+        ax2 = plt.subplot2grid((rows+add_rows, 1), (rows, 0), rowspan=add_rows, sharex=ax1)
+        start_idx = vdm.find_nearest_idx(position.time, start_time)
+        stop_idx = vdm.find_nearest_idx(position.time, stop_time)
+        ax2.plot(position.time[start_idx:stop_idx], position.y[start_idx:stop_idx], '#045a8d', lw=1)
+        ax2.set_xticks([])
+        ax2.set_xlim([start_time, stop_time])
+        ax2.set_yticks([])
+
+        vdm.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
+                         bbox_to_anchor=(0.9, 0.05), units='ms')
+
+    else:
+        vdm.add_scalebar(ax1, matchy=False, bbox_transform=fig.transFigure,
+                         bbox_to_anchor=(0.9, 0.08), units='s')
 
     sns.despine(bottom=True)
     plt.tight_layout(h_pad=0.003)
 
     if savepath is not None:
-        plt.savefig(savepath, bbox_inches='tight', transparent=True)
+        plt.savefig(savepath, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
