@@ -101,9 +101,9 @@ novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'npt3', 'nov
 
 sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['swr'] = vdm.Epoch(np.array([[27888.2, 27888.6],
-                                           [27924.45, 27924.85]]))
-sequence['u']['run'] = vdm.Epoch(np.array([[25360, 25390],
-                                           [25320, 25350]]))
+                                           [27924.45, 27924.95]]))
+sequence['u']['run'] = vdm.Epoch(np.array([[25355, 25385],
+                                           [25330, 25360]]))
 sequence['u']['ms'] = 15
 
 sequence['shortcut']['swr'] = vdm.Epoch(np.array([[27791.2, 27791.8],

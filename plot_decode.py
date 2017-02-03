@@ -264,8 +264,9 @@ def get_combined(infos, experiment_times):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, days123_infos, days456_infos, error_infos
+    from run import spike_sorted_infos, days123_infos, days456_infos, error_infos, info
     infos = spike_sorted_infos
+    # infos = [info.r066d3]
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']
@@ -346,7 +347,6 @@ if __name__ == "__main__":
         filename = os.path.join(output_filepath, 'track-length_phases.png')
         plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
 
-    if 1:
         experiment_times = ['pauseA', 'pauseB']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
@@ -354,7 +354,6 @@ if __name__ == "__main__":
         filename = os.path.join(output_filepath, 'track-length_pauses.png')
         plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
 
-    if 1:
         experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
@@ -362,7 +361,6 @@ if __name__ == "__main__":
         filename = os.path.join(output_filepath, 'track-length_all.png')
         plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
 
-    if 1:
         experiment_times = ['prerecord', 'postrecord']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
