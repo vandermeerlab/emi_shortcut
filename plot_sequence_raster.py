@@ -28,7 +28,7 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
     mew = 0.7
     spike_loc = 1
 
-    fig = plt.figure(figsize=(4, 6))
+    fig = plt.figure(figsize=(7, 6))
     ax1 = plt.subplot2grid((rows+add_rows, 1), (0, 0), rowspan=rows)
 
 
@@ -72,7 +72,7 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
     plt.tight_layout(h_pad=0.003)
 
     if savepath is not None:
-        plt.savefig(savepath, bbox_inches='tight')
+        plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
         plt.show()
