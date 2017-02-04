@@ -144,20 +144,15 @@ def plot_bydurations(durations, savepath, figsize=(4.5, 3), savefig=True):
         plt.show()
 
 
-def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=True):
+def plot_proportions(proportions, savepath, figsize=(4.5, 3), savefig=True):
     """Plots proportion of each trajectory taken. Behavior only.
 
         Parameters
         ----------
-        us : list of floats
-            Proportion along the u trajectory for each session.
-            len(us) == num_sessions evaluated
-        shortcuts : list of floats
-            Proportion along the shortcut trajectory for each session.
-            len(shortcut) == num_sessions evaluated
-        novels : list of floats
-            Proportion along the novel trajectory for each session.
-            len(novel) == num_sessions evaluated
+        proportions : dict
+            With u, shortcut, novel as keys.
+            Proportion along each trajectory for each session.
+            len(proportions[key]) == num_sessions evaluated
         savepath : str
             Location and filename for the saved plot.
         figsize : tuple
@@ -167,12 +162,12 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=
             shows with plot without saving it.
 
         """
-    all_us = np.mean(us)
-    us_sem = stats.sem(us)
-    all_shortcuts = np.mean(shortcuts)
-    shortcuts_sem = stats.sem(shortcuts)
-    all_novels = np.mean(novels)
-    novels_sem = stats.sem(novels)
+    all_us = np.mean(proportions['u'])
+    us_sem = stats.sem(proportions['u'])
+    all_shortcuts = np.mean(proportions['shortcut'])
+    shortcuts_sem = stats.sem(proportions['shortcut'])
+    all_novels = np.mean(proportions['novel'])
+    novels_sem = stats.sem(proportions['novel'])
 
     n_groups = list(range(3))
 
@@ -187,7 +182,7 @@ def plot_proportions(us, shortcuts, novels, savepath, figsize=(4.5, 3), savefig=
         ax.bar(n_groups[i], data[i], align='center',
                yerr=sems[i], color=colour[i], ecolor='#525252')
 
-    plt.xlabel('(sessions=' + str(len(us)) + ')')
+    plt.xlabel('(sessions=' + str(len(proportions['u'])) + ')')
     plt.ylabel('Proportion of trials')
     # plt.title('Early')
     # ax.set(yticklabels=[], yticks=[])
@@ -245,7 +240,7 @@ def plot_bytrial(togethers, savepath, min_length=30, figsize=(6., 3), savefig=Tr
     sns.despine(left=False)
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
-    plt.legend(loc=1, bbox_to_anchor=(1.42, 1.1))
+    plt.legend(loc=1, bbox_to_anchor=(1.1, 1.1))
 
     if savefig:
         plt.savefig(savepath, bbox_inches='tight', transparent=True)

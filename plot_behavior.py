@@ -20,7 +20,7 @@ outputs = [
 
 def analyze(infos, filename, figsize='normal'):
     durations = dict(u=[], shortcut=[], novel=[])
-    num_sessions = 0
+    n_sessions = 0
 
     trials = []
 
@@ -53,13 +53,13 @@ def analyze(infos, filename, figsize='normal'):
 
         trials.append(trials_idx)
 
-        num_sessions += 1
+        n_sessions += 1
 
         for key in durations:
             for trial in trials_idx[key]:
                 durations[key].append(trials_idx['stop_trials'][trial[0]] - trials_idx['start_trials'][trial[0]])
 
-    durations['num_sessions'] = num_sessions
+    durations['num_sessions'] = n_sessions
 
     shortcuts = []
     us = []
