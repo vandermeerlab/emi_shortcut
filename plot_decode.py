@@ -268,6 +268,9 @@ if __name__ == "__main__":
     infos = spike_sorted_infos
     # infos = [info.r066d3]
 
+    # session = 'r066d3'
+    session = 'combined'
+
     if 1:
         experiment_times = ['pauseA', 'pauseB']
 
@@ -276,7 +279,7 @@ if __name__ == "__main__":
         for info in infos:
             decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
 
-        filename = os.path.join(output_filepath, 'decode_pauses.png')
+        filename = os.path.join(output_filepath, session + '_decode_pauses.png')
         plot_decoded_compare(decodes, savepath=filename)
 
 
@@ -287,7 +290,7 @@ if __name__ == "__main__":
         for info in infos:
             decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
 
-        filename = os.path.join(output_filepath, 'decode_phases.png')
+        filename = os.path.join(output_filepath, session + '_decode_phases.png')
         plot_decoded_compare(decodes, savepath=filename)
 
         experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
@@ -297,7 +300,7 @@ if __name__ == "__main__":
         for info in infos:
             decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
 
-        filename = os.path.join(output_filepath, 'decode_all.png')
+        filename = os.path.join(output_filepath, session + '_decode_all.png')
         plot_decoded_compare(decodes, savepath=filename)
 
         experiment_times = ['prerecord', 'postrecord']
@@ -307,7 +310,7 @@ if __name__ == "__main__":
         for info in infos:
             decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
 
-        filename = os.path.join(output_filepath, 'decode_prepost.png')
+        filename = os.path.join(output_filepath, session + '_decode_prepost.png')
         plot_decoded_compare(decodes, savepath=filename)
 
     # plot errors
@@ -344,26 +347,26 @@ if __name__ == "__main__":
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
         proportion = get_proportions(norm_length)
-        filename = os.path.join(output_filepath, 'track-length_phases.png')
-        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
+        filename = os.path.join(output_filepath, session + '_track-length_phases.png')
+        plot_decoded_compare(proportion, ylabel='Proportion relative to track length', savepath=filename)
 
         experiment_times = ['pauseA', 'pauseB']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
         proportion = get_proportions(norm_length)
-        filename = os.path.join(output_filepath, 'track-length_pauses.png')
-        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
+        filename = os.path.join(output_filepath, session + '_track-length_pauses.png')
+        plot_decoded_compare(proportion, ylabel='Proportion relative to track length', savepath=filename)
 
         experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
         proportion = get_proportions(norm_length)
-        filename = os.path.join(output_filepath, 'track-length_all.png')
-        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
+        filename = os.path.join(output_filepath, session + '_track-length_all.png')
+        plot_decoded_compare(proportion, ylabel='Proportion relative to track length', savepath=filename)
 
         experiment_times = ['prerecord', 'postrecord']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)
         proportion = get_proportions(norm_length)
-        filename = os.path.join(output_filepath, 'track-length_prepost.png')
-        plot_decoded_compare(proportion, ylabel='Proportion of time relative to track length', savepath=filename)
+        filename = os.path.join(output_filepath, session + '_track-length_prepost.png')
+        plot_decoded_compare(proportion, ylabel='Proportion relative to track length', savepath=filename)

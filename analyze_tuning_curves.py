@@ -211,8 +211,6 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
     events, position, spikes, lfp, lfp_theta = get_data(info)
     xedges, yedges = vdm.get_xyedges(position)
 
-    run_pos = speed_threshold(position, speed_limit=speed_limit)
-
     if use_all_tracks:
         track_starts = [info.task_times['phase1'].start,
                     info.task_times['phase2'].start,
@@ -220,15 +218,17 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
         track_stops = [info.task_times['phase1'].stop,
                        info.task_times['phase2'].stop,
                        info.task_times['phase3'].stop]
-        track_position = run_pos.time_slices(track_starts, track_stops)
+        track_position = position.time_slices(track_starts, track_stops)
 
         filename = info.session_id + '_neurons_all-phases.pkl'
     else:
         track_starts = [info.task_times['phase3'].start]
         track_stops = [info.task_times['phase3'].stop]
-        track_position = run_pos.time_slices(track_starts, track_stops)
+        track_position = position.time_slices(track_starts, track_stops)
 
         filename = info.session_id + '_neurons.pkl'
+
+    run_position = speed_threshold(track_position, speed_limit=speed_limit)
 
     track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
 
@@ -239,8 +239,8 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
             tuning_spikes.append(neuron)
             filtered_spikes.append(neuron_all)
 
-    tuning_curves = vdm.tuning_curve_2d(track_position, np.array(tuning_spikes),
-                                        xedges, yedges, gaussian_sigma=0.1)
+    tuning_curves = vdm.tuning_curve_2d(run_position, np.array(tuning_spikes),
+                                        xedges, yedges, occupied_thresh=0.1, gaussian_sigma=0.1)
 
     neurons = vdm.Neurons(np.array(filtered_spikes), tuning_curves)
 

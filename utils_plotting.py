@@ -686,7 +686,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
              verticalalignment='bottom',
              horizontalalignment='right',
              transform=ax3.transAxes,
-             color='k', fontsize=10)
+             color='k', fontsize=12)
 
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.08)
