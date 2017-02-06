@@ -8,11 +8,9 @@ import pandas as pd
 
 import vdmlab as vdm
 
-from utils_behavior import bytrial_counts, summary_bytrial
-
 sns.set_style('white')
 sns.set_style('ticks')
-# sns.set_context('poster')
+sns.set_context('poster')
 
 
 def raster_plot(spikes, savepath, savefig=False):
@@ -104,14 +102,64 @@ def plot_zone(zone):
     plt.plot(zone.exterior.xy[0], zone.exterior.xy[1], 'b', lw=1)
 
 
-def plot_bydurations(durations, savepath, figsize=(4.5, 3), savefig=True):
-    """Plots duration for each trial separated by trajectories. Behavior only.
+def plot_durations(durations, savepath, n_sessions, early_late=False, figsize=(8, 5), fliersize=3, savefig=True):
+    """ Plots duration of each trajectory taken. Behavior only.
 
     Parameters
     ----------
-    durations : dict
-        With u, shortcut, novel, num_sessions as keys.
-        Each value is a list of durations (float) for a each session.
+    durations : pd.DataFrame
+        With trajectory and value columns.
+        For comparison, also a time column.
+    savepath : str
+        Location and filename for the saved plot.
+    n_sessions: int
+    early_late: boolean
+    figsize : tuple
+        Width by height in inches.
+    savefig : boolean
+        Default is True and will save the plot to the specified location. False
+        shows with plot without saving it.
+
+    """
+    plt.figure(figsize=(8, 5))
+
+    flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
+
+    if early_late:
+        colour = ['#bf812d', '#35978f']
+        ax = sns.boxplot(x="trajectory", y="value", hue="time", data=durations, palette=colour,
+                         flierprops=flierprops)
+
+    else:
+        colour = ['#0072b2', '#009e73', '#d55e00']
+        ax = sns.boxplot(x="trajectory", y="value", data=durations, palette=colour,
+                         flierprops=flierprops)
+
+    ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
+    plt.ylabel('Duration of trial (s)')
+    plt.xlabel('(sessions=' + str(n_sessions) + ')')
+    plt.ylim(0, 120)
+    sns.despine(left=False)
+
+    plt.tight_layout()
+
+    if savefig:
+        plt.savefig(savepath, transparent=True)
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_proportions(proportions, savepath, n_sessions, early_late=False, figsize=(8, 5), savefig=True):
+    """ Plots proportion of each trajectory taken. Behavior only.
+
+    Parameters
+    ----------
+    proportions : pd.DataFrame
+        With trajectory and value columns.
+        For comparison, also a time column.
+    n_sessions: int
+    early_late: boolean
     savepath : str
         Location and filename for the saved plot.
     figsize : tuple
@@ -121,106 +169,51 @@ def plot_bydurations(durations, savepath, figsize=(4.5, 3), savefig=True):
         shows with plot without saving it.
 
     """
-    fliersize = 3
-    flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
+
     plt.figure(figsize=figsize)
 
-    colour = ['#0072b2', '#009e73', '#d55e00']
+    if early_late:
+        colour = ['#bf812d', '#35978f']
+        ax = sns.barplot(x="trajectory", y="value", hue="time", data=proportions, palette=colour)
 
-    ax = sns.boxplot(data=[durations['u'], durations['shortcut'], durations['novel']], palette=colour,
-                     flierprops=flierprops)
+    else:
+        colour = ['#0072b2', '#009e73', '#d55e00']
+        ax = sns.barplot(x="trajectory", y="value", data=proportions, palette=colour)
+
+
     ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
-    plt.ylabel('Duration of trial (s)')
-    # plt.title('Early')
-    # ax.set(yticklabels=[], yticks=[])
-    plt.xlabel('(sessions=' + str(durations['num_sessions']) + ')')
-    plt.ylim(0, 120)
-    sns.despine(left=False)
-
-    if savefig:
-        plt.savefig(savepath, bbox_inches='tight', transparent=True)
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_proportions(proportions, savepath, figsize=(4.5, 3), savefig=True):
-    """Plots proportion of each trajectory taken. Behavior only.
-
-        Parameters
-        ----------
-        proportions : dict
-            With u, shortcut, novel as keys.
-            Proportion along each trajectory for each session.
-            len(proportions[key]) == num_sessions evaluated
-        savepath : str
-            Location and filename for the saved plot.
-        figsize : tuple
-            Width by height in inches.
-        savefig : boolean
-            Default is True and will save the plot to the specified location. False
-            shows with plot without saving it.
-
-        """
-    all_us = np.mean(proportions['u'])
-    us_sem = stats.sem(proportions['u'])
-    all_shortcuts = np.mean(proportions['shortcut'])
-    shortcuts_sem = stats.sem(proportions['shortcut'])
-    all_novels = np.mean(proportions['novel'])
-    novels_sem = stats.sem(proportions['novel'])
-
-    n_groups = list(range(3))
-
-    colour = ['#0072b2', '#009e73', '#d55e00']
-
-    data = [all_us, all_shortcuts, all_novels]
-    sems = [us_sem, shortcuts_sem, novels_sem]
-
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_subplot(111)
-    for i in list(range(len(data))):
-        ax.bar(n_groups[i], data[i], align='center',
-               yerr=sems[i], color=colour[i], ecolor='#525252')
-
-    plt.xlabel('(sessions=' + str(len(proportions['u'])) + ')')
     plt.ylabel('Proportion of trials')
-    # plt.title('Early')
-    # ax.set(yticklabels=[], yticks=[])
-    plt.ylim(0, 1.)
+    plt.xlabel('(sessions=' + str(n_sessions) + ')')
     sns.despine(left=False)
-    plt.xticks(n_groups, ['U', 'Shortcut', 'Novel'])
 
-    # plt.tight_layout()
+    plt.tight_layout()
+
     if savefig:
-        plt.savefig(savepath, bbox_inches='tight', transparent=True)
+        plt.savefig(savepath, transparent=True)
         plt.close()
     else:
         plt.show()
 
 
-def plot_bytrial(togethers, savepath, min_length=30, figsize=(6., 3), savefig=True):
+def plot_bytrial(means, sems, n_sessions, savepath, figsize=(6., 3), savefig=True):
     """Plots choice of trajectory by trial. Behavior only.
 
-        Parameters
-        ----------
-        togethers : list
-        savepath : str
-            Location and filename for the saved plot.
-        min_length = int
-            This is the number of trials to be considered.
-            The default is set to 30 (Eg. trials 1-30 are considered).
-        figsize : tuple
-            Width by height in inches.
-        savefig : boolean
-            Default is True and will save the plot to the specified location.
-            False shows with plot without saving it.
+    Parameters
+    ----------
+    togethers : list
+    savepath : str
+        Location and filename for the saved plot.
+    min_length = int
+        This is the number of trials to be considered.
+        The default is set to 30 (Eg. trials 1-30 are considered).
+    figsize : tuple
+        Width by height in inches.
+    savefig : boolean
+        Default is True and will save the plot to the specified location.
+        False shows with plot without saving it.
 
-        """
-    bytrial = bytrial_counts(togethers, min_length)
-
-    means, sems = summary_bytrial(bytrial, min_length)
-
-    trials = list(range(min_length))
+    """
+    trials = list(range(len(means['u'])))
 
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
     labels = dict(u='U', shortcut='Shortcut', novel='Novel')
@@ -235,7 +228,7 @@ def plot_bytrial(togethers, savepath, min_length=30, figsize=(6., 3), savefig=Tr
     plt.ylabel('Proportion of trials')
     # plt.title('Early')
     # ax.set(yticklabels=[], yticks=[])
-    plt.xlabel('Trial number (sessions=' + str(len(togethers)) + ')')
+    plt.xlabel('Trial number (sessions=' + str(n_sessions) + ')')
     plt.ylim(0.0, 1.0)
     sns.despine(left=False)
     ax.yaxis.set_ticks_position('left')
