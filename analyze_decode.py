@@ -212,7 +212,10 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
 
     if not decoded.isempty:
         sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=min_length)
-        decoded_epochs = sequences.intersect(epochs_interest)
+        decoded_epochs = epochs_interest.overlaps(sequences)
+
+        print('number of sequences that overlap swr events: ', decoded_epochs.n_epochs)
+
         decoded = decoded[decoded_epochs]
     else:
         raise ValueError("decoded cannot be empty.")
