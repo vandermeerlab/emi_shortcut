@@ -645,7 +645,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
 
     decode = OrderedDict()
     for experimental_time in decodes[0].keys():
-        decode[experimental_time] = dict(u=[], shortcut=[], novel=[], other=[])
+        decode[experimental_time] = dict(u=[], shortcut=[], novel=[])
 
     for session in decodes:
         for experimental_time in session.keys():

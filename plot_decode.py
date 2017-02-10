@@ -25,17 +25,19 @@ def get_zone_proportion(decoded, experiment_time):
     if experiment_time not in ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']:
         raise ValueError("experiment time is not recognized as a shortcut experiment time.")
 
-    zones = decoded['zones'].keys()
-    n_total = decoded['decoded'].n_samples
+    n_total = 0
+    for zone in ['u', 'shortcut', 'novel']:
+        n_total += decoded['zones'][zone].n_samples
+    n_total = np.maximum(n_total, 1.0)
 
     decoded_proportions = dict()
-    for zone in zones:
+    for zone in ['u', 'shortcut', 'novel']:
         decoded_proportions[zone] = decoded['zones'][zone].n_samples / n_total
 
     return decoded_proportions
 
 
-def get_decoded(info, experiment_times, pickle_filepath, f_combine, shuffled=False):
+def get_decoded(info, experiment_times, pickle_filepath, f_combine, shuffled=False, min_samples=15):
     """Combines decoded outputs
 
     Parameters
@@ -232,6 +234,7 @@ def get_proportions(norm):
 
         for exp in session.keys():
             for trajectory in session[exp].keys():
+                n_total[exp] = np.maximum(n_total[exp], 1.0)
                 session_proportion[exp][trajectory] = norm[i][exp][trajectory] / n_total[exp]
 
         proportion.append(session_proportion)
@@ -266,19 +269,19 @@ def get_combined(infos, experiment_times):
 if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, error_infos, info
 
-    infos = spike_sorted_infos
-    session = 'combined'
+    # infos = spike_sorted_infos
+    # session = 'combined'
 
-    # infos = [info.r066d3]
-    # session = 'r066d3'
+    infos = [info.r066d3]
+    session = 'r066d3'
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']
 
         decodes = []
 
-        for info in infos:
-            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+        for this_info in infos:
+            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_pauses.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -288,8 +291,8 @@ if __name__ == "__main__":
 
         decodes = []
 
-        for info in infos:
-            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+        for this_info in infos:
+            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_phases.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -298,8 +301,8 @@ if __name__ == "__main__":
 
         decodes = []
 
-        for info in infos:
-            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+        for this_info in infos:
+            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_all.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -308,8 +311,8 @@ if __name__ == "__main__":
 
         decodes = []
 
-        for info in infos:
-            decodes.append(get_decoded(info, experiment_times, pickle_filepath, get_zone_proportion))
+        for this_info in infos:
+            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_prepost.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -321,9 +324,9 @@ if __name__ == "__main__":
         errors = []
         errors_shuffled = []
 
-        for info in infos:
-            errors.append(get_decoded(info, experiment_times, pickle_filepath, get_errors))
-            errors_shuffled.append(get_decoded(info, experiment_times, pickle_filepath, get_errors, shuffled=True))
+        for this_info in infos:
+            errors.append(get_decoded(this_info, experiment_times, pickle_filepath, get_errors))
+            errors_shuffled.append(get_decoded(this_info, experiment_times, pickle_filepath, get_errors, shuffled=True))
 
         combine_error = combine_errors(errors)
         combine_error_shuffled = combine_errors(errors_shuffled)
@@ -343,7 +346,7 @@ if __name__ == "__main__":
         plot_decoded_compare(norm_time, ylabel='Total firing rate', savepath=filename)
 
     # Plot by track length
-    if 1:
+    if 0:
         experiment_times = ['phase1', 'phase2', 'phase3']
         sessions = get_combined(infos, experiment_times)
         norm_length = compare_lengths(infos, sessions)

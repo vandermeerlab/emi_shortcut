@@ -64,23 +64,24 @@ def point_in_zones(position, zones):
     other_data = []
     other_times = []
 
-    for x, y, time in zip(position.x, position.y, position.time):
-        point = Point([x, y])
-        if zones['u'].contains(point):
-            u_data.append([x, y])
-            u_times.append(time)
-            continue
-        elif zones['shortcut'].contains(point):
-            shortcut_data.append([x, y])
-            shortcut_times.append(time)
-            continue
-        elif zones['novel'].contains(point):
-            novel_data.append([x, y])
-            novel_times.append(time)
-            continue
-        else:
-            other_data.append([x, y])
-            other_times.append(time)
+    if not position.isempty:
+        for x, y, time in zip(position.x, position.y, position.time):
+            point = Point([x, y])
+            if zones['u'].contains(point):
+                u_data.append([x, y])
+                u_times.append(time)
+                continue
+            elif zones['shortcut'].contains(point):
+                shortcut_data.append([x, y])
+                shortcut_times.append(time)
+                continue
+            elif zones['novel'].contains(point):
+                novel_data.append([x, y])
+                novel_times.append(time)
+                continue
+            else:
+                other_data.append([x, y])
+                other_times.append(time)
 
     sorted_zones = dict()
     sorted_zones['u'] = vdm.Position(u_data, u_times)
@@ -91,7 +92,7 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False):
+def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, min_swr=3):
     """Finds decoded for each session.
 
     Parameters
@@ -139,7 +140,7 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False):
         z_thresh = 3.0
         power_thresh = 5.0
         merge_thresh = 0.02
-        min_length = 0.01
+        min_length = 0.05
         swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
@@ -149,10 +150,12 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False):
         epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=min_involved)
 
         print('sharp-wave ripples, min', min_involved, 'neurons :', epochs_interest.n_epochs)
-        print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
 
-        if epochs_interest.n_epochs == 0:
-            epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=1)
+        if epochs_interest.n_epochs < min_swr:
+            epochs_interest = vdm.Epoch(np.array([[], []]))
+
+        print('sharp-wave ripples, used :', epochs_interest.n_epochs)
+        print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
     else:
         raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
                          "'pauseB', phase3', 'postrecord'].")
