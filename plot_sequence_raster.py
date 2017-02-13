@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
 from shapely.geometry import Point, LineString
+import scalebar
 import vdmlab as vdm
 
 from loading_data import get_data
@@ -48,8 +49,8 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
         ax2.set_xlim([start_time, stop_time])
         ax2.set_yticks([])
 
-        vdm.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
-                         bbox_to_anchor=(0.9, 0.05), units='ms')
+        scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
+                              bbox_to_anchor=(0.9, 0.05), units='ms')
 
     elif position is not None:
         ax2 = plt.subplot2grid((rows+add_rows, 1), (rows, 0), rowspan=add_rows, sharex=ax1)
@@ -61,12 +62,12 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
         ax2.set_xlim([start_time, stop_time])
         ax2.set_yticks([])
 
-        vdm.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
-                         bbox_to_anchor=(0.9, 0.05), units='ms')
+        scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
+                              bbox_to_anchor=(0.9, 0.05), units='ms')
 
     else:
-        vdm.add_scalebar(ax1, matchy=False, bbox_transform=fig.transFigure,
-                         bbox_to_anchor=(0.9, 0.08), units='s')
+        scalebar.add_scalebar(ax1, matchy=False, bbox_transform=fig.transFigure,
+                              bbox_to_anchor=(0.9, 0.08), units='s')
 
     sns.despine(bottom=True)
     plt.tight_layout(h_pad=0.003)
