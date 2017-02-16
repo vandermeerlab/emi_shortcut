@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pickle
 
-import vdmlab as vdm
+import nept
 
 from loading_data import get_data
 from utils_fields import get_unique_fields, categorize_fields
@@ -68,22 +68,22 @@ def analyze(info, neurons, experiment_time, all_tracks_tc=False):
     power_thresh = 5.0
     merge_thresh = 0.02
     min_length = 0.01
-    swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
+    swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                   power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-    multi_swrs = vdm.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
+    multi_swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
 
     count_matrix = dict()
     for key in field_spikes:
-        count_matrix[key] = vdm.spike_counts(field_spikes[key], multi_swrs)
+        count_matrix[key] = nept.spike_counts(field_spikes[key], multi_swrs)
 
     tetrode_mask = dict()
     for key in field_spikes:
-        tetrode_mask[key] = vdm.get_tetrode_mask(field_spikes[key])
+        tetrode_mask[key] = nept.get_tetrode_mask(field_spikes[key])
 
     probs = dict()
     for key in count_matrix:
-        probs[key] = vdm.compute_cooccur(count_matrix[key], tetrode_mask[key], num_shuffles=10000)
+        probs[key] = nept.compute_cooccur(count_matrix[key], tetrode_mask[key], num_shuffles=10000)
 
     output = dict()
     output['probs'] = probs

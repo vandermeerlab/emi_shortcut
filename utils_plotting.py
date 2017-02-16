@@ -6,7 +6,7 @@ from collections import OrderedDict
 import seaborn as sns
 import pandas as pd
 
-import vdmlab as vdm
+import nept
 
 sns.set_style('white')
 sns.set_style('ticks')
@@ -251,7 +251,7 @@ def plot_fields(heatmaps, position, num_neurons, savepath=None, savefig=True, pl
         heatmaps : dict of lists
             Where the key is the neuron number and the value is the heatmap for
             that individual neuron.
-        position : vdmlab.Position
+        position : nept.Position
         savepath : str
             Location and filename for the saved plot.
         num_neurons = int
@@ -468,9 +468,9 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
 
         Parameters
         ----------
-        lfp : vdmlab.LFP
+        lfp : nept.LFP
         swrs : list
-            Contains vdmlab.LFP objects
+            Contains nept.LFP objects
         saveloc : str or None
             Location and filename for the saved plot. Do not add '.png', it is
             added here to include the multiple figures into the filename.
@@ -498,8 +498,8 @@ def plot_swrs(lfp, swrs, saveloc=None, row=10, col=8, buffer=20, savefig=True):
             stop_idx = swrs.n_epochs + 1
 
         for i, (starts, stops) in enumerate(zip(swrs.starts[start_idx:stop_idx], swrs.stops[start_idx:stop_idx])):
-            start = vdm.find_nearest_idx(lfp.time, starts)
-            stop = vdm.find_nearest_idx(lfp.time, stops)
+            start = nept.find_nearest_idx(lfp.time, starts)
+            stop = nept.find_nearest_idx(lfp.time, stops)
             plt.subplot(row, col, i+1)
 
             plt.plot(lfp.time[start-buffer:stop+buffer], lfp.data[start-buffer:stop+buffer], 'k')
@@ -635,7 +635,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
     ----------
     decodes: list
         Of OrderedDict with experiment_time as keys, each a dict.
-        The keys of that dict are u, shortcut, novel, other, each a vdmlab.Position object.
+        The keys of that dict are u, shortcut, novel, other, each a nept.Position object.
     ylabel: str
     savepath : str or None
         Location and filename for the saved plot.
@@ -704,9 +704,9 @@ def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, label
     Parameters
     ----------
     cooccur_1: dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+        With u, shortcut, novel, other as keys, each a nept.Position object.
     cooccur_2: dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object.
+        With u, shortcut, novel, other as keys, each a nept.Position object.
     labels: list of str
     prob: str
         One of expected, observed, active, shuffle, zscore

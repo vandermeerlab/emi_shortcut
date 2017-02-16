@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import vdmlab as vdm
+import nept
 from startup import convert_to_cm
 
 rat_id = 'R067_EI'
@@ -37,13 +37,13 @@ pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
-task_times['prerecord'] = vdm.Epoch(np.array([1.4985e+04, 1.5291e+04]))
-task_times['phase1'] = vdm.Epoch(np.array([1.5327e+04, 1.5808e+04]))
-task_times['pauseA'] = vdm.Epoch(np.array([1.5864e+04, 1.6470e+04]))
-task_times['phase2'] = vdm.Epoch(np.array([1.6521e+04, 1.7422e+04]))
-task_times['pauseB'] = vdm.Epoch(np.array([1.7460e+04, 1.9270e+04]))
-task_times['phase3'] = vdm.Epoch(np.array([1.9314e+04, 2.2017e+04]))
-task_times['postrecord'] = vdm.Epoch(np.array([2.2077e+04, 2.2382e+04]))
+task_times['prerecord'] = nept.Epoch(np.array([1.4985e+04, 1.5291e+04]))
+task_times['phase1'] = nept.Epoch(np.array([1.5327e+04, 1.5808e+04]))
+task_times['pauseA'] = nept.Epoch(np.array([1.5864e+04, 1.6470e+04]))
+task_times['phase2'] = nept.Epoch(np.array([1.6521e+04, 1.7422e+04]))
+task_times['pauseB'] = nept.Epoch(np.array([1.7460e+04, 1.9270e+04]))
+task_times['phase3'] = nept.Epoch(np.array([1.9314e+04, 2.2017e+04]))
+task_times['postrecord'] = nept.Epoch(np.array([2.2077e+04, 2.2382e+04]))
 
 pxl_to_cm = (7.3680, 7.1535)
 scale_targets = (3.7, 3.5)
@@ -97,8 +97,8 @@ shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3'
 novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr'] = vdm.Epoch(np.array([[21643, 21647]]))
-sequence['u']['run'] = vdm.Epoch(np.array([[21345, 21377]]))
+sequence['u']['swr'] = nept.Epoch(np.array([[21643, 21647]]))
+sequence['u']['run'] = nept.Epoch(np.array([[21345, 21377]]))
 
-sequence['shortcut']['swr'] = vdm.Epoch(np.array([[22255, 22257]]))
-sequence['shortcut']['run'] = vdm.Epoch(np.array([[18567, 18607]]))
+sequence['shortcut']['swr'] = nept.Epoch(np.array([[22255, 22257]]))
+sequence['shortcut']['run'] = nept.Epoch(np.array([[18567, 18607]]))

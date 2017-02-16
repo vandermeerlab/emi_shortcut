@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import vdmlab as vdm
+import nept
 from startup import convert_to_cm
 
 rat_id = 'R063_EI'
@@ -37,13 +37,13 @@ pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
-task_times['prerecord'] = vdm.Epoch(np.array([3711.6, 4033.1]))
-task_times['phase1'] = vdm.Epoch(np.array([4078.4, 4622.9]))
-task_times['pauseA'] = vdm.Epoch(np.array([4649.5, 5255.4]))
-task_times['phase2'] = vdm.Epoch(np.array([5281.2, 6482.6]))
-task_times['pauseB'] = vdm.Epoch(np.array([6497.2, 8414.1]))
-task_times['phase3'] = vdm.Epoch(np.array([8441.8, 9943.8]))
-task_times['postrecord'] = vdm.Epoch(np.array([9961.5, 10357.0]))
+task_times['prerecord'] = nept.Epoch(np.array([3711.6, 4033.1]))
+task_times['phase1'] = nept.Epoch(np.array([4078.4, 4622.9]))
+task_times['pauseA'] = nept.Epoch(np.array([4649.5, 5255.4]))
+task_times['phase2'] = nept.Epoch(np.array([5281.2, 6482.6]))
+task_times['pauseB'] = nept.Epoch(np.array([6497.2, 8414.1]))
+task_times['phase3'] = nept.Epoch(np.array([8441.8, 9943.8]))
+task_times['postrecord'] = nept.Epoch(np.array([9961.5, 10357.0]))
 
 pxl_to_cm = (7.2949, 6.8906)
 scale_targets = (3.7, 3.5)
@@ -92,8 +92,8 @@ shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3'
 novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr'] = vdm.Epoch(np.array([[9929, 9933]]))
-sequence['u']['run'] = vdm.Epoch(np.array([[9541, 9584]]))
+sequence['u']['swr'] = nept.Epoch(np.array([[9929, 9933]]))
+sequence['u']['run'] = nept.Epoch(np.array([[9541, 9584]]))
 
-sequence['shortcut']['swr'] = vdm.Epoch(np.array([[8894, 8929]]))
-sequence['shortcut']['run'] = vdm.Epoch(np.array([[8153, 8156]]))
+sequence['shortcut']['swr'] = nept.Epoch(np.array([[8894, 8929]]))
+sequence['shortcut']['run'] = nept.Epoch(np.array([[8153, 8156]]))

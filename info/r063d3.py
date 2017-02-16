@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import vdmlab as vdm
+import nept
 from startup import convert_to_cm
 
 rat_id = 'R063_EI'
@@ -37,13 +37,13 @@ pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
-task_times['prerecord'] = vdm.Epoch(np.array([837.4714, 1143.1]))
-task_times['phase1'] = vdm.Epoch(np.array([1207.9, 2087.5]))
-task_times['pauseA'] = vdm.Epoch(np.array([2174.3, 2800.8]))
-task_times['phase2'] = vdm.Epoch(np.array([2836.2, 4034.1]))
-task_times['pauseB'] = vdm.Epoch(np.array([4051.3, 6185.6]))
-task_times['phase3'] = vdm.Epoch(np.array([6249.5, 9373.7]))
-task_times['postrecord'] = vdm.Epoch(np.array([9395.4, 9792.5]))
+task_times['prerecord'] = nept.Epoch(np.array([837.4714, 1143.1]))
+task_times['phase1'] = nept.Epoch(np.array([1207.9, 2087.5]))
+task_times['pauseA'] = nept.Epoch(np.array([2174.3, 2800.8]))
+task_times['phase2'] = nept.Epoch(np.array([2836.2, 4034.1]))
+task_times['pauseB'] = nept.Epoch(np.array([4051.3, 6185.6]))
+task_times['phase3'] = nept.Epoch(np.array([6249.5, 9373.7]))
+task_times['postrecord'] = nept.Epoch(np.array([9395.4, 9792.5]))
 
 pxl_to_cm = (7.3452, 7.2286)
 scale_targets = (3.6, 3.7)
@@ -103,16 +103,16 @@ shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3'
 novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr'] = vdm.Epoch(np.array([[9692.2, 9692.5],
+sequence['u']['swr'] = nept.Epoch(np.array([[9692.2, 9692.5],
                                            [9735.65, 9736.1]]))
-sequence['u']['run'] = vdm.Epoch(np.array([[2950, 2975],
+sequence['u']['run'] = nept.Epoch(np.array([[2950, 2975],
                                            [3285, 3315]]))
 sequence['u']['ms'] = 10
 
-sequence['shortcut']['swr'] = vdm.Epoch(np.array([[9692.2, 9692.7],
+sequence['shortcut']['swr'] = nept.Epoch(np.array([[9692.2, 9692.7],
                                                   [9450.01, 9450.4],
                                                   [9735.75, 9736.1]]))
-sequence['shortcut']['run'] = vdm.Epoch(np.array([[8000, 8030],
+sequence['shortcut']['run'] = nept.Epoch(np.array([[8000, 8030],
                                                   [7950, 7980],
                                                   [8035, 8065]]))
 sequence['shortcut']['ms'] = 10

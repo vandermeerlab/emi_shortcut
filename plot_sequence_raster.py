@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
 from shapely.geometry import Point, LineString
+import nept
 import scalebar
-import vdmlab as vdm
 
 from loading_data import get_data
 from utils_maze import find_zones
@@ -42,8 +42,8 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
 
     if lfp is not None:
         ax2 = plt.subplot2grid((rows+add_rows, 1), (rows, 0), rowspan=add_rows, sharex=ax1)
-        start_idx = vdm.find_nearest_idx(lfp.time, start_time)
-        stop_idx = vdm.find_nearest_idx(lfp.time, stop_time)
+        start_idx = nept.find_nearest_idx(lfp.time, start_time)
+        stop_idx = nept.find_nearest_idx(lfp.time, stop_time)
         ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], '#3288bd', lw=0.3)
         ax2.set_xticks([])
         ax2.set_xlim([start_time, stop_time])
@@ -54,8 +54,8 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
 
     elif position is not None:
         ax2 = plt.subplot2grid((rows+add_rows, 1), (rows, 0), rowspan=add_rows, sharex=ax1)
-        start_idx = vdm.find_nearest_idx(position.time, start_time)
-        stop_idx = vdm.find_nearest_idx(position.time, stop_time)
+        start_idx = nept.find_nearest_idx(position.time, start_time)
+        stop_idx = nept.find_nearest_idx(position.time, stop_time)
         ax2.plot(position.time[start_idx:stop_idx], position.x[start_idx:stop_idx], '#9970ab', lw=1)
         ax2.plot(position.time[start_idx:stop_idx], position.y[start_idx:stop_idx], '#5aae61', lw=1)
         ax2.set_xticks([])
@@ -100,7 +100,7 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
 
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
-    xy_centers = vdm.cartesian(xcenters, ycenters)
+    xy_centers = nept.cartesian(xcenters, ycenters)
 
     zones = find_zones(info, remove_feeder=False, expand_by=4)
 

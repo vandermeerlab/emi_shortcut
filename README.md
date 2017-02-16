@@ -1,7 +1,7 @@
 Getting started for this project
 ================================
 
-* In addition to the vdmlab dependencies, 
+* In addition to the nept dependencies, 
   this project also requires the following.
 
   ```

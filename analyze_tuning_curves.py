@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 from shapely.geometry import Point, LineString
 
-import vdmlab as vdm
+import nept
 
 from loading_data import get_data
 from utils_maze import spikes_by_position, speed_threshold
@@ -38,7 +38,7 @@ def find_ideal(info, position, expand_by=6):
         ----------
         info : module
             Contains session-specific information.
-        position : vdmlab.Position
+        position : nept.Position
         expand_by : int or float
             This is how much you wish to expand the line to fit
             the animal's actual movements. Default is set to 6.
@@ -122,9 +122,9 @@ def get_tc_1d(info, position, spikes, pickled_tc, binsize, expand_by=2, sampling
         ----------
         info : module
             Contains session-specific information.
-        position : vdmlab.Position
+        position : nept.Position
         spikes : list
-            Contains vdmlab.SpikeTrain for each neuron.
+            Contains nept.SpikeTrain for each neuron.
         pickled_tc: str
             Absolute location of where tuning_curve.pkl files are saved.
 
@@ -150,15 +150,15 @@ def get_tc_1d(info, position, spikes, pickled_tc, binsize, expand_by=2, sampling
 
     tuning_curves = dict()
     if len(linear['u'].x) > 0:
-        tuning_curves['u'] = vdm.tuning_curve(linear['u'], spike_position['u'], binsize)
+        tuning_curves['u'] = nept.tuning_curve(linear['u'], spike_position['u'], binsize)
     else:
         tuning_curves['u'] = None
     if len(linear['shortcut'].x) > 0:
-        tuning_curves['shortcut'] = vdm.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize)
+        tuning_curves['shortcut'] = nept.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize)
     else:
         tuning_curves['shortcut'] = None
     if len(linear['novel'].x) > 0:
-        tuning_curves['novel'] = vdm.tuning_curve(linear['novel'], spike_position['novel'], binsize)
+        tuning_curves['novel'] = nept.tuning_curve(linear['novel'], spike_position['novel'], binsize)
     else:
         tuning_curves['novel'] = None
 
@@ -209,7 +209,7 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
     print('tuning curves:', info.session_id)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
-    xedges, yedges = vdm.get_xyedges(position)
+    xedges, yedges = nept.get_xyedges(position)
 
     if use_all_tracks:
         track_starts = [info.task_times['phase1'].start,
@@ -239,10 +239,10 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
             tuning_spikes.append(neuron)
             filtered_spikes.append(neuron_all)
 
-    tuning_curves = vdm.tuning_curve_2d(run_position, np.array(tuning_spikes),
+    tuning_curves = nept.tuning_curve_2d(run_position, np.array(tuning_spikes),
                                         xedges, yedges, occupied_thresh=0.1, gaussian_sigma=0.1)
 
-    neurons = vdm.Neurons(np.array(filtered_spikes), tuning_curves)
+    neurons = nept.Neurons(np.array(filtered_spikes), tuning_curves)
 
     pickled_tc = os.path.join(pickle_filepath, filename)
 

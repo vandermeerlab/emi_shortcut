@@ -17,7 +17,7 @@ def get_zone_proportion(decoded, experiment_time):
 
     Parameters
     ----------
-    decoded: vdmlab.Position
+    decoded: nept.Position
 
     Returns: dict
 
@@ -82,7 +82,7 @@ def get_errors(decoded, experiment_time):
 
     Parameters
     ----------
-    decoded: vdmlab.Position
+    decoded: nept.Position
 
     Returns: dict
 

@@ -1,5 +1,5 @@
 import os
-import vdmlab as vdm
+import nept
 
 from loading_data import get_data
 from utils_plotting import plot_swrs
@@ -18,7 +18,7 @@ for info in infos:
     events, position, spikes, lfp, lfp_theta = get_data(info)
 
     thresh = (140.0, 250.0)
-    swrs = vdm.detect_swr_hilbert(lfp, fs=info.fs, thresh=thresh)
+    swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=thresh)
 
     filename = info.session_id + '-swr_'
     saveloc = os.path.join(output_filepath, filename)

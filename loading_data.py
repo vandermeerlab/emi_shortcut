@@ -1,6 +1,6 @@
 import os
 import pickle
-import vdmlab as vdm
+import nept
 
 from startup import load_shortcut_position
 
@@ -9,15 +9,15 @@ def load_data(info):
     thisdir = os.path.dirname(os.path.realpath(__file__))
     dataloc = os.path.abspath(os.path.join(thisdir, 'cache', 'data'))
 
-    events = vdm.load_events(os.path.join(dataloc, info.event_filename), info.event_labels)
+    events = nept.load_events(os.path.join(dataloc, info.event_filename), info.event_labels)
 
     position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events)
 
-    spikes = vdm.load_spikes(os.path.join(dataloc, info.spikes_filepath))
+    spikes = nept.load_spikes(os.path.join(dataloc, info.spikes_filepath))
 
-    lfp_swr = vdm.load_lfp(os.path.join(dataloc, info.lfp_swr_filename))
+    lfp_swr = nept.load_lfp(os.path.join(dataloc, info.lfp_swr_filename))
 
-    lfp_theta = vdm.load_lfp(os.path.join(dataloc, info.lfp_theta_filename))
+    lfp_theta = nept.load_lfp(os.path.join(dataloc, info.lfp_theta_filename))
 
     return events, position, spikes, lfp_swr, lfp_theta
 
@@ -58,11 +58,11 @@ def get_data(info):
 
     Returns
     -------
-    events: dict of vdm.Epoch
-    position: vdm.Position
-    spikes: list of vdm.SpikeTrains
-    lfp_swr: vdm.AnalogSignal
-    lfp_theta: vdm.AnalogSignal
+    events: dict of nept.Epoch
+    position: nept.Position
+    spikes: list of nept.SpikeTrains
+    lfp_swr: nept.AnalogSignal
+    lfp_theta: nept.AnalogSignal
 
     """
     thisdir = os.path.dirname(os.path.realpath(__file__))

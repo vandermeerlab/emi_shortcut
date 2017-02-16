@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-import vdmlab as vdm
+import nept
 
 from loading_data import get_data
 
@@ -20,7 +20,7 @@ for info in infos:
     print('place_fields:', info.session_id)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
-    xedges, yedges = vdm.get_xyedges(position)
+    xedges, yedges = nept.get_xyedges(position)
 
     speed = position.speed(t_smooth=0.5)
     run_idx = np.squeeze(speed.data) >= 0.1
@@ -48,13 +48,13 @@ for info in infos:
             spike_heatmaps = pickle.load(fileobj)
     else:
         all_neurons = list(range(0, len(spikes)))
-        spike_heatmaps = vdm.get_heatmaps(all_neurons, spikes, position)
+        spike_heatmaps = nept.get_heatmaps(all_neurons, spikes, position)
         with open(pickled_spike_heatmaps, 'wb') as fileobj:
             pickle.dump(spike_heatmaps, fileobj)
 
-    fields = vdm.find_fields(neurons.tuning_curves)
+    fields = nept.find_fields(neurons.tuning_curves)
 
-    fields_single = vdm.get_single_field(fields)
+    fields_single = nept.get_single_field(fields)
 
     all_tuning_curves = np.zeros(neurons.tuning_shape)
     for i in range(neurons.n_neurons):

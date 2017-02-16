@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import vdmlab as vdm
+import nept
 from startup import convert_to_cm
 
 rat_id = 'R068_EI'
@@ -37,13 +37,13 @@ pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
-task_times['prerecord'] = vdm.Epoch(np.array([661.8095, 965.1690]))
-task_times['phase1'] = vdm.Epoch(np.array([1039.8, 1665.2]))
-task_times['pauseA'] = vdm.Epoch(np.array([1685.3, 2370.1]))
-task_times['phase2'] = vdm.Epoch(np.array([2570.9, 3807.9]))
-task_times['pauseB'] = vdm.Epoch(np.array([3825.8, 5676.1]))
-task_times['phase3'] = vdm.Epoch(np.array([5714.6, 8716.0]))
-task_times['postrecord'] = vdm.Epoch(np.array([8741.7, 9083.8]))
+task_times['prerecord'] = nept.Epoch(np.array([661.8095, 965.1690]))
+task_times['phase1'] = nept.Epoch(np.array([1039.8, 1665.2]))
+task_times['pauseA'] = nept.Epoch(np.array([1685.3, 2370.1]))
+task_times['phase2'] = nept.Epoch(np.array([2570.9, 3807.9]))
+task_times['pauseB'] = nept.Epoch(np.array([3825.8, 5676.1]))
+task_times['phase3'] = nept.Epoch(np.array([5714.6, 8716.0]))
+task_times['postrecord'] = nept.Epoch(np.array([8741.7, 9083.8]))
 
 pxl_to_cm = (7.2090, 7.0877)
 scale_targets = (3.6, 3.5)

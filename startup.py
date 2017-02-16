@@ -1,7 +1,7 @@
 import scipy.signal as signal
 import numpy as np
 
-import vdmlab as vdm
+import nept
 
 
 def convert_to_cm(path_pts, xy_conversion):
@@ -37,7 +37,7 @@ def sort_led_locations(info, events, times):
     Parameters
     ----------
     info: module
-    events: dict of vdm.Epochs
+    events: dict of nept.Epochs
     times: np.array
 
     Returns
@@ -65,7 +65,7 @@ def sort_led_locations(info, events, times):
     for time, label in sorted_leds:
         if label == last_label:
             continue
-        idx = vdm.find_nearest_idx(times, time)
+        idx = nept.find_nearest_idx(times, time)
         x_location = feeder1_x if label == 'led1' else feeder2_x
         y_location = feeder1_y if label == 'led1' else feeder2_y
 
@@ -164,10 +164,10 @@ def load_shortcut_position(info, filename, events):
 
     Returns
     -------
-    position: vdm.Position
+    position: nept.Position
 
     """
-    nvt_data = vdm.load_nvt(filename)
+    nvt_data = nept.load_nvt(filename)
     targets = nvt_data['targets']
     times = nvt_data['time']
 
@@ -179,7 +179,7 @@ def load_shortcut_position(info, filename, events):
     # X and Y are stored in a custom bitfield. See Neuralynx data file format documentation for details.
     # Briefly, each record contains up to 50 targets, each stored in 32bit field.
     # X field at [20:31] and Y at [4:15].
-    # TODO: make into a separate function in vdmlab
+    # TODO: make into a separate function in nept
     for target in range(targets.shape[1]):
         this_sample = targets[:, target]
         for sample in range(targets.shape[0]):
@@ -218,7 +218,7 @@ def load_shortcut_position(info, filename, events):
         # Apply a median filter
         out_x, out_y = median_filter(out_x, out_y)
 
-        position = vdm.Position(np.hstack(np.array([out_x, out_y])[..., np.newaxis]), times)
+        position = nept.Position(np.hstack(np.array([out_x, out_y])[..., np.newaxis]), times)
 
         return position
 
@@ -251,7 +251,7 @@ def load_shortcut_position(info, filename, events):
     # Apply a median filter
     out_x, out_y = median_filter(out_x, out_y)
 
-    # Construct a vdm.Position object
-    position = vdm.Position(np.hstack(np.array([out_x, out_y])[..., np.newaxis]), times)
+    # Construct a nept.Position object
+    position = nept.Position(np.hstack(np.array([out_x, out_y])[..., np.newaxis]), times)
 
     return position

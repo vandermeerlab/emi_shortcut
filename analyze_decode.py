@@ -4,7 +4,7 @@ import random
 import pickle
 from shapely.geometry import Point, LineString
 
-import vdmlab as vdm
+import nept
 
 from loading_data import get_data
 from utils_maze import find_zones, speed_threshold
@@ -18,7 +18,7 @@ def get_edges(position, binsize, lastbin=False):
 
     Parameters
     ----------
-    position : vdmlab.Position
+    position : nept.Position
     binsize : float
         This is the desired size of bin.
         Typically set around 0.020 to 0.040 seconds.
@@ -45,14 +45,14 @@ def point_in_zones(position, zones):
 
     Parameters
     ----------
-    position : vdmlab.Position
+    position : neptlab.Position
     zones : dict
         With u, shortcut, novel, pedestal as keys
 
     Returns
     -------
     sorted_zones : dict
-        With u, shortcut, novel, other as keys, each a vdmlab.Position object
+        With u, shortcut, novel, other as keys, each a nept.Position object
 
     """
     u_data = []
@@ -84,10 +84,10 @@ def point_in_zones(position, zones):
                 other_times.append(time)
 
     sorted_zones = dict()
-    sorted_zones['u'] = vdm.Position(u_data, u_times)
-    sorted_zones['shortcut'] = vdm.Position(shortcut_data, shortcut_times)
-    sorted_zones['novel'] = vdm.Position(novel_data, novel_times)
-    sorted_zones['other'] = vdm.Position(other_data, other_times)
+    sorted_zones['u'] = nept.Position(u_data, u_times)
+    sorted_zones['shortcut'] = nept.Position(shortcut_data, shortcut_times)
+    sorted_zones['novel'] = nept.Position(novel_data, novel_times)
+    sorted_zones['other'] = nept.Position(other_data, other_times)
 
     return sorted_zones
 
@@ -98,14 +98,14 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     Parameters
     ----------
     info: module
-    neurons: vdm.Neurons
+    neurons: nept.Neurons
     experiment_time: str
     shuffle_id: bool
         Defaults to False (not shuffled)
 
     Returns
     -------
-    decoded: dict of vdmlab.Position objects
+    decoded: dict of nept.Position objects
         With u, shortcut, novel, other as keys.
 
     """
@@ -115,7 +115,7 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     pedestal_times = ['pauseA', 'pauseB', 'prerecord', 'postrecord']
 
     events, position, all_spikes, lfp, lfp_theta = get_data(info)
-    xedges, yedges = vdm.get_xyedges(position)
+    xedges, yedges = nept.get_xyedges(position)
 
     exp_start = info.task_times[experiment_time].start
     exp_stop = info.task_times[experiment_time].stop
@@ -133,7 +133,7 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
         random.shuffle(neurons.tuning_curves)
 
     if experiment_time in track_times:
-        epochs_interest = vdm.Epoch(np.hstack([exp_start, exp_stop]))
+        epochs_interest = nept.Epoch(np.hstack([exp_start, exp_stop]))
     elif experiment_time in pedestal_times:
         sliced_lfp = lfp.time_slice(exp_start, exp_stop)
 
@@ -141,18 +141,18 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
         power_thresh = 5.0
         merge_thresh = 0.02
         min_length = 0.05
-        swrs = vdm.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
+        swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
         print('sharp-wave ripples, total:', swrs.n_epochs)
 
         min_involved = 4
-        epochs_interest = vdm.find_multi_in_epochs(decode_spikes, swrs, min_involved=min_involved)
+        epochs_interest = nept.find_multi_in_epochs(decode_spikes, swrs, min_involved=min_involved)
 
         print('sharp-wave ripples, min', min_involved, 'neurons :', epochs_interest.n_epochs)
 
         if epochs_interest.n_epochs < min_swr:
-            epochs_interest = vdm.Epoch(np.array([[], []]))
+            epochs_interest = nept.Epoch(np.array([[], []]))
 
         print('sharp-wave ripples, used :', epochs_interest.n_epochs)
         print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
@@ -162,20 +162,20 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
 
     counts_binsize = 0.025
     time_edges = get_edges(exp_position, counts_binsize, lastbin=True)
-    counts = vdm.get_counts(decode_spikes, time_edges, gaussian_std=0.005)
+    counts = nept.get_counts(decode_spikes, time_edges, gaussian_std=0.005)
 
     tc_shape = neurons.tuning_curves.shape
     decoding_tc = neurons.tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-    likelihood = vdm.bayesian_prob(counts, decoding_tc, counts_binsize)
+    likelihood = nept.bayesian_prob(counts, decoding_tc, counts_binsize)
 
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
-    xy_centers = vdm.cartesian(xcenters, ycenters)
+    xy_centers = nept.cartesian(xcenters, ycenters)
 
     time_centers = (time_edges[1:] + time_edges[:-1]) / 2.
 
-    decoded = vdm.decode_location(likelihood, xy_centers, time_centers)
+    decoded = nept.decode_location(likelihood, xy_centers, time_centers)
     nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
     decoded = decoded[~nan_idx]
 
@@ -194,7 +194,7 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
     Parameters
     ----------
     info: module
-    neurons: vdm.Neurons
+    neurons: nept.Neurons
     experiment_time: str
     shuffle_id: bool
         Defaults to False (not shuffled)
@@ -211,7 +211,7 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
     exp_position = decode['exp_position']
 
     if not decoded.isempty:
-        sequences = vdm.remove_teleports(decoded, speed_thresh=40, min_length=min_length)
+        sequences = nept.remove_teleports(decoded, speed_thresh=40, min_length=min_length)
         decoded_epochs = epochs_interest.overlaps(sequences)
 
         print('number of sequences that overlap swr events: ', decoded_epochs.n_epochs)
@@ -230,7 +230,7 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
         for trajectory in keys:
             actual_x = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.x)
             actual_y = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.y)
-            actual_position[trajectory] = vdm.Position(np.hstack((actual_x[..., np.newaxis],
+            actual_position[trajectory] = nept.Position(np.hstack((actual_x[..., np.newaxis],
                                                                   actual_y[..., np.newaxis])),
                                                        decoded_zones[trajectory].time)
 

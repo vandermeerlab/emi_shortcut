@@ -1,7 +1,7 @@
 import numpy as np
 from shapely.geometry import Point, LineString
 
-import vdmlab as vdm
+import nept
 
 
 def get_trial_idx(low_priority, mid_priority, high_priority, feeder1_times, feeder2_times, phase_stop):
@@ -76,11 +76,11 @@ def get_trial_idx(low_priority, mid_priority, high_priority, feeder1_times, feed
     low_priority_trials = []
 
     for trial in high_priority_time:
-        high_priority_trials.append((vdm.find_nearest_idx(np.array(start_trials), trial), 'novel'))
+        high_priority_trials.append((nept.find_nearest_idx(np.array(start_trials), trial), 'novel'))
     for trial in mid_priority_time:
-        mid_priority_trials.append((vdm.find_nearest_idx(np.array(start_trials), trial), 'shortcut'))
+        mid_priority_trials.append((nept.find_nearest_idx(np.array(start_trials), trial), 'shortcut'))
     for trial in low_priority_time:
-        low_priority_trials.append((vdm.find_nearest_idx(np.array(start_trials), trial), 'u'))
+        low_priority_trials.append((nept.find_nearest_idx(np.array(start_trials), trial), 'u'))
 
     trials_idx = dict()
     trials_idx['novel'] = high_priority_trials
@@ -98,17 +98,17 @@ def spikes_by_position(spikes, zone, position):
     Parameters
     ----------
     spikes : list
-        Contains vdmlab.SpikeTrain for each neuron
+        Contains nept.SpikeTrain for each neuron
     zone : dict
         With 'ushort', 'u', 'novel', 'uped', 'unovel', 'pedestal',
         'novelped', 'shortcut', 'shortped' keys.
         Each value is a unique Shapely Polygon object.
-    position : vdmlab.Position
+    position : nept.Position
 
     Returns
     -------
     path_spikes : dict
-        With u, shortcut, novel, other keys. Each value is a list of vdmlab.SpikeTrain.
+        With u, shortcut, novel, other keys. Each value is a list of nept.SpikeTrain.
 
     """
     counter = 0
@@ -117,7 +117,7 @@ def spikes_by_position(spikes, zone, position):
     for spiketrain in spikes:
         neuron_spikes = dict(pedestal=[], u=[], shortcut=[], novel=[], other=[])
         for spike in spiketrain.time:
-            pos_idx = vdm.find_nearest_idx(position.time, spike)
+            pos_idx = nept.find_nearest_idx(position.time, spike)
             point = Point([position.x[pos_idx], position.y[pos_idx]])
             if zone['pedestal'].contains(point) or zone['uped'].contains(point) or zone['shortped'].contains(point) or zone['novelped'].contains(point):
                 neuron_spikes['pedestal'].append(np.asscalar(spike))
@@ -135,13 +135,13 @@ def spikes_by_position(spikes, zone, position):
                 neuron_spikes['other'].append(np.asscalar(spike))
 
         if len(neuron_spikes['u']) > 1:
-            path_spikes['u'].append(vdm.SpikeTrain(np.array(neuron_spikes['u']), spiketrain.label))
+            path_spikes['u'].append(nept.SpikeTrain(np.array(neuron_spikes['u']), spiketrain.label))
         if len(neuron_spikes['shortcut']) > 1:
-            path_spikes['shortcut'].append(vdm.SpikeTrain(np.array(neuron_spikes['shortcut']), spiketrain.label))
+            path_spikes['shortcut'].append(nept.SpikeTrain(np.array(neuron_spikes['shortcut']), spiketrain.label))
         if len(neuron_spikes['novel']) > 1:
-            path_spikes['novel'].append(vdm.SpikeTrain(np.array(neuron_spikes['novel']), spiketrain.label))
+            path_spikes['novel'].append(nept.SpikeTrain(np.array(neuron_spikes['novel']), spiketrain.label))
         if len(neuron_spikes['other']) > 1:
-            path_spikes['other'].append(vdm.SpikeTrain(np.array(neuron_spikes['other']), spiketrain.label))
+            path_spikes['other'].append(nept.SpikeTrain(np.array(neuron_spikes['other']), spiketrain.label))
 
         counter += 1
         print(str(counter) + ' of ' + str(len(spikes)) + ' neurons completed!')
@@ -156,7 +156,7 @@ def get_zones(info, position, expand_by=6):
     ----------
     info : module
         Module with session-specific information
-    position : vdmlab.Position
+    position : nept.Position
         Must be a 2D position.
 
     Returns
@@ -179,9 +179,9 @@ def get_zones(info, position, expand_by=6):
     novel_stop = Point(info.novel_trajectory[-1])
 
     zones = dict()
-    zones['u'] = vdm.expand_line(u_start, u_stop, u_line, expand_by)
-    zones['shortcut'] = vdm.expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
-    zones['novel'] = vdm.expand_line(novel_start, novel_stop, novel_line, expand_by)
+    zones['u'] = nept.expand_line(u_start, u_stop, u_line, expand_by)
+    zones['shortcut'] = nept.expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
+    zones['novel'] = nept.expand_line(novel_start, novel_stop, novel_line, expand_by)
     zones['ushort'] = zones['u'].intersection(zones['shortcut'])
     zones['unovel'] = zones['u'].intersection(zones['novel'])
 
@@ -295,7 +295,7 @@ def trajectory_fields(tuning_curves, spikes, zone, xedges, yedges, field_thresh)
     Parameters
     ----------
     tuning_curves : list of np.arrays
-    spikes: list of vdmlab.SpikeTrain objects
+    spikes: list of nept.SpikeTrain objects
     zone : shapely.Polygon
     xedges : np.array
     yedges : np.array
@@ -310,7 +310,7 @@ def trajectory_fields(tuning_curves, spikes, zone, xedges, yedges, field_thresh)
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
 
-    xy_centers = vdm.cartesian(xcenters, ycenters)
+    xy_centers = nept.cartesian(xcenters, ycenters)
 
     in_u = []
     in_shortcut = []
@@ -353,7 +353,7 @@ def get_xyedges(position, binsize=3):
 
     Parameters
     ----------
-    position: 2D vdm.Position
+    position: 2D nept.Position
     binsize: int
 
     Returns
@@ -373,13 +373,13 @@ def speed_threshold(position, t_smooth=0.5, speed_limit=0.4):
 
     Parameters
     ----------
-    position: vdm.Position
+    position: nept.Position
     t_smooth: float
     speed_limit: float
 
     Returns
     -------
-    position_run: vdm.Position
+    position_run: nept.Position
 
     """
 

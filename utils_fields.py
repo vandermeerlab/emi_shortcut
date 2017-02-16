@@ -1,7 +1,7 @@
 import numpy as np
 from shapely.geometry import Point
 from scipy import ndimage
-import vdmlab as vdm
+import nept
 
 
 def get_unique_fields(fields, fields_compare1, fields_compare2):
@@ -92,7 +92,7 @@ def categorize_fields(tuning_curves, zone, xedges, yedges, field_thresh):
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
 
-    xy_centers = vdm.cartesian(xcenters, ycenters)
+    xy_centers = nept.cartesian(xcenters, ycenters)
 
     fields_tc = dict(u=dict(), shortcut=dict(), novel=dict(), pedestal=dict())
 
