@@ -188,7 +188,7 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     return output
 
 
-def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuffle_id=False):
+def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min_epochs=3, shuffle_id=False):
     """Evaluates decoded analysis
 
     Parameters
@@ -196,6 +196,9 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
     info: module
     neurons: nept.Neurons
     experiment_time: str
+    min_sequence: int
+    speed_limit: float
+    min_epochs: int
     shuffle_id: bool
         Defaults to False (not shuffled)
 
@@ -210,15 +213,16 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
     time_centers = decode['time_centers']
     exp_position = decode['exp_position']
 
-    if not decoded.isempty:
-        sequences = nept.remove_teleports(decoded, speed_thresh=40, min_length=min_length)
-        decoded_epochs = epochs_interest.overlaps(sequences)
+    sequences = nept.remove_teleports(decoded, speed_thresh=10, min_length=min_sequence)
+    decoded_epochs = epochs_interest.intersect(sequences)
+    decoded_epochs = decoded_epochs.expand(0.05)
 
-        print('number of sequences that overlap swr events: ', decoded_epochs.n_epochs)
+    print('number of positions that are sequences and overlap epochs: ', decoded_epochs.n_epochs)
 
-        decoded = decoded[decoded_epochs]
+    if decoded_epochs.n_epochs < min_epochs:
+        decoded = nept.Position(np.array([[], []]), np.array([]))
     else:
-        raise ValueError("decoded cannot be empty.")
+        decoded = decoded[decoded_epochs]
 
     zones = find_zones(info, remove_feeder=True, expand_by=8)
     decoded_zones = point_in_zones(decoded, zones)
@@ -247,6 +251,7 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
     output['times'] = len(time_centers)
     output['actual'] = actual_position
     output['decoded'] = decoded
+    output['epochs'] = decoded_epochs
 
     if shuffle_id:
         filename = info.session_id + '_decode-shuffled-' + experiment_time + '.pkl'
@@ -263,8 +268,8 @@ def analyze(info, neurons, experiment_time, min_length=3, speed_limit=0.4, shuff
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    infos = spike_sorted_infos
-    # infos = [info.r066d3]
+    # infos = spike_sorted_infos
+    infos = [info.r066d3]
 
     if 1:
         for info in infos:

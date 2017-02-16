@@ -240,7 +240,7 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
             filtered_spikes.append(neuron_all)
 
     tuning_curves = nept.tuning_curve_2d(run_position, np.array(tuning_spikes),
-                                        xedges, yedges, occupied_thresh=0.1, gaussian_sigma=0.1)
+                                        xedges, yedges, occupied_thresh=0.5, gaussian_sigma=0.1)
 
     neurons = nept.Neurons(np.array(filtered_spikes), tuning_curves)
 
@@ -254,8 +254,8 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    infos = spike_sorted_infos
-    # infos = [info.r068d8]
+    # infos = spike_sorted_infos
+    infos = [info.r066d3]
 
     if 1:
         for info in infos:

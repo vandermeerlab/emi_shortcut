@@ -213,7 +213,7 @@ def plot_bytrial(means, sems, n_sessions, savepath, figsize=(6., 3), savefig=Tru
         False shows with plot without saving it.
 
     """
-    trials = list(range(len(means['u'])))
+    trials = list(range(1, len(means['u'])+1))
 
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
     labels = dict(u='U', shortcut='Shortcut', novel='Novel')

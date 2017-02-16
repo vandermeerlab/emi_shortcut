@@ -101,13 +101,15 @@ novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'npt3', 'nov
 
 sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['swr'] = nept.Epoch(np.array([[27888.2, 27888.6],
-                                           [27924.45, 27924.95]]))
+                                            [27924.45, 27924.95],
+                                            [21466.5, 21466.9]]))
 sequence['u']['run'] = nept.Epoch(np.array([[25355, 25385],
-                                           [25330, 25360]]))
+                                            [25330, 25360]]))
 sequence['u']['ms'] = 15
 
 sequence['shortcut']['swr'] = nept.Epoch(np.array([[27791.2, 27791.8],
-                                                  [27833.7, 27834.7]]))
+                                                   [27833.7, 27834.7],
+                                                   [23248.9, 23249.2]]))
 sequence['shortcut']['run'] = nept.Epoch(np.array([[25170, 25210],
-                                                  [25265, 25305]]))
+                                                   [25265, 25305]]))
 sequence['shortcut']['ms'] = 10

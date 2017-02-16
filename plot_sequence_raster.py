@@ -29,16 +29,16 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
     mew = 0.7
     spike_loc = 1
 
-    fig = plt.figure(figsize=(7, 6))
+    fig = plt.figure(figsize=(4, 6))
     ax1 = plt.subplot2grid((rows+add_rows, 1), (0, 0), rowspan=rows)
 
 
     for idx, neuron_spikes in enumerate(ordered_spikes):
-        ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time))+(idx*spike_loc)-1, '|',
+        ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time))+(idx*spike_loc), '|',
                  color='k', ms=ms, mew=mew)
     ax1.set_xticks([])
     ax1.set_xlim([start_time, stop_time])
-    ax1.set_ylim([-0.5, len(ordered_spikes)*spike_loc])
+    ax1.set_ylim([0.5, len(ordered_spikes)*spike_loc+0.5])
 
     if lfp is not None:
         ax2 = plt.subplot2grid((rows+add_rows, 1), (rows, 0), rowspan=add_rows, sharex=ax1)
@@ -63,7 +63,7 @@ def plot_sequence(ordered_spikes, start_time, stop_time, ms_fraction=132, lfp=No
         ax2.set_yticks([])
 
         scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
-                              bbox_to_anchor=(0.9, 0.05), units='ms')
+                              bbox_to_anchor=(0.9, 0.05), units='s')
 
     else:
         scalebar.add_scalebar(ax1, matchy=False, bbox_transform=fig.transFigure,
@@ -83,15 +83,7 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
     print(info.session_id)
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
-
-    times = info.task_times['phase3']
-
-    sliced_spikes = [spiketrain.time_slice(times.start, times.stop) for spiketrain in spikes]
-    sliced_pos = position.time_slice(times.start, times.stop)
-
-    binsize = 3
-    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
-    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
+    xedges, yedges = nept.get_xyedges(position)
 
     neurons_filename = info.session_id + '_neurons.pkl'
     pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
@@ -104,56 +96,63 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
 
     zones = find_zones(info, remove_feeder=False, expand_by=4)
 
-    field_thresh = 1.0
+    field_thresh = 0.01
     fields_tunings = categorize_fields(neurons.tuning_curves, zones, xedges, yedges, field_thresh=field_thresh)
 
-    u_line = LineString(info.u_trajectory)
-    shortcut_line = LineString(info.shortcut_trajectory)
-    novel_line = LineString(info.novel_trajectory)
-
-    u_dist = []
-    for neuron in fields_tunings['u']:
-        yy = ycenters[np.where(fields_tunings['u'][neuron] == fields_tunings['u'][neuron].max())[0][0]]
-        xx = xcenters[np.where(fields_tunings['u'][neuron] == fields_tunings['u'][neuron].max())[1][0]]
-
-        pt = Point(xx, yy)
-        if zones['u'].contains(pt):
-            u_dist.append((u_line.project(pt), neuron))
-
-    ordered_dist_u = sorted(u_dist, key=lambda x:x[0])
-    sort_idx = []
-    for neuron in ordered_dist_u:
-        sort_idx.append(neuron[1])
-
-    sort_spikes = []
-    sort_tuning_curves = []
-    for neuron in sort_idx:
-        sort_tuning_curves.append(fields_tunings['u'][neuron])
-        sort_spikes.append(spikes[neuron])
-
-
-    odd_firing_idx = get_odd_firing_idx(sort_tuning_curves, max_mean_firing=2)
-    ordered_spikes = []
-    ordered_fields =[]
-    for i, neuron in enumerate(sort_spikes):
-        if i not in odd_firing_idx:
-            ordered_spikes.append(neuron)
-            ordered_fields.append(sort_tuning_curves[i])
-
     for trajectory in ['u', 'shortcut']:
+        if trajectory == 'u':
+            line = LineString(info.u_trajectory)
+        elif trajectory == 'shortcut':
+            line = LineString(info.shortcut_trajectory)
+        else:
+            raise ValueError("can only evaluate along u or shortcut trajectories.")
+
+        dist = []
+        for neuron in fields_tunings['u']:
+            yy = ycenters[np.where(fields_tunings['u'][neuron] == fields_tunings['u'][neuron].max())[0][0]]
+            xx = xcenters[np.where(fields_tunings['u'][neuron] == fields_tunings['u'][neuron].max())[1][0]]
+
+            pt = Point(xx, yy)
+            if zones['u'].contains(pt):
+                dist.append((line.project(pt), neuron))
+
+        ordered_dist_u = sorted(dist, key=lambda x: x[0])
+        sort_idx = []
+        for neuron in ordered_dist_u:
+            sort_idx.append(neuron[1])
+
+        sort_spikes = []
+        sort_tuning_curves = []
+        for neuron in sort_idx:
+            sort_tuning_curves.append(fields_tunings['u'][neuron])
+            sort_spikes.append(neurons.spikes[neuron])
+
+        odd_firing_idx = get_odd_firing_idx(sort_tuning_curves, max_mean_firing=10)
+
+        ordered_spikes = []
+        ordered_fields = []
+        for i, neuron in enumerate(sort_spikes):
+            if i not in odd_firing_idx:
+                ordered_spikes.append(neuron)
+                ordered_fields.append(sort_tuning_curves[i])
+
         for time in ['run', 'swr']:
             for i, (start, stop) in enumerate(zip(info.sequence[trajectory][time].starts,
                                                   info.sequence[trajectory][time].stops)):
-                savepath = os.path.join(output_filepath, info.session_id + '_' + time + '-' + trajectory + str(i) + '.pdf')
-                if savefig:
-                    plot_sequence(ordered_spikes, lfp, start, stop, savepath)
+                savepath = os.path.join(output_filepath, info.session_id + '_' + time
+                                        + '-' + trajectory + str(i) + '.png')
+                if time == 'run' and savefig:
+                    plot_sequence(ordered_spikes, start, stop, ms_fraction=250, position=position, savepath=savepath)
+                elif time == 'swr' and savefig:
+                    plot_sequence(ordered_spikes, start, stop, ms_fraction=250, lfp=lfp, savepath=savepath)
                 else:
-                    plot_sequence(ordered_spikes, lfp, start, stop)
+                    plot_sequence(ordered_spikes, start, stop)
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-    infos = spike_sorted_infos
+    from run import spike_sorted_infos, info
+    # infos = spike_sorted_infos
+    infos = [info.r066d3]
 
-    for info in infos:
-        analyze(info)
+    for session in infos:
+        analyze(session)
