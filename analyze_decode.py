@@ -268,8 +268,8 @@ def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r066d3]
+    infos = spike_sorted_infos
+    # infos = [info.r066d3]
 
     if 1:
         for info in infos:
