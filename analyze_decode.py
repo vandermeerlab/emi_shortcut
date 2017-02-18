@@ -13,39 +13,12 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 
 
-def get_edges(position, binsize, lastbin=False):
-    """Finds edges based on linear time
-
-    Parameters
-    ----------
-    position : nept.Position
-    binsize : float
-        This is the desired size of bin.
-        Typically set around 0.020 to 0.040 seconds.
-    lastbin : boolean
-        Determines whether to include the last bin. This last bin may
-        not have the same binsize as the other bins.
-
-    Returns
-    -------
-    edges : np.array
-
-    """
-    edges = np.arange(position.time[0], position.time[-1], binsize)
-
-    if lastbin:
-        if edges[-1] != position.time[-1]:
-            edges = np.hstack((edges, position.time[-1]))
-
-    return edges
-
-
 def point_in_zones(position, zones):
     """Assigns points if contained in shortcut zones
 
     Parameters
     ----------
-    position : neptlab.Position
+    position : nept.Position
     zones : dict
         With u, shortcut, novel, pedestal as keys
 
@@ -120,7 +93,7 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     exp_start = info.task_times[experiment_time].start
     exp_stop = info.task_times[experiment_time].stop
 
-    decode_spikes = neurons.time_slice(exp_start, exp_stop)
+    sliced_spikes = neurons.time_slice(exp_start, exp_stop)
 
     if experiment_time in track_times:
         run_position = speed_threshold(position, speed_limit=speed_limit)
@@ -147,7 +120,7 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
         print('sharp-wave ripples, total:', swrs.n_epochs)
 
         min_involved = 4
-        epochs_interest = nept.find_multi_in_epochs(decode_spikes, swrs, min_involved=min_involved)
+        epochs_interest = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=min_involved)
 
         print('sharp-wave ripples, min', min_involved, 'neurons :', epochs_interest.n_epochs)
 
@@ -160,29 +133,28 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
         raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
                          "'pauseB', phase3', 'postrecord'].")
 
-    counts_binsize = 0.025
-    time_edges = get_edges(exp_position, counts_binsize, lastbin=True)
-    counts = nept.get_counts(decode_spikes, time_edges, gaussian_std=0.005)
+    window_size = 0.020
+    window_advance = 0.005
+    time_edges = nept.get_edges(exp_position, window_advance, lastbin=True)
+    counts = nept.bin_spikes(sliced_spikes, exp_position, window_size, window_advance)
 
     tc_shape = neurons.tuning_curves.shape
     decoding_tc = neurons.tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-    likelihood = nept.bayesian_prob(counts, decoding_tc, counts_binsize)
+    likelihood = nept.bayesian_prob(counts, decoding_tc, window_advance)
 
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
     xy_centers = nept.cartesian(xcenters, ycenters)
 
-    time_centers = (time_edges[1:] + time_edges[:-1]) / 2.
-
-    decoded = nept.decode_location(likelihood, xy_centers, time_centers)
+    decoded = nept.decode_location(likelihood, xy_centers, time_edges)
     nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
     decoded = decoded[~nan_idx]
 
     output = dict()
     output['decoded'] = decoded
     output['epochs_interest'] = epochs_interest
-    output['time_centers'] = time_centers
+    output['time_edges'] = time_edges
     output['exp_position'] = exp_position
 
     return output
@@ -210,7 +182,7 @@ def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min
     decode = get_decoded(info, neurons, experiment_time, speed_limit=speed_limit, shuffle_id=False)
     decoded = decode['decoded']
     epochs_interest = decode['epochs_interest']
-    time_centers = decode['time_centers']
+    time_edges = decode['time_edges']
     exp_position = decode['exp_position']
 
     sequences = nept.remove_teleports(decoded, speed_thresh=10, min_length=min_sequence)
@@ -236,7 +208,7 @@ def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min
             actual_y = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.y)
             actual_position[trajectory] = nept.Position(np.hstack((actual_x[..., np.newaxis],
                                                                   actual_y[..., np.newaxis])),
-                                                       decoded_zones[trajectory].time)
+                                                        decoded_zones[trajectory].time)
 
             if actual_position[trajectory].n_samples > 0:
                 errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
@@ -248,7 +220,7 @@ def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min
     output = dict()
     output['zones'] = decoded_zones
     output['errors'] = errors
-    output['times'] = len(time_centers)
+    output['times'] = len(time_edges)
     output['actual'] = actual_position
     output['decoded'] = decoded
     output['epochs'] = decoded_epochs
@@ -268,8 +240,8 @@ def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    infos = spike_sorted_infos
-    # infos = [info.r066d3]
+    # infos = spike_sorted_infos
+    infos = [info.r066d3]
 
     if 1:
         for info in infos:

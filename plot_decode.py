@@ -270,10 +270,10 @@ if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, error_infos, info
 
     infos = spike_sorted_infos
-    session = 'combined'
+    # session = 'combined'
 
-    # infos = [info.r066d3]
-    # session = 'r066d3'
+    infos = [info.r066d3]
+    session = 'r066d3'
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']
@@ -285,7 +285,6 @@ if __name__ == "__main__":
 
         filename = os.path.join(output_filepath, session + '_decode_pauses.png')
         plot_decoded_compare(decodes, savepath=filename)
-
 
         experiment_times = ['phase1', 'phase2', 'phase3']
 
@@ -318,7 +317,7 @@ if __name__ == "__main__":
         plot_decoded_compare(decodes, savepath=filename)
 
     # plot errors
-    if 0:
+    if 1:
         experiment_times = ['phase1', 'phase2', 'phase3']
 
         errors = []
@@ -330,11 +329,11 @@ if __name__ == "__main__":
 
         combine_error = combine_errors(errors)
         combine_error_shuffled = combine_errors(errors_shuffled)
-        filename = os.path.join(output_filepath, 'errors_phase1.png')
+        filename = os.path.join(output_filepath, session + '_errors_phase1.png')
         plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase1', savepath=filename)
-        filename = os.path.join(output_filepath, 'errors_phase2.png')
+        filename = os.path.join(output_filepath, session + '_errors_phase2.png')
         plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase2', savepath=filename)
-        filename = os.path.join(output_filepath, 'errors_phase3.png')
+        filename = os.path.join(output_filepath, session + '_errors_phase3.png')
         plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase3', savepath=filename)
 
     # Plot by time spent

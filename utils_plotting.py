@@ -652,7 +652,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
             for trajectory in ['u', 'shortcut', 'novel']:
                 decode[experimental_time][trajectory].append(session[experimental_time][trajectory])
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(8, 5))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey='all', figsize=(8, 5))
 
     ind = np.arange(1)
     width = 0.5
@@ -663,8 +663,8 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
         count = 0
         for key in decode:
             ax.bar(ind + (count * width), np.mean(decode[key][trajectory]), width, color=colours[trajectory],
-                   yerr=stats.sem(decode[key][trajectory]), ecolor='k')
-            xtick_loc.append(ind + (count * width) + (0.5 * width))
+                   yerr=stats.sem(decode[key][trajectory]), ecolor='k', edgecolor='k')
+            xtick_loc.append(ind + (count * width))
             count += 1
 
     for ax in [ax2, ax3]:
@@ -676,7 +676,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
         ax.spines['top'].set_visible(False)
         ax.set_xlabel(trajectory)
         ax.set_xticks(xtick_loc)
-        ax.set_xticklabels(labels, rotation=85)
+        ax.set_xticklabels(labels, rotation=90)
         ax.xaxis.set_ticks_position('bottom')
 
     ax1.set_ylabel(ylabel)
