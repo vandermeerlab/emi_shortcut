@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import random
 import pickle
 from shapely.geometry import Point, LineString
 
@@ -65,7 +64,7 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, min_swr=3):
+def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id, min_swr=3):
     """Finds decoded for each session.
 
     Parameters
@@ -74,7 +73,6 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     neurons: nept.Neurons
     experiment_time: str
     shuffle_id: bool
-        Defaults to False (not shuffled)
 
     Returns
     -------
@@ -103,7 +101,9 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     exp_position = run_position.time_slice(exp_start, exp_stop)
 
     if shuffle_id:
-        random.shuffle(neurons.tuning_curves)
+        tuning_curves = np.random.permutation(neurons.tuning_curves)
+    else:
+        tuning_curves = neurons.tuning_curves
 
     if experiment_time in track_times:
         epochs_interest = nept.Epoch(np.hstack([exp_start, exp_stop]))
@@ -115,20 +115,20 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
         merge_thresh = 0.02
         min_length = 0.05
         swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
-                                      power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-        print('sharp-wave ripples, total:', swrs.n_epochs)
+        # print('sharp-wave ripples, total:', swrs.n_epochs)
 
         min_involved = 4
         epochs_interest = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=min_involved)
 
-        print('sharp-wave ripples, min', min_involved, 'neurons :', epochs_interest.n_epochs)
+        # print('sharp-wave ripples, min', min_involved, 'neurons :', epochs_interest.n_epochs)
 
         if epochs_interest.n_epochs < min_swr:
             epochs_interest = nept.Epoch(np.array([[], []]))
 
-        print('sharp-wave ripples, used :', epochs_interest.n_epochs)
-        print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
+        # print('sharp-wave ripples, used :', epochs_interest.n_epochs)
+        # print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
     else:
         raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
                          "'pauseB', phase3', 'postrecord'].")
@@ -136,10 +136,11 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     window_size = 0.020
     window_advance = 0.005
     time_edges = nept.get_edges(exp_position, window_advance, lastbin=True)
-    counts = nept.bin_spikes(sliced_spikes, exp_position, window_size, window_advance)
+    counts = nept.bin_spikes(sliced_spikes, exp_position, window_size, window_advance,
+                             gaussian_std=0.006, normalized=False)
 
-    tc_shape = neurons.tuning_curves.shape
-    decoding_tc = neurons.tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
+    tc_shape = tuning_curves.shape
+    decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
     likelihood = nept.bayesian_prob(counts, decoding_tc, window_advance)
 
@@ -160,7 +161,7 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id=False, m
     return output
 
 
-def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min_epochs=3, shuffle_id=False):
+def analyze(info, neurons, experiment_time, shuffle_id, min_sequence=3, speed_limit=0.4, min_epochs=3):
     """Evaluates decoded analysis
 
     Parameters
@@ -168,18 +169,17 @@ def analyze(info, neurons, experiment_time, min_sequence=3, speed_limit=0.4, min
     info: module
     neurons: nept.Neurons
     experiment_time: str
+    shuffle_id: bool
     min_sequence: int
     speed_limit: float
     min_epochs: int
-    shuffle_id: bool
-        Defaults to False (not shuffled)
 
     Returns
     -------
     decoded_output: dict
 
     """
-    decode = get_decoded(info, neurons, experiment_time, speed_limit=speed_limit, shuffle_id=False)
+    decode = get_decoded(info, neurons, experiment_time, speed_limit=speed_limit, shuffle_id=shuffle_id)
     decoded = decode['decoded']
     epochs_interest = decode['epochs_interest']
     time_edges = decode['time_edges']
@@ -252,7 +252,7 @@ if __name__ == "__main__":
             experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
             # experiment_times = ['pauseA', 'pauseB']
             for experiment_time in experiment_times:
-                analyze(info, neurons, experiment_time)
+                analyze(info, neurons, experiment_time, shuffle_id=False)
 
     # shuffled_id
     if 1:
