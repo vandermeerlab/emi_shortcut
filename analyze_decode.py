@@ -64,7 +64,7 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id, min_swr=3):
+def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min_swr):
     """Finds decoded for each session.
 
     Parameters
@@ -73,15 +73,19 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id, min_swr
     neurons: nept.Neurons
     experiment_time: str
     shuffle_id: bool
+    speed_limit: float
+    min_swr: int
 
     Returns
     -------
-    decoded: dict of nept.Position objects
-        With u, shortcut, novel, other as keys.
+    likelihood: np.array
+    time_edges: np.array
+    xedges: np.array
+    yedges: np.array
+    epochs_interest: nept.Epoch
+    exp_position: nept.Position
 
     """
-    print('decoding:', info.session_id, experiment_time)
-
     track_times = ['phase1', 'phase2', 'phase3', 'tracks']
     pedestal_times = ['pauseA', 'pauseB', 'prerecord', 'postrecord']
 
@@ -117,18 +121,19 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id, min_swr
         swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                        power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-        # print('sharp-wave ripples, total:', swrs.n_epochs)
-
         min_involved = 4
-        epochs_interest = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=min_involved)
+        multi_swr = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=min_involved)
 
-        # print('sharp-wave ripples, min', min_involved, 'neurons :', epochs_interest.n_epochs)
-
-        if epochs_interest.n_epochs < min_swr:
+        if multi_swr.n_epochs < min_swr:
             epochs_interest = nept.Epoch(np.array([[], []]))
+        else:
+            epochs_interest = multi_swr
 
+        # print('sharp-wave ripples, total:', swrs.n_epochs)
+        # print('sharp-wave ripples, min', min_involved, 'neurons :', multi_swr.n_epochs)
         # print('sharp-wave ripples, used :', epochs_interest.n_epochs)
         # print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
+
     else:
         raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
                          "'pauseB', phase3', 'postrecord'].")
@@ -144,6 +149,28 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id, min_swr
 
     likelihood = nept.bayesian_prob(counts, decoding_tc, window_advance)
 
+    return likelihood, time_edges, xedges, yedges, epochs_interest, exp_position
+
+
+def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, sequence_speed, sequence_len, min_epochs):
+    """Finds decoded for each session.
+
+    Parameters
+    ----------
+    likelihood: np.array
+    time_edges: np.array
+    xedges: np.array
+    yedges: np.array
+    epochs_interest: nept.Epoch
+    sequence_speed: float
+    sequence_len: int
+    min_epochs: int
+
+    Returns
+    -------
+    decoded: nept.Position
+
+    """
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
     xy_centers = nept.cartesian(xcenters, ycenters)
@@ -152,16 +179,63 @@ def get_decoded(info, neurons, experiment_time, speed_limit, shuffle_id, min_swr
     nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
     decoded = decoded[~nan_idx]
 
-    output = dict()
-    output['decoded'] = decoded
-    output['epochs_interest'] = epochs_interest
-    output['time_edges'] = time_edges
-    output['exp_position'] = exp_position
+    sequences = nept.remove_teleports(decoded, speed_thresh=sequence_speed, min_length=sequence_len)
+    decoded_epochs = epochs_interest.intersect(sequences)
+    decoded_epochs = decoded_epochs.expand(0.05)
 
-    return output
+    if decoded_epochs.n_epochs < min_epochs:
+        decoded = nept.Position(np.array([[], []]), np.array([]))
+    else:
+        decoded = decoded[decoded_epochs]
+
+    return decoded, decoded_epochs
 
 
-def analyze(info, neurons, experiment_time, shuffle_id, min_sequence=3, speed_limit=0.4, min_epochs=3):
+def get_decoded_zones(info, decoded, exp_position):
+    """Assigns decoded position to zone and computes error
+
+    Parameters
+    ----------
+    info: module
+    decoded: nept.Position
+    exp_position: nept.Position
+
+    Returns
+    -------
+    decoded_zones: dict
+        With u, shortcut, novel as keys.
+    errors: dict
+        With u, shortcut, novel as keys.
+    actual_position: dict
+        With u, shortcut, novel as keys.
+
+    """
+    zones = find_zones(info, remove_feeder=True, expand_by=8)
+    decoded_zones = point_in_zones(decoded, zones)
+
+    keys = ['u', 'shortcut', 'novel']
+
+    errors = dict()
+    actual_position = dict()
+    if experiment_time in ['phase1', 'phase2', 'phase3', 'tracks']:
+        for trajectory in keys:
+            actual_x = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.x)
+            actual_y = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.y)
+            actual_position[trajectory] = nept.Position(np.hstack((actual_x[..., np.newaxis],
+                                                                   actual_y[..., np.newaxis])),
+                                                        decoded_zones[trajectory].time)
+            if actual_position[trajectory].n_samples > 0:
+                errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
+    else:
+        for trajectory in decoded_zones:
+            errors[trajectory] = []
+            actual_position[trajectory] = []
+
+    return decoded_zones, errors, actual_position
+
+
+def analyze(info, neurons, experiment_time, shuffle_id, speed_limit=0.4, min_swr=3, sequence_speed=10,
+            sequence_len=3, min_epochs=3):
     """Evaluates decoded analysis
 
     Parameters
@@ -170,8 +244,10 @@ def analyze(info, neurons, experiment_time, shuffle_id, min_sequence=3, speed_li
     neurons: nept.Neurons
     experiment_time: str
     shuffle_id: bool
-    min_sequence: int
     speed_limit: float
+    min_swr: int
+    sequence_speed: float
+    sequence_len: int
     min_epochs: int
 
     Returns
@@ -179,43 +255,15 @@ def analyze(info, neurons, experiment_time, shuffle_id, min_sequence=3, speed_li
     decoded_output: dict
 
     """
-    decode = get_decoded(info, neurons, experiment_time, speed_limit=speed_limit, shuffle_id=shuffle_id)
-    decoded = decode['decoded']
-    epochs_interest = decode['epochs_interest']
-    time_edges = decode['time_edges']
-    exp_position = decode['exp_position']
+    print('decoding:', info.session_id, experiment_time)
 
-    sequences = nept.remove_teleports(decoded, speed_thresh=10, min_length=min_sequence)
-    decoded_epochs = epochs_interest.intersect(sequences)
-    decoded_epochs = decoded_epochs.expand(0.05)
+    (likelihood, time_edges, xedges, yedges,
+     epochs_interest, exp_position) = get_likelihoods(info, neurons, experiment_time,
+                                                      shuffle_id, speed_limit, min_swr)
+    decoded, decoded_epochs = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
+                                          sequence_speed, sequence_len, min_epochs)
 
-    print('number of positions that are sequences and overlap epochs: ', decoded_epochs.n_epochs)
-
-    if decoded_epochs.n_epochs < min_epochs:
-        decoded = nept.Position(np.array([[], []]), np.array([]))
-    else:
-        decoded = decoded[decoded_epochs]
-
-    zones = find_zones(info, remove_feeder=True, expand_by=8)
-    decoded_zones = point_in_zones(decoded, zones)
-
-    keys = ['u', 'shortcut', 'novel']
-    errors = dict()
-    actual_position = dict()
-    if experiment_time in ['phase1', 'phase2', 'phase3', 'tracks']:
-        for trajectory in keys:
-            actual_x = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.x)
-            actual_y = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.y)
-            actual_position[trajectory] = nept.Position(np.hstack((actual_x[..., np.newaxis],
-                                                                  actual_y[..., np.newaxis])),
-                                                        decoded_zones[trajectory].time)
-
-            if actual_position[trajectory].n_samples > 0:
-                errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
-    else:
-        for trajectory in decoded_zones:
-            errors[trajectory] = []
-            actual_position[trajectory] = []
+    decoded_zones, errors, actual_position = get_decoded_zones(info, decoded, exp_position)
 
     output = dict()
     output['zones'] = decoded_zones
