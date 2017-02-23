@@ -574,6 +574,64 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersi
         plt.show()
 
 
+
+def plot_decoded_session_errors(decode_errors, shuffled_errors, n_sessions, fliersize=1, savepath=None, transparent=False):
+    """Plots boxplot distance between decoded and actual position for decoded and shuffled_id
+
+    Parameters
+    ----------
+    decode_errors: list
+    shuffled_errors: list
+    n_sessions: int
+    fliersize: int
+    savepath : str or None
+        Location and filename for the saved plot.
+
+    """
+    decoded_dict = dict(error=decode_errors, shuffled='Decoded')
+    shuffled_dict = dict(error=shuffled_errors, shuffled='ID-shuffle decoded')
+    decoded = pd.DataFrame(decoded_dict)
+    shuffled = pd.DataFrame(shuffled_dict)
+    data = pd.concat([shuffled, decoded])
+    colours = ['#ffffff', '#bdbdbd']
+
+    print('actual:', np.mean(decode_errors), stats.sem(decode_errors))
+    print('shuffle:', np.mean(shuffled_errors), stats.sem(shuffled_errors))
+
+    plt.figure(figsize=(6, 4))
+    flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
+    # ax = sns.boxplot(x='shuffled', y='error', data=data, palette=colours, flierprops=flierprops)
+    ax = sns.boxplot(x='shuffled', y='error', data=data, flierprops=flierprops)
+
+    edge_colour = '#252525'
+    for i, artist in enumerate(ax.artists):
+        artist.set_edgecolor(edge_colour)
+        artist.set_facecolor(colours[i])
+
+        for j in range(i*6, i*6+6):
+            line = ax.lines[j]
+            line.set_color(edge_colour)
+            line.set_mfc(edge_colour)
+            line.set_mec(edge_colour)
+
+    ax.text(0.9, 1., 'n_sessions = ' + str(n_sessions),
+            verticalalignment='bottom',
+            horizontalalignment='right',
+            transform=ax.transAxes,
+            color='k', fontsize=10)
+
+    ax.set(xlabel=' ', ylabel="Error (cm)")
+
+    sns.despine()
+    plt.tight_layout()
+
+    if savepath is not None:
+        plt.savefig(savepath, transparent=transparent)
+        plt.close()
+    else:
+        plt.show()
+
+
 # Seaborn specific properties for combined phases
 def plot_v3(data, exp_labels, errors=True):
     fig = sns.FacetGrid(data, col='trajectory', col_order=['U', 'Shortcut', 'Novel'], sharex=False)
@@ -664,7 +722,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
         for key in decode:
             ax.bar(ind + (count * width), np.mean(decode[key][trajectory]), width, color=colours[trajectory],
                    yerr=stats.sem(decode[key][trajectory]), ecolor='k', edgecolor='k')
-            xtick_loc.append(ind + (count * width))
+            xtick_loc.append(ind + (count * width) + (0.5 * width))
             count += 1
 
     for ax in [ax2, ax3]:

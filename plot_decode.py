@@ -4,7 +4,7 @@ import pickle
 from collections import OrderedDict
 from shapely.geometry import LineString
 
-from utils_plotting import plot_decoded_errors, plot_decoded_compare
+from utils_plotting import plot_decoded_errors, plot_decoded_compare, plot_decoded_session_errors
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,7 +37,7 @@ def get_zone_proportion(decoded, experiment_time):
     return decoded_proportions
 
 
-def get_decoded(info, experiment_times, pickle_filepath, f_combine, shuffled=False, min_samples=15):
+def load_decoded(info, experiment_times, pickle_filepath, f_combine, shuffled=False, min_samples=15):
     """Combines decoded outputs
 
     Parameters
@@ -123,6 +123,39 @@ def combine_errors(errors):
                 combine_errors[key]['together'].extend(error[key][trajectory])
 
     return combine_errors
+
+
+def get_session_errors(info, experiment_time, shuffled):
+    """Loads the error of decoded position compared to actual position
+
+    Parameters
+    ----------
+    info: module
+    experiment_time: str
+    shuffled: boolean
+
+    Returns
+    -------
+    errors: np.array
+
+    """
+    if experiment_time in ['phase1', 'phase2', 'phase3']:
+        if shuffled:
+            filename = '_decode-shuffled-' + experiment_time + '.pkl'
+        else:
+            filename = '_decode-' + experiment_time + '.pkl'
+        decode_filename = info.session_id + filename
+        pickled_decoded = os.path.join(pickle_filepath, decode_filename)
+
+        if os.path.isfile(pickled_decoded):
+            with open(pickled_decoded, 'rb') as fileobj:
+                decoded = pickle.load(fileobj)
+        else:
+            raise ValueError("pickled decoded not found for " + info.session_id)
+
+        return decoded['errors']
+    else:
+        return np.array([])
 
 
 def compare_rates(combined_zones, jump=0.1):
@@ -270,10 +303,10 @@ if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, error_infos, info
 
     infos = spike_sorted_infos
-    # session = 'combined'
+    session = 'combined'
 
-    infos = [info.r066d3]
-    session = 'r066d3'
+    # infos = [info.r066d3]
+    # session = 'r066d3'
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']
@@ -281,7 +314,7 @@ if __name__ == "__main__":
         decodes = []
 
         for this_info in infos:
-            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
+            decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_pauses.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -291,7 +324,7 @@ if __name__ == "__main__":
         decodes = []
 
         for this_info in infos:
-            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
+            decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_phases.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -301,7 +334,7 @@ if __name__ == "__main__":
         decodes = []
 
         for this_info in infos:
-            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
+            decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_all.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -311,7 +344,7 @@ if __name__ == "__main__":
         decodes = []
 
         for this_info in infos:
-            decodes.append(get_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
+            decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
 
         filename = os.path.join(output_filepath, session + '_decode_prepost.png')
         plot_decoded_compare(decodes, savepath=filename)
@@ -320,21 +353,17 @@ if __name__ == "__main__":
     if 1:
         experiment_times = ['phase1', 'phase2', 'phase3']
 
-        errors = []
-        errors_shuffled = []
+        for experiment_time in experiment_times:
+            errors = []
+            errors_shuffled = []
+            n_sessions = 0
+            for this_info in infos:
+                errors.extend(get_session_errors(this_info, experiment_time, shuffled=False))
+                errors_shuffled.extend(get_session_errors(this_info, experiment_time, shuffled=True))
+                n_sessions += 1
 
-        for this_info in infos:
-            errors.append(get_decoded(this_info, experiment_times, pickle_filepath, get_errors))
-            errors_shuffled.append(get_decoded(this_info, experiment_times, pickle_filepath, get_errors, shuffled=True))
-
-        combine_error = combine_errors(errors)
-        combine_error_shuffled = combine_errors(errors_shuffled)
-        filename = os.path.join(output_filepath, session + '_errors_phase1.png')
-        plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase1', savepath=filename)
-        filename = os.path.join(output_filepath, session + '_errors_phase2.png')
-        plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase2', savepath=filename)
-        filename = os.path.join(output_filepath, session + '_errors_phase3.png')
-        plot_decoded_errors(combine_error, combine_error_shuffled, experiment_time='phase3', savepath=filename)
+            filename = os.path.join(output_filepath, session + '_errors_' + experiment_time + '.png')
+            plot_decoded_session_errors(errors, errors_shuffled, n_sessions, savepath=filename)
 
     # Plot by time spent
     if 0:

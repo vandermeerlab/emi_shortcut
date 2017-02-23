@@ -64,7 +64,7 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min_swr, size, advance):
+def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min_swr, window_size, window_advance):
     """Finds decoded for each session.
 
     Parameters
@@ -75,6 +75,8 @@ def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min
     shuffle_id: bool
     speed_limit: float
     min_swr: int
+    window_size: float
+    window_advance: float
 
     Returns
     -------
@@ -138,8 +140,8 @@ def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min
         raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
                          "'pauseB', phase3', 'postrecord'].")
 
-    window_size = size
-    window_advance = advance
+    # exp_position = nept.Position([np.insert(exp_position.x, 0, np.array(np.zeros(len(newarray)))), np.insert(exp_position.y, 0, np.array(np.zeros(len(newarray))))],
+    #                               np.insert(exp_position.time, 0, np.array(np.min(position.time)-newarray)))
     time_edges = nept.get_edges(exp_position, window_advance, lastbin=True)
     counts = nept.bin_spikes(sliced_spikes, exp_position, window_size, window_advance,
                              gaussian_std=None, normalized=False)
@@ -152,7 +154,8 @@ def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min
     return likelihood, time_edges, xedges, yedges, epochs_interest, exp_position
 
 
-def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, sequence_speed, sequence_len, min_epochs):
+def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, exp_position,
+                sequence_speed, sequence_len, min_epochs):
     """Finds decoded for each session.
 
     Parameters
@@ -162,6 +165,7 @@ def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, sequenc
     xedges: np.array
     yedges: np.array
     epochs_interest: nept.Epoch
+    exp_position: nept.Position
     sequence_speed: float
     sequence_len: int
     min_epochs: int
@@ -169,6 +173,8 @@ def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, sequenc
     Returns
     -------
     decoded: nept.Position
+    decoded_epochs: nept.Epoch
+    errors: np.array
 
     """
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
@@ -188,7 +194,13 @@ def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, sequenc
     else:
         decoded = decoded[decoded_epochs]
 
-    return decoded, decoded_epochs
+    actual_x = np.interp(decoded.time, exp_position.time, exp_position.x)
+    actual_y = np.interp(decoded.time, exp_position.time, exp_position.y)
+    actual_position = nept.Position(np.hstack((actual_x[..., np.newaxis],
+                                               actual_y[..., np.newaxis])), decoded.time)
+    errors = actual_position.distance(decoded)
+
+    return decoded, decoded_epochs, errors
 
 
 def get_decoded_zones(info, decoded, exp_position):
@@ -234,8 +246,8 @@ def get_decoded_zones(info, decoded, exp_position):
     return decoded_zones, errors, actual_position
 
 
-def analyze(info, neurons, experiment_time, shuffle_id, size, advance, speed_limit=0.4, min_swr=3, sequence_speed=10,
-            sequence_len=3, min_epochs=3):
+def analyze(info, neurons, experiment_time, shuffle_id, window_size=0.025, window_advance=0.025, speed_limit=0.4,
+            min_swr=2, sequence_speed=5, sequence_len=3, min_epochs=3):
     """Evaluates decoded analysis
 
     Parameters
@@ -244,6 +256,8 @@ def analyze(info, neurons, experiment_time, shuffle_id, size, advance, speed_lim
     neurons: nept.Neurons
     experiment_time: str
     shuffle_id: bool
+    window_size: float
+    window_advance: float
     speed_limit: float
     min_swr: int
     sequence_speed: float
@@ -259,15 +273,16 @@ def analyze(info, neurons, experiment_time, shuffle_id, size, advance, speed_lim
 
     (likelihood, time_edges, xedges, yedges,
      epochs_interest, exp_position) = get_likelihoods(info, neurons, experiment_time,
-                                                      shuffle_id, speed_limit, min_swr, size, advance)
-    decoded, decoded_epochs = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
-                                          sequence_speed, sequence_len, min_epochs)
+                                                      shuffle_id, speed_limit, min_swr, window_size, window_advance)
+    decoded, decoded_epochs, errors = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
+                                                  exp_position, sequence_speed, sequence_len, min_epochs)
 
-    decoded_zones, errors, actual_position = get_decoded_zones(info, decoded, exp_position)
+    decoded_zones, zone_errors, actual_position = get_decoded_zones(info, decoded, exp_position)
 
     output = dict()
     output['zones'] = decoded_zones
     output['errors'] = errors
+    output['zone_errors'] = zone_errors
     output['times'] = len(time_edges)
     output['actual'] = actual_position
     output['decoded'] = decoded
@@ -288,61 +303,54 @@ def analyze(info, neurons, experiment_time, shuffle_id, size, advance, speed_lim
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r066d3]
+    infos = spike_sorted_infos
+    # infos = [info.r066d3]
 
-    if 0:
-        for info in infos:
-            neurons_filename = info.session_id + '_neurons.pkl'
+    if 1:
+        for session in infos:
+            neurons_filename = session.session_id + '_neurons.pkl'
             pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
             with open(pickled_neurons, 'rb') as fileobj:
                 neurons = pickle.load(fileobj)
             experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
             # experiment_times = ['pauseA', 'pauseB']
             for experiment_time in experiment_times:
-                analyze(info, neurons, experiment_time, shuffle_id=False)
+                analyze(session, neurons, experiment_time, shuffle_id=False, window_advance=0.025, window_size=0.025)
 
     # shuffled_id
-    if 0:
-        for info in infos:
-            neurons_filename = info.session_id + '_neurons.pkl'
+    # if 0:
+        for session in infos:
+            neurons_filename = session.session_id + '_neurons.pkl'
             pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
             with open(pickled_neurons, 'rb') as fileobj:
                 neurons = pickle.load(fileobj)
             experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
             for experiment_time in experiment_times:
-                analyze(info, neurons, experiment_time, shuffle_id=True)
+                analyze(session, neurons, experiment_time, shuffle_id=True, window_advance=0.025, window_size=0.025)
 
-    if 1:
-        for info in infos:
-            neurons_filename = info.session_id + '_neurons.pkl'
+    if 0:
+        for session in infos:
+            neurons_filename = session.session_id + '_neurons.pkl'
             pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
             with open(pickled_neurons, 'rb') as fileobj:
                 neurons = pickle.load(fileobj)
             experiment_times = ['phase3']
             for experiment_time in experiment_times:
-                size = 0.02
-                advance = 0.005
-                output = analyze(info, neurons, experiment_time, shuffle_id=False, size=size, advance=advance)
-                print('window', size, 's and advancing in ', advance, 's increments:',
-                      np.mean(output['errors']['u']))
+                windows = [0.025, 0.025]
+                advances = [0.025, 0.0125]
+                for window, advance in zip(windows, advances):
+                    window_size = window
+                    window_advance = advance
+                    speed_limit = 0.4
+                    min_swr = 3
+                    sequence_speed = 5.
+                    sequence_len = 4
+                    min_epochs = 3
+                    shuffle_id = False
+                    (likelihood, time_edges, xedges, yedges,
+                     epochs_interest, exp_position) = get_likelihoods(session, neurons, experiment_time, shuffle_id,
+                                                                      speed_limit, min_swr, window_size, window_advance)
+                    decoded, decoded_epochs, errors = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
+                                                                  exp_position, sequence_speed, sequence_len, min_epochs)
 
-                size = 0.02
-                advance = 0.01
-                output = analyze(info, neurons, experiment_time, shuffle_id=False, size=size, advance=advance)
-                print('window', size, 's and advancing in ', advance, 's increments:', np.mean(output['errors']['u']))
-
-                size = 0.02
-                advance = 0.02
-                output = analyze(info, neurons, experiment_time, shuffle_id=False, size=size, advance=advance)
-                print('window', size, 's and advancing in ', advance, 's increments:', np.mean(output['errors']['u']))
-
-                size = 0.025
-                advance = 0.005
-                output = analyze(info, neurons, experiment_time, shuffle_id=False, size=size, advance=advance)
-                print('window', size, 's and advancing in ', advance, 's increments:', np.mean(output['errors']['u']))
-
-                size = 0.025
-                advance = 0.025
-                output = analyze(info, neurons, experiment_time, shuffle_id=False, size=size, advance=advance)
-                print('window', size, 's and advancing in ', advance, 's increments:', np.mean(output['errors']['u']))
+                    print('window', window, 'advancing in', advance, ':', np.mean(errors))
