@@ -303,8 +303,8 @@ def analyze(info, neurons, experiment_time, shuffle_id, window_size=0.025, windo
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    infos = spike_sorted_infos
-    # infos = [info.r066d3]
+    # infos = spike_sorted_infos
+    infos = [info.r066d8]
 
     if 1:
         for session in infos:
