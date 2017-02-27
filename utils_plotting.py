@@ -556,7 +556,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersi
             line.set_mfc(edge_colour)
             line.set_mec(edge_colour)
 
-    ax.text(0.9, 1., 'n_sessions = ' + str(len(decode_errors)),
+    ax.text(-0.05, -0.15, 'N = ' + str(len(decode_errors)),
             verticalalignment='bottom',
             horizontalalignment='right',
             transform=ax.transAxes,
@@ -713,7 +713,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey='all', figsize=(8, 5))
 
     ind = np.arange(1)
-    width = 0.5
+    width = 0.45
     xtick_loc = []
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
 
@@ -740,10 +740,9 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
     ax1.set_ylabel(ylabel)
     ax1.yaxis.set_ticks_position('left')
 
-    ax3.text(0.65, 0.9, 'n_sessions = ' + str(len(decodes)),
+    ax1.text(-0.05, -0.15, 'N = ' + str(len(decodes)),
              verticalalignment='bottom',
              horizontalalignment='right',
-             transform=ax3.transAxes,
              color='k', fontsize=12)
 
     plt.tight_layout()
