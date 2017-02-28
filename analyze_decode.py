@@ -12,6 +12,23 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 
 
+def test_binning(position, spikes, binsize, stepsize):
+    edges = nept.get_edges(position, stepsize, lastbin=False)
+    final_counts = np.zeros((len(spikes), len(edges)-1))
+
+    count = 0
+    for num in range(int(binsize / stepsize)):
+        count += 1
+        these_edges = np.arange(edges[num], edges[-1]+(stepsize*count), stepsize)
+
+        counts = np.zeros((len(spikes), len(these_edges)-1))
+        for idx, spiketrain in enumerate(spikes):
+            counts[idx] = np.histogram(spiketrain.time, bins=these_edges)[0]
+        final_counts += counts
+
+    return final_counts
+
+
 def point_in_zones(position, zones):
     """Assigns points if contained in shortcut zones
 
@@ -140,11 +157,10 @@ def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min
         raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
                          "'pauseB', phase3', 'postrecord'].")
 
-    # exp_position = nept.Position([np.insert(exp_position.x, 0, np.array(np.zeros(len(newarray)))), np.insert(exp_position.y, 0, np.array(np.zeros(len(newarray))))],
-    #                               np.insert(exp_position.time, 0, np.array(np.min(position.time)-newarray)))
+    counts = test_binning(sliced_spikes, exp_position, window_size, window_advance)
     time_edges = nept.get_edges(exp_position, window_advance, lastbin=True)
-    counts = nept.bin_spikes(sliced_spikes, exp_position, window_size, window_advance,
-                             gaussian_std=None, normalized=False)
+    # counts = nept.bin_spikes(sliced_spikes, exp_position, window_size, window_advance,
+    #                          gaussian_std=None, normalized=False)
 
     tc_shape = tuning_curves.shape
     decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
@@ -269,13 +285,15 @@ def analyze(info, neurons, experiment_time, shuffle_id, window_size=0.025, windo
     decoded_output: dict
 
     """
-    print('decoding:', info.session_id, experiment_time)
+    print('decoding:', info.session_id, experiment_time, 'shuffled-', shuffle_id)
 
     (likelihood, time_edges, xedges, yedges,
      epochs_interest, exp_position) = get_likelihoods(info, neurons, experiment_time,
                                                       shuffle_id, speed_limit, min_swr, window_size, window_advance)
     decoded, decoded_epochs, errors = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
                                                   exp_position, sequence_speed, sequence_len, min_epochs)
+
+    print(np.mean(errors), np.median(errors))
 
     decoded_zones, zone_errors, actual_position = get_decoded_zones(info, decoded, exp_position)
 
@@ -315,7 +333,7 @@ if __name__ == "__main__":
             experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
             # experiment_times = ['pauseA', 'pauseB']
             for experiment_time in experiment_times:
-                analyze(session, neurons, experiment_time, shuffle_id=False, window_advance=0.025, window_size=0.025)
+                analyze(session, neurons, experiment_time, shuffle_id=False, window_advance=0.0125, window_size=0.025)
 
     # shuffled_id
     # if 0:
@@ -326,7 +344,7 @@ if __name__ == "__main__":
                 neurons = pickle.load(fileobj)
             experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
             for experiment_time in experiment_times:
-                analyze(session, neurons, experiment_time, shuffle_id=True, window_advance=0.025, window_size=0.025)
+                analyze(session, neurons, experiment_time, shuffle_id=True, window_advance=0.0125, window_size=0.025)
 
     if 0:
         for session in infos:
