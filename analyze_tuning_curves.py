@@ -218,19 +218,19 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
         track_stops = [info.task_times['phase1'].stop,
                        info.task_times['phase2'].stop,
                        info.task_times['phase3'].stop]
-        track_position = position.time_slices(track_starts, track_stops)
+        track_position = position.time_slice(track_starts, track_stops)
 
         filename = info.session_id + '_neurons_all-phases.pkl'
     else:
         track_starts = [info.task_times['phase3'].start]
         track_stops = [info.task_times['phase3'].stop]
-        track_position = position.time_slices(track_starts, track_stops)
+        track_position = position.time_slice(track_starts, track_stops)
 
         filename = info.session_id + '_neurons.pkl'
 
     run_position = speed_threshold(track_position, speed_limit=speed_limit)
 
-    track_spikes = [spiketrain.time_slices(track_starts, track_stops) for spiketrain in spikes]
+    track_spikes = [spiketrain.time_slice(track_starts, track_stops) for spiketrain in spikes]
 
     filtered_spikes = []
     tuning_spikes = []

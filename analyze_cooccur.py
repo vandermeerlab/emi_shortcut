@@ -30,7 +30,7 @@ def analyze(info, neurons, experiment_time, all_tracks_tc=False):
                    info.task_times['phase2'].stop,
                    info.task_times['phase3'].stop]
 
-    track_pos = run_pos.time_slices(track_starts, track_stops)
+    track_pos = run_pos.time_slice(track_starts, track_stops)
 
     binsize = 3
     xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
