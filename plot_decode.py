@@ -202,8 +202,8 @@ if __name__ == "__main__":
     # infos = spike_sorted_infos
     # session = 'combined'
 
-    infos = [info.r066d3]
-    session = 'r066d3'
+    infos = [info.r066d4]
+    session = 'r066d4'
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']

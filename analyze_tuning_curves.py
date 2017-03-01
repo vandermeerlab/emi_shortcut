@@ -11,6 +11,7 @@ from utils_maze import spikes_by_position, speed_threshold
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 
+
 def expand_line(start_pt, stop_pt, line, expand_by):
     """Expands shapely Linestring.
 
@@ -254,8 +255,8 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r066d8]
+    infos = spike_sorted_infos
+    # infos = [info.r066d8]
 
     if 1:
         for info in infos:

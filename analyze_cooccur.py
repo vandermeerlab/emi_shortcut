@@ -103,8 +103,8 @@ def analyze(info, neurons, experiment_time, all_tracks_tc=False):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r066d8]
+    infos = spike_sorted_infos
+    # infos = [info.r066d8]
 
     all_tracks_tc = True
 
