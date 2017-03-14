@@ -99,6 +99,7 @@ def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min
     exp_stop = info.task_times[experiment_time].stop
 
     sliced_spikes = neurons.time_slice(exp_start, exp_stop)
+    sliced_spikes = sliced_spikes.spikes
 
     if experiment_time in track_times:
         run_position = speed_threshold(position, speed_limit=speed_limit)
@@ -304,8 +305,8 @@ def analyze(info, neurons, experiment_time, window_size, window_advance, speed_l
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r066d4]
+    infos = spike_sorted_infos
+    # infos = [info.r066d4]
 
     speed_limit = 0.4
     min_swr = 3

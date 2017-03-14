@@ -63,6 +63,7 @@ def analyze(info, neurons, experiment_time, all_tracks_tc=False):
     sliced_lfp = lfp.time_slice(t_start, t_stop)
 
     sliced_spikes = neurons.time_slice(t_start, t_stop)
+    sliced_spikes = sliced_spikes.spikes
 
     z_thresh = 3.0
     power_thresh = 5.0
