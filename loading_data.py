@@ -1,8 +1,40 @@
 import os
 import pickle
+import zipfile
 import nept
 
 from startup import load_shortcut_position
+
+
+def zip_nvt_file(datapath, filename):
+    """Compresses a videotracking (*.nvt) file
+
+    Parameters
+    ----------
+    datapath: str
+    filename: str
+
+    """
+    file = zipfile.ZipFile(os.path.join(datapath, filename+'.zip'), 'w')
+    file.write(os.path.join(datapath, filename+'.nvt'), filename+'.nvt',
+               compress_type=zipfile.ZIP_DEFLATED)
+
+    file.close()
+
+
+def unzip_nvt_file(datapath, filename):
+    """Extracts a videotracking (*.nvt) file
+
+    Parameters
+    ----------
+    datapath: str
+    filename: str
+
+    """
+    with zipfile.ZipFile(os.path.join(datapath, filename+'.zip'), 'r') as file:
+        file.extractall(datapath)
+
+    file.close()
 
 
 def load_data(info):
@@ -11,7 +43,10 @@ def load_data(info):
 
     events = nept.load_events(os.path.join(dataloc, info.event_filename), info.event_labels)
 
+    position_path = os.path.join(dataloc, 'data-working', info.rat_id, info.session+'_recording')
+    unzip_nvt_file(position_path, info.session+'-VT1')
     position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events)
+    os.remove(os.path.join(position_path, info.session+'-VT1.nvt'))
 
     spikes = nept.load_spikes(os.path.join(dataloc, info.spikes_filepath))
 
