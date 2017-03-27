@@ -211,28 +211,28 @@ if __name__ == "__main__":
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_pauses.png')
-        plot_decoded_compare(decodes, savepath=filename)
+        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
 
         experiment_times = ['phase1', 'phase2', 'phase3']
         decodes = []
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_phases.png')
-        plot_decoded_compare(decodes, savepath=filename)
+        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
 
         experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
         decodes = []
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_all.png')
-        plot_decoded_compare(decodes, savepath=filename)
+        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
 
         experiment_times = ['prerecord', 'postrecord']
         decodes = []
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_prepost.png')
-        plot_decoded_compare(decodes, savepath=filename)
+        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
 
     # plot errors
     if 1:

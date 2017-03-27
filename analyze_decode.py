@@ -313,10 +313,10 @@ if __name__ == "__main__":
     min_neurons = 2
     min_spikes = 1
     sequence_speed = 5.
-    sequence_len = 4
+    sequence_len = 3
     min_epochs = 3
     window_size = 0.025
-    window_advance = 0.0125
+    window_advance = 0.025
 
     if 1:
         for session in infos:

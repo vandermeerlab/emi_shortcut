@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import nept
 import scipy.stats as stats
 
 from loading_data import get_data
@@ -31,7 +32,7 @@ def bytrial_counts(togethers, min_length):
     -------
     means : dict
         With u, shortcut, novel as keys
-    sems : dict
+    err : dict
         With u, shortcut, novel as keys
 
     """
@@ -49,13 +50,13 @@ def bytrial_counts(togethers, min_length):
                     bytrial[key][trial].append(0)
 
     means = dict(u=[], shortcut=[], novel=[])
-    sems = dict(u=[], shortcut=[], novel=[])
+    err = dict(u=[], shortcut=[], novel=[])
     for trial in range(min_length):
         for key in bytrial:
             means[key].append(np.mean(bytrial[key][trial]))
-            sems[key].append(stats.sem(bytrial[key][trial]))
+            err[key].append(stats.sem(bytrial[key][trial]))
 
-    return means, sems
+    return means, err
 
 
 def combine_behavior(infos):
@@ -92,11 +93,13 @@ def combine_behavior(infos):
 
         trials.append(trials_idx)
 
+        trial_epoch = nept.Epoch([trials_idx['start_trials'], trials_idx['stop_trials']])
+
         n_sessions += 1
 
         for key in durations:
             for trial in trials_idx[key]:
-                durations[key].append(trials_idx['stop_trials'][trial[0]] - trials_idx['start_trials'][trial[0]])
+                durations[key].append(trial_epoch.durations[trial[0]])
 
         for trial in trials:
             togethers.append(sorted(trial['u'] + trial['shortcut'] + trial['novel']))
@@ -109,10 +112,11 @@ if __name__ == "__main__":
                      days1234_infos, days5678_infos,
                      r063_infos, r066_infos, r067_infos, r068_infos,
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos,
-                     spike_sorted_infos)
+                     spike_sorted_infos,
+                     some_infos)
 
     if 1:
-        infos = behavior_infos
+        infos = spike_sorted_infos
 
         proportion_filename = 'all-behavior_proportions.png'
         duration_filename = 'all-behavior_durations.png'
@@ -140,18 +144,20 @@ if __name__ == "__main__":
         df_trials = pd.DataFrame(data=trials_together)
 
         proportion_savepath = os.path.join(output_filepath, proportion_filename)
-        plot_proportions(df_trials, proportion_savepath, total_n_sessions, early_late=False, figsize=(8, 5), savefig=True)
+        plot_proportions(df_trials, proportion_savepath, total_n_sessions,
+                         early_late=False, figsize=(5, 5), savefig=True)
 
         duration_savepath = os.path.join(output_filepath, duration_filename)
-        plot_durations(df_durations, duration_savepath, total_n_sessions, early_late=False, figsize=(8, 5), fliersize=3, savefig=True)
+        plot_durations(df_durations, duration_savepath, total_n_sessions,
+                       early_late=False, figsize=(8, 5), fliersize=3, savefig=True)
 
         min_length = 30
         means, sems = bytrial_counts(togethers, min_length)
 
         bytrial_savepath = os.path.join(output_filepath, bytrial_filename)
-        plot_bytrial(means, sems, total_n_sessions, bytrial_savepath, figsize=(8, 5), savefig=True)
+        plot_bytrial(means, sems, total_n_sessions, bytrial_savepath, figsize=(5, 5), savefig=True)
 
-    if 1:
+    if 0:
         total_n_sessions = 0
 
         durations_together = dict(trajectory=[], value=[], time=[])

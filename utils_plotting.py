@@ -233,7 +233,7 @@ def plot_bytrial(means, sems, n_sessions, savepath, figsize=(6., 3), savefig=Tru
     sns.despine(left=False)
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
-    plt.legend(loc=1, bbox_to_anchor=(1.1, 1.1))
+    plt.legend(loc=1, bbox_to_anchor=(1.2, 1.1))
 
     if savefig:
         plt.savefig(savepath, bbox_inches='tight', transparent=True)
@@ -686,7 +686,7 @@ def set_size(fig):
     plt.tight_layout()
 
 
-def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparent=False):
+def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=None, transparent=False):
     """Plots barplot comparing decoded during experiment phases
 
     Parameters
@@ -710,7 +710,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', savepath=None, transparen
             for trajectory in ['u', 'shortcut', 'novel']:
                 decode[experimental_time][trajectory].append(session[experimental_time][trajectory])
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey='all', figsize=(8, 5))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey='all', figsize=figsize)
 
     ind = np.arange(1)
     width = 0.45
