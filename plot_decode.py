@@ -199,40 +199,44 @@ def get_combined(infos, experiment_times):
 if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, info
 
-    # infos = spike_sorted_infos
-    # session = 'combined'
+    infos = spike_sorted_infos
+    session = 'combined'
 
-    infos = [info.r066d4]
-    session = 'r066d4'
+    # infos = [info.r066d4]
+    # session = 'r066d4'
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']
+        labels = ['Pause A', 'Pause B']
         decodes = []
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_pauses.png')
-        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
+        plot_decoded_compare(decodes, labels=labels, savepath=filename, figsize=(7., 5.5))
 
         experiment_times = ['phase1', 'phase2', 'phase3']
+        labels = ['Run 1', 'Run 2', 'Run 3']
         decodes = []
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_phases.png')
-        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
+        plot_decoded_compare(decodes, labels=labels, savepath=filename, figsize=(7., 5.))
 
         experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+        labels = ['Prerecord', 'Run 1', 'Pause A', 'Run 2', 'Pause B', 'Run 3', 'Postrecord']
         decodes = []
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_all.png')
-        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
+        plot_decoded_compare(decodes, labels=labels, savepath=filename, figsize=(6.5, 4.5))
 
         experiment_times = ['prerecord', 'postrecord']
+        labels = ['Prerecord', 'Postrecord']
         decodes = []
         for this_info in infos:
             decodes.append(load_decoded(this_info, experiment_times, pickle_filepath, get_zone_proportion))
         filename = os.path.join(output_filepath, session + '_decode_prepost.png')
-        plot_decoded_compare(decodes, savepath=filename, figsize=(6.5, 4.5))
+        plot_decoded_compare(decodes, labels=labels, savepath=filename, figsize=(6.5, 4.5))
 
     # plot errors
     if 1:

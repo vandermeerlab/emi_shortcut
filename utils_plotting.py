@@ -686,7 +686,7 @@ def set_size(fig):
     plt.tight_layout()
 
 
-def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=None, transparent=False):
+def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=None, transparent=False, labels=None):
     """Plots barplot comparing decoded during experiment phases
 
     Parameters
@@ -699,7 +699,8 @@ def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=
         Location and filename for the saved plot.
 
     """
-    labels = decodes[0].keys()
+    if labels is None:
+        labels = decodes[0].keys()
 
     decode = OrderedDict()
     for experimental_time in decodes[0].keys():
@@ -722,25 +723,27 @@ def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=
         for key in decode:
             ax.bar(ind + (count * width), np.mean(decode[key][trajectory]), width, color=colours[trajectory],
                    yerr=stats.sem(decode[key][trajectory]), ecolor='k', edgecolor='k')
-            xtick_loc.append(ind + (count * width) + (0.5 * width))
+            xtick_loc.append(ind + (count * width))
             count += 1
 
     for ax in [ax2, ax3]:
         ax.spines['left'].set_visible(False)
         ax.tick_params(axis='y', which='both', length=0)
 
+
     for ax, trajectory in zip([ax1, ax2, ax3], ['U', 'Shortcut', 'Novel']):
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_xlabel(trajectory)
         ax.set_xticks(xtick_loc)
-        ax.set_xticklabels(labels, rotation=90)
+        ax.set_xticklabels(labels, rotation='vertical')
+        ax.xaxis.labelpad = 15
         ax.xaxis.set_ticks_position('bottom')
 
     ax1.set_ylabel(ylabel)
     ax1.yaxis.set_ticks_position('left')
 
-    ax1.text(-0.05, -0.15, 'N = ' + str(len(decodes)),
+    ax1.text(-0.35, -0.15, 'N = ' + str(len(decodes)),
              verticalalignment='bottom',
              horizontalalignment='right',
              color='k', fontsize=12)
