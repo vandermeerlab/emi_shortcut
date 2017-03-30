@@ -135,7 +135,7 @@ def plot_durations(durations, savepath, n_sessions, early_late=False, figsize=(8
         ax = sns.boxplot(x="trajectory", y="value", data=durations, palette=colour,
                          flierprops=flierprops)
 
-    ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
+    ax.set(xticklabels=['U', 'Shortcut', 'Dead-end'])
     plt.ylabel('Duration of trial (s)')
     plt.xlabel('(sessions=' + str(n_sessions) + ')')
     plt.ylim(0, 120)
@@ -181,7 +181,7 @@ def plot_proportions(proportions, savepath, n_sessions, early_late=False, figsiz
         ax = sns.barplot(x="trajectory", y="value", data=proportions, palette=colour)
 
 
-    ax.set(xticklabels=['U', 'Shortcut', 'Novel'])
+    ax.set(xticklabels=['U', 'Shortcut', 'Dead-end'])
     plt.ylabel('Proportion of trials')
     plt.xlabel('(sessions=' + str(n_sessions) + ')')
     sns.despine(left=False)
@@ -216,7 +216,7 @@ def plot_bytrial(means, sems, n_sessions, savepath, figsize=(6., 3), savefig=Tru
     trials = list(range(1, len(means['u'])+1))
 
     colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
-    labels = dict(u='U', shortcut='Shortcut', novel='Novel')
+    labels = dict(u='U', shortcut='Shortcut', novel='Dead-end')
 
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
@@ -731,7 +731,7 @@ def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=
         ax.tick_params(axis='y', which='both', length=0)
 
 
-    for ax, trajectory in zip([ax1, ax2, ax3], ['U', 'Shortcut', 'Novel']):
+    for ax, trajectory in zip([ax1, ax2, ax3], ['U', 'Shortcut', 'Dead-end']):
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_xlabel(trajectory)
