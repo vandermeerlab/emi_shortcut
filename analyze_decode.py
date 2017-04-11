@@ -190,7 +190,7 @@ def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, exp_pos
     decoded_epochs = decoded_epochs.expand(0.05)
 
     if decoded_epochs.n_epochs < min_epochs:
-        decoded = nept.Position(np.array([[], []]), np.array([]))
+        decoded = nept.Position(np.array([]), np.array([]))
     else:
         decoded = decoded[decoded_epochs]
 
@@ -198,7 +198,10 @@ def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, exp_pos
     actual_y = np.interp(decoded.time, exp_position.time, exp_position.y)
     actual_position = nept.Position(np.hstack((actual_x[..., np.newaxis],
                                                actual_y[..., np.newaxis])), decoded.time)
-    errors = actual_position.distance(decoded)
+    if decoded.n_samples > 0:
+        errors = actual_position.distance(decoded)
+    else:
+        errors = np.nan
 
     return decoded, decoded_epochs, errors
 
