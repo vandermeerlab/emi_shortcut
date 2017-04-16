@@ -214,8 +214,8 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
 
     if use_all_tracks:
         track_starts = [info.task_times['phase1'].start,
-                    info.task_times['phase2'].start,
-                    info.task_times['phase3'].start]
+                        info.task_times['phase2'].start,
+                        info.task_times['phase3'].start]
         track_stops = [info.task_times['phase1'].stop,
                        info.task_times['phase2'].stop,
                        info.task_times['phase3'].stop]
@@ -229,9 +229,11 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
 
         filename = info.session_id + '_neurons.pkl'
 
-    run_position = speed_threshold(track_position, speed_limit=speed_limit)
+    # run_position = speed_threshold(track_position, speed_limit=speed_limit)
+    run_epoch = speed_threshold(track_position, speed_limit=speed_limit)
+    run_position = position[run_epoch]
 
-    track_spikes = [spiketrain.time_slice(track_starts, track_stops) for spiketrain in spikes]
+    track_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in spikes]
 
     filtered_spikes = []
     tuning_spikes = []
@@ -240,8 +242,8 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
             tuning_spikes.append(neuron)
             filtered_spikes.append(neuron_all)
 
-    tuning_curves = nept.tuning_curve_2d(run_position, np.array(tuning_spikes),
-                                         xedges, yedges, occupied_thresh=0.2, gaussian_sigma=0.1)
+    tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes,
+                                         xedges, yedges, occupied_thresh=0.2, gaussian_std=0.3)
 
     neurons = nept.Neurons(np.array(filtered_spikes), tuning_curves)
 

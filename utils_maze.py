@@ -369,7 +369,7 @@ def get_xyedges(position, binsize=3):
 
 
 def speed_threshold(position, t_smooth=0.5, speed_limit=0.4):
-    """Finds positions above a certain speed threshold
+    """Finds times where position is above a certain speed threshold
 
     Parameters
     ----------
@@ -379,11 +379,12 @@ def speed_threshold(position, t_smooth=0.5, speed_limit=0.4):
 
     Returns
     -------
-    position_run: nept.Position
+    epoch_run: nept.Epoch
 
     """
 
     speed = position.speed(t_smooth)
-    run_idx = np.squeeze(speed.data) >= speed_limit
-
-    return position[run_idx]
+    run_idx = np.where(np.diff(np.squeeze(speed.data) >= speed_limit))[0]
+    t_start = position.time[run_idx[::2]]
+    t_stop = position.time[run_idx[1::2]]
+    return nept.Epoch(np.vstack((t_start, t_stop)))
