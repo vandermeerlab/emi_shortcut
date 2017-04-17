@@ -387,4 +387,9 @@ def speed_threshold(position, t_smooth=0.5, speed_limit=0.4):
     run_idx = np.where(np.diff(np.squeeze(speed.data) >= speed_limit))[0]
     t_start = position.time[run_idx[::2]]
     t_stop = position.time[run_idx[1::2]]
+
+    if len(t_start) != len(t_stop):
+        assert len(t_start) - len(t_stop) == 1
+        t_stop = np.hstack([t_stop, position.time[-1]])
+
     return nept.Epoch(np.vstack((t_start, t_stop)))

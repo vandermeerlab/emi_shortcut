@@ -258,7 +258,7 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
     infos = spike_sorted_infos
-    # infos = [info.r066d8]
+    # infos = [info.r066d1]
 
     if 1:
         for info in infos:

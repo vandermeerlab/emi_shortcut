@@ -243,8 +243,8 @@ def get_decoded_zones(info, decoded, exp_position):
     return decoded_zones, errors, actual_position
 
 
-def analyze(info, neurons, experiment_time, window_size, window_advance, speed_limit,
-            min_swr, sequence_speed, sequence_len, min_epochs, min_neurons, min_spikes, shuffle_id):
+def analyze(info, neurons, experiment_time, dt, window, speed_limit,
+            min_swr, sequence_speed, sequence_len, min_epochs, min_neurons, min_spikes, gaussian_std, shuffle_id):
     """Evaluates decoded analysis
 
     Parameters
@@ -272,7 +272,7 @@ def analyze(info, neurons, experiment_time, window_size, window_advance, speed_l
 
     (likelihood, time_edges, xedges, yedges,
      epochs_interest, exp_position) = get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min_swr,
-                                                      window_size, window_advance, min_neurons, min_spikes)
+                                                      window, dt, min_neurons, min_spikes, gaussian_std)
     decoded, decoded_epochs, errors = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
                                                   exp_position, sequence_speed, sequence_len, min_epochs)
 
@@ -302,8 +302,8 @@ def analyze(info, neurons, experiment_time, window_size, window_advance, speed_l
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r063d2]
+    infos = spike_sorted_infos
+    # infos = [info.r063d2]
 
     speed_limit = 0.4
     min_swr = 3
@@ -312,36 +312,38 @@ if __name__ == "__main__":
     sequence_speed = 5.
     sequence_len = 3
     min_epochs = 3
-    window_size = 0.025
-    window_advance = 0.025
-
-    if 0:
-        for session in infos:
-            neurons_filename = session.session_id + '_neurons.pkl'
-            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
-            with open(pickled_neurons, 'rb') as fileobj:
-                neurons = pickle.load(fileobj)
-            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
-            # experiment_times = ['pauseA', 'pauseB']
-            # experiment_times = ['phase3']
-            for experiment_time in experiment_times:
-                analyze(session, neurons, experiment_time, window_size, window_advance, speed_limit,
-                        min_swr, sequence_speed, sequence_len, min_epochs, min_neurons, min_spikes, shuffle_id=False)
-
-    # shuffled_id
-    if 0:
-        for session in infos:
-            neurons_filename = session.session_id + '_neurons.pkl'
-            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
-            with open(pickled_neurons, 'rb') as fileobj:
-                neurons = pickle.load(fileobj)
-            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
-            # experiment_times = ['phase3']
-            for experiment_time in experiment_times:
-                analyze(session, neurons, experiment_time, window_size, window_advance, speed_limit,
-                        min_swr, sequence_speed, sequence_len, min_epochs, min_neurons, min_spikes, shuffle_id=True)
+    window_size = 0.0125
+    window_advance = 0.0125
+    gaussian_std = 0.0075
 
     if 1:
+        for session in infos:
+            neurons_filename = session.session_id + '_neurons.pkl'
+            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
+            with open(pickled_neurons, 'rb') as fileobj:
+                neurons = pickle.load(fileobj)
+            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+            for experiment_time in experiment_times:
+                analyze(info=session, neurons=neurons, experiment_time=experiment_time, dt=window_advance,
+                        window=window_size, speed_limit=speed_limit, min_swr=min_swr, sequence_speed=sequence_speed,
+                        sequence_len=sequence_len, min_epochs=min_epochs, min_neurons=min_neurons,
+                        min_spikes=min_spikes, gaussian_std=gaussian_std, shuffle_id=False)
+
+    # shuffled_id
+    if 1:
+        for session in infos:
+            neurons_filename = session.session_id + '_neurons.pkl'
+            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
+            with open(pickled_neurons, 'rb') as fileobj:
+                neurons = pickle.load(fileobj)
+            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
+            for experiment_time in experiment_times:
+                analyze(info=session, neurons=neurons, experiment_time=experiment_time, dt=window_advance,
+                        window=window_size, speed_limit=speed_limit, min_swr=min_swr, sequence_speed=sequence_speed,
+                        sequence_len=sequence_len, min_epochs=min_epochs, min_neurons=min_neurons,
+                        min_spikes=min_spikes, gaussian_std=gaussian_std, shuffle_id=True)
+
+    if 0:
         for session in infos:
             neurons_filename = session.session_id + '_neurons.pkl'
             pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
