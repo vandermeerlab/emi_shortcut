@@ -704,21 +704,22 @@ def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=
 
     decode = OrderedDict()
     for experimental_time in decodes[0].keys():
-        decode[experimental_time] = dict(u=[], shortcut=[], novel=[])
+        decode[experimental_time] = dict(u=[], shortcut=[], novel=[], other=[])
 
     for session in decodes:
         for experimental_time in session.keys():
-            for trajectory in ['u', 'shortcut', 'novel']:
-                decode[experimental_time][trajectory].append(session[experimental_time][trajectory])
+            for trajectory in ['u', 'shortcut', 'novel', 'other']:
+                if trajectory in session[experimental_time].keys():
+                    decode[experimental_time][trajectory].append(session[experimental_time][trajectory])
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey='all', figsize=figsize)
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, sharey='all', figsize=figsize)
 
     ind = np.arange(1)
     width = 0.45
     xtick_loc = []
-    colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00')
+    colours = dict(u='#0072b2', shortcut='#009e73', novel='#d55e00', other='c')
 
-    for ax, trajectory in zip([ax1, ax2, ax3], ['u', 'shortcut', 'novel']):
+    for ax, trajectory in zip([ax1, ax2, ax3, ax4], ['u', 'shortcut', 'novel', 'other']):
         count = 0
         for key in decode:
             ax.bar(ind + (count * width), np.mean(decode[key][trajectory]), width, color=colours[trajectory],
@@ -726,12 +727,12 @@ def plot_decoded_compare(decodes, ylabel='Proportion', figsize=(8, 5), savepath=
             xtick_loc.append(ind + (count * width))
             count += 1
 
-    for ax in [ax2, ax3]:
+    for ax in [ax2, ax3, ax4]:
         ax.spines['left'].set_visible(False)
         ax.tick_params(axis='y', which='both', length=0)
 
 
-    for ax, trajectory in zip([ax1, ax2, ax3], ['U', 'Shortcut', 'Dead-end']):
+    for ax, trajectory in zip([ax1, ax2, ax3, ax4], ['U', 'Shortcut', 'Dead-end', 'Other']):
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_xlabel(trajectory)

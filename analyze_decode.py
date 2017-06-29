@@ -192,7 +192,7 @@ def get_decoded_zones(info, decoded, position):
     zones = find_zones(info, remove_feeder=True, expand_by=8)
     decoded_zones = point_in_zones(decoded, zones)
 
-    keys = ['u', 'shortcut', 'novel']
+    keys = ['u', 'shortcut', 'novel', 'other']
 
     errors = dict()
     actual_position = dict()
@@ -253,8 +253,8 @@ def zone_sort(info, decoded, shuffle_id):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r063d2]
+    infos = spike_sorted_infos
+    # infos = [info.r066d3, info.r066d4]
 
     if 1:
         track_times = ['phase1', 'phase2', 'phase3', 'tracks']
@@ -273,14 +273,14 @@ if __name__ == "__main__":
                 args = dict(speed_limit=0.4,
                             min_swr=3,
                             min_neurons=2,
-                            min_spikes=1,
+                            min_spikes=2,
                             t_start=t_start,
                             t_stop=t_stop,
                             neurons=neurons,
                             info=session,
                             normalized=False,
-                            sequence_speed=5.,
-                            sequence_len=3,
+                            sequence_speed=500.,
+                            sequence_len=4,
                             min_epochs=3,
                             window=0.0125,
                             dt=0.0125,

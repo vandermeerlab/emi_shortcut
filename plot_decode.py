@@ -68,13 +68,13 @@ def get_zone_proportion(info, decoded, experiment_time):
         raise ValueError("experiment time is not recognized as a shortcut experiment time.")
 
     n_total = 0
-    for zone in ['u', 'shortcut', 'novel']:
+    for zone in ['u', 'shortcut', 'novel', 'other']:
         n_total += decoded['zones'][zone].n_samples
-    n_total = np.maximum(n_total, 1.0)
 
     decoded_proportions = dict()
-    for zone in ['u', 'shortcut', 'novel']:
-        decoded_proportions[zone] = decoded['zones'][zone].n_samples / n_total
+    for zone in ['u', 'shortcut', 'novel', 'other']:
+        if n_total > 0.0:
+            decoded_proportions[zone] = decoded['zones'][zone].n_samples / n_total
 
     return decoded_proportions
 
@@ -105,12 +105,12 @@ def get_proportion_normalized(info, decoded, experiment_time):
     length['novel'] = LineString(info.novel_trajectory).length
 
     n_total = 0
-    for zone in ['u', 'shortcut', 'novel']:
+    for zone in ['u', 'shortcut', 'novel', 'other']:
         n_total += decoded['zones'][zone].n_samples / length[zone]
     n_total = np.maximum(n_total, 1.0)
 
     proportions_normalized = dict()
-    for zone in ['u', 'shortcut', 'novel']:
+    for zone in ['u', 'shortcut', 'novel', 'other']:
         proportions_normalized[zone] = (decoded['zones'][zone].n_samples / length[zone]) / n_total
 
     return proportions_normalized
