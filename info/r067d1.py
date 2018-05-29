@@ -36,7 +36,6 @@ pickled_lfp_swr = session + '-lfp_swr.pkl'
 pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
-
 task_times = dict()
 task_times['prerecord'] = nept.Epoch(np.array([9479.9, 9783.7]))
 task_times['phase1'] = nept.Epoch(np.array([9858.4, 10463.0]))
@@ -45,6 +44,10 @@ task_times['phase2'] = nept.Epoch(np.array([11172.0, 12392.0]))
 task_times['pauseB'] = nept.Epoch(np.array([12445.0, 14249.0]))
 task_times['phase3'] = nept.Epoch(np.array([14339.0, 16560.0]))
 task_times['postrecord'] = nept.Epoch(np.array([16631.0, 17041.0]))
+
+session_length = 0
+for phase in task_times.keys():
+    session_length += task_times[phase].durations
 
 pxl_to_cm = (7.3552, 7.1253)
 scale_targets = (3.7, 3.5)
@@ -77,6 +80,7 @@ path_pts['npt1'] = [107, 165]
 path_pts['npt2'] = [96, 187]
 path_pts['novel2'] = [91, 372]
 path_pts['pedestal'] = [309, 220]
+path_pts['stable1'] = [245, 370]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 

@@ -206,49 +206,99 @@ def get_outputs_all(infos):
     return outputs
 
 
-def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
-    print('tuning curves:', info.session_id)
+def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=4., min_n_spikes=100,
+                      phase_id=None, trial_times=None, trial_number=None, cache=True):
+    """
 
-    events, position, spikes, lfp, lfp_theta = get_data(info)
-    xedges, yedges = nept.get_xyedges(position)
+    Parameters
+    ----------
+    info: module
+    sliced_position: nept.Position
+    speed_limit: float
+    min_n_spikes: int or None
+    phase_id: str
+    trial_times: nept.Epoch or None
+    trial_number: int or None
+    cache: bool
 
-    if use_all_tracks:
-        track_starts = [info.task_times['phase1'].start,
-                    info.task_times['phase2'].start,
-                    info.task_times['phase3'].start]
-        track_stops = [info.task_times['phase1'].stop,
-                       info.task_times['phase2'].stop,
-                       info.task_times['phase3'].stop]
-        track_position = position.time_slice(track_starts, track_stops)
+    Returns
+    -------
+    neurons: nept.Neurons
 
-        filename = info.session_id + '_neurons_all-phases.pkl'
+    """
+    print('generating tuning curves for', info.session_id)
+
+    if trial_times is not None and trial_times.n_epochs != 1:
+        raise AssertionError("trial_times must only contain one epoch (start, stop)")
+
+    if trial_number is None:
+        trial_number = ""
+
+    if trial_times is None:
+        trial_times = nept.Epoch([], [])
+
+    phase1 = nept.Epoch([info.task_times['phase1'].start, info.task_times['phase1'].stop])
+    phase2 = nept.Epoch([info.task_times['phase2'].start, info.task_times['phase2'].stop])
+    phase3 = nept.Epoch([info.task_times['phase3'].start, info.task_times['phase3'].stop])
+
+    if phase_id is None:
+        track_starts = []
+        track_stops = []
+        for phase in [phase1, phase2, phase3]:
+            if phase.overlaps(trial_times).durations.size > 0:
+                if trial_times.start < phase.start:
+                    phase = nept.Epoch([trial_times.stop, phase.stop])
+                elif trial_times.stop > phase.stop:
+                    phase = nept.Epoch([phase.start, trial_times.start])
+                else:
+                    phase = nept.Epoch([[phase.start, trial_times.stop], [trial_times.start, phase.stop]])
+            track_starts.extend(phase.starts)
+            track_stops.extend(phase.stops)
+        filename = info.session_id + '_neurons_all-phases' + str(trial_number) + '.pkl'
     else:
-        track_starts = [info.task_times['phase3'].start]
-        track_stops = [info.task_times['phase3'].stop]
-        track_position = position.time_slice(track_starts, track_stops)
+        phase = nept.Epoch([info.task_times[phase_id].start, info.task_times[phase_id].stop])
 
-        filename = info.session_id + '_neurons.pkl'
+        track_starts = []
+        track_stops = []
+        if phase.overlaps(trial_times).durations.size > 0:
+            if trial_times.start < phase.start:
+                phase = nept.Epoch([trial_times.stop, phase.stop])
+            elif trial_times.stop > phase.stop:
+                phase = nept.Epoch([phase.start, trial_times.start])
+            else:
+                phase = nept.Epoch([[phase.start, trial_times.stop], [trial_times.start, phase.stop]])
 
-    run_position = speed_threshold(track_position, speed_limit=speed_limit)
+            track_starts.extend(phase.starts)
+            track_stops.extend(phase.stops)
+        filename = info.session_id + '_neurons' + str(trial_number) + '.pkl'
 
-    track_spikes = [spiketrain.time_slice(track_starts, track_stops) for spiketrain in spikes]
+    # limit position to only times when the subject is moving faster than a certain threshold
+    run_epoch = speed_threshold(sliced_position, speed_limit=speed_limit)
+    run_position = sliced_position[run_epoch]
+
+    track_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
 
     filtered_spikes = []
     tuning_spikes = []
-    for neuron, neuron_all in zip(track_spikes, spikes):
-        if len(neuron.time) > min_n_spikes:
-            tuning_spikes.append(neuron)
-            filtered_spikes.append(neuron_all)
+    if min_n_spikes is not None:
+        for neuron, neuron_all in zip(track_spikes, sliced_spikes):
+            if len(neuron.time) > min_n_spikes:
+                tuning_spikes.append(neuron)
+                filtered_spikes.append(neuron_all)
+    else:
+        tuning_spikes = track_spikes
+        filtered_spikes = sliced_spikes
 
-    tuning_curves = nept.tuning_curve_2d(run_position, np.array(tuning_spikes),
-                                         xedges, yedges, occupied_thresh=0.2, gaussian_sigma=0.1)
+    tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, xedges, yedges,
+                                         occupied_thresh=0.5, gaussian_std=0.3)
 
     neurons = nept.Neurons(np.array(filtered_spikes), tuning_curves)
 
-    pickled_tc = os.path.join(pickle_filepath, filename)
+    if cache:
+        pickled_tc = os.path.join(pickle_filepath, filename)
 
-    with open(pickled_tc, 'wb') as fileobj:
-        pickle.dump(neurons, fileobj)
+        with open(pickled_tc, 'wb') as fileobj:
+            pickle.dump(neurons, fileobj)
 
     return neurons
 
@@ -256,11 +306,14 @@ def analyze(info, speed_limit=0.4, min_n_spikes=100, use_all_tracks=False):
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
     infos = spike_sorted_infos
-    # infos = [info.r066d8]
+    # infos = [info.r066d1]
 
     if 1:
         for info in infos:
-            analyze(info)
-    if 1:
+            events, position, spikes, lfp, lfp_theta = get_data(info)
+            xedges, yedges = nept.get_xyedges(position)
+            get_tuning_curves(info, position, spikes, xedges, yedges, speed_limit=4.,
+                              min_n_spikes=None, trial_times=None, trial_number=None, cache=True)
+    if 0:
         for info in infos:
-            analyze(info, use_all_tracks=True)
+            get_tuning_curves(info, use_all_tracks=True)

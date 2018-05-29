@@ -1,9 +1,14 @@
 import os
 import pickle
 import zipfile
+import warnings
 import nept
 
-from startup import load_shortcut_position
+import matplotlib.pyplot as plt
+
+from startup import load_shortcut_position, load_shortcut_pos
+
+warnings.filterwarnings("ignore")
 
 
 def zip_nvt_file(datapath, filename):
@@ -22,7 +27,7 @@ def zip_nvt_file(datapath, filename):
     file.close()
 
 
-def unzip_nvt_file(datapath, filename):
+def unzip_nvt_file(datapath, filename, info):
     """Extracts a videotracking (*.nvt) file
 
     Parameters
@@ -34,6 +39,8 @@ def unzip_nvt_file(datapath, filename):
     with zipfile.ZipFile(os.path.join(datapath, filename+'.zip'), 'r') as file:
         file.extractall(datapath)
 
+    # os.rename(os.path.join(datapath, 'VT1.nvt'), os.path.join(datapath, info.session+'-VT1.nvt'))
+
     file.close()
 
 
@@ -44,7 +51,7 @@ def load_data(info):
     events = nept.load_events(os.path.join(dataloc, info.event_filename), info.event_labels)
 
     position_path = os.path.join(dataloc, 'data-working', info.rat_id, info.session+'_recording')
-    unzip_nvt_file(position_path, info.session+'-VT1')
+    unzip_nvt_file(position_path, info.session+'-VT1', info)
     position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events)
     os.remove(os.path.join(position_path, info.session+'-VT1.nvt'))
 
@@ -125,12 +132,36 @@ def get_data(info):
 
     return events, position, spikes, lfp_swr, lfp_theta
 
+
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info
+    from run import spike_sorted_infos, info, r067_infos
     infos = spike_sorted_infos
-    # infos = [info.r066d8]
+    # infos = [info.r063d8]
+    # infos = r067_infos
 
     for info in infos:
         print(info.session_id)
-        save_data(info)
+        # save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
+        events, position, spikes, lfp_swr, lfp_theta = load_data(info)
+
+
+
+        thisdir = os.getcwd()
+        dataloc = os.path.join(thisdir, 'cache', 'data')
+        pickle_filepath = os.path.join(thisdir, "cache", "pickled")
+        output_filepath = os.path.join(thisdir, "plots", "correcting_position")
+
+        # plot to check
+        fig, ax = plt.subplots()
+        plt.plot(position.time, position.y, "k.", ms=3)
+        plt.xlabel("time")
+        plt.ylabel("y")
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks_position('bottom')
+        plt.title("n_samples:" + str(position.n_samples))
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_filepath, info.session_id+"_corrected-position_old_y.png"))
+        # plt.show()

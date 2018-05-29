@@ -199,12 +199,12 @@ def get_combined(infos, experiment_times):
 if __name__ == "__main__":
     from run import spike_sorted_infos, days123_infos, days456_infos, info
 
-    # infos = spike_sorted_infos
-    # session = 'combined'
+    infos = spike_sorted_infos
+    session = 'combined'
 
-    infos = [info.r066d4]
-    session = 'r066d4'
-    condition = 'win25'
+    # infos = [info.r066d4]
+    # session = 'r066d4'
+    condition = '_overlap'
 
     if 1:
         experiment_times = ['pauseA', 'pauseB']
@@ -248,10 +248,19 @@ if __name__ == "__main__":
             errors_shuffled = []
             n_sessions = 0
             for this_info in infos:
-                errors.extend(get_session_errors(this_info, experiment_time, shuffled=False))
-                errors_shuffled.extend(get_session_errors(this_info, experiment_time, shuffled=True))
-                n_sessions += 1
+                error = get_session_errors(this_info, experiment_time, shuffled=False)
+                if isinstance(error, float):
+                    error = []
+                errors.extend(error)
 
+                error_shuffled = get_session_errors(this_info, experiment_time, shuffled=True)
+                if isinstance(error_shuffled, float):
+                    error_shuffled = []
+                errors_shuffled.extend(error_shuffled)
+
+                n_sessions += 1
+            # print(errors)
+            # print(errors_shuffled)
             filename = os.path.join(output_filepath, session + '_errors_' + experiment_time + condition + '.png')
             plot_decoded_session_errors(errors, errors_shuffled, n_sessions, savepath=filename)
 

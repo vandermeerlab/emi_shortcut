@@ -1,11 +1,11 @@
 Getting started for this project
 ================================
 
-* In addition to the nept dependencies, 
-  this project also requires the following.
+* Install ffmpeg for videos by:
 
   ```
-  conda install seaborn jupyter
+  activate yourenv
+  conda install -c conda-forge ffmpeg
   ```
 
 * Jupyter notebooks can be started by:

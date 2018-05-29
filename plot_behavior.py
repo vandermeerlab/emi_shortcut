@@ -67,7 +67,7 @@ def combine_behavior(infos):
     togethers = []
 
     for info in infos:
-        print(info.session_id)
+        print('getting behavior for:', info.session_id)
 
         events, position, spikes, lfp, lfp_theta = get_data(info)
 
@@ -88,23 +88,21 @@ def combine_behavior(infos):
 
         path_pos = get_zones(info, sliced_pos)
 
-        trials_idx = get_trial_idx(path_pos['u'].time, path_pos['shortcut'].time, path_pos['novel'].time,
-                                   feeder1_times, feeder2_times, t_stop)
+        trials_idx, trial_epochs = get_trial_idx(path_pos['u'].time, path_pos['shortcut'].time, path_pos['novel'].time,
+                                                 feeder1_times, feeder2_times, t_stop)
 
         trials.append(trials_idx)
-
-        trial_epoch = nept.Epoch([trials_idx['start_trials'], trials_idx['stop_trials']])
 
         n_sessions += 1
 
         for key in durations:
             for trial in trials_idx[key]:
-                durations[key].append(trial_epoch.durations[trial[0]])
+                durations[key].append(trial_epochs.durations[trial[0]])
 
         for trial in trials:
             togethers.append(sorted(trial['u'] + trial['shortcut'] + trial['novel']))
 
-    return durations, trials, togethers, n_sessions
+    return durations, trials, trial_epochs, togethers, n_sessions
 
 
 if __name__ == "__main__":
@@ -127,7 +125,7 @@ if __name__ == "__main__":
         durations_together = dict(trajectory=[], value=[])
         trials_together = dict(trajectory=[], value=[])
 
-        durations, trials, togethers, n_sessions = combine_behavior(infos)
+        durations, trials, trial_epochs, togethers, n_sessions = combine_behavior(infos)
         total_n_sessions += n_sessions
 
         for key in durations:
@@ -136,9 +134,9 @@ if __name__ == "__main__":
                 durations_together['value'].append(val)
 
         for key in ['u', 'shortcut', 'novel']:
-            for trial in trials:
+            for trial, epochs in zip(trials, trial_epochs):
                 trials_together['trajectory'].append(key)
-                trials_together['value'].append(len(trial[key])/float(len(trial['start_trials'])))
+                trials_together['value'].append(len(trial[key])/float(epochs.n_epochs))
 
         df_durations = pd.DataFrame(data=durations_together)
         df_trials = pd.DataFrame(data=trials_together)

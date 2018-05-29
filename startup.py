@@ -77,8 +77,7 @@ def sort_led_locations(info, events, times):
 
 
 def correct_targets(subset_x, subset_y, feeder_x, feeder_y, contamination_thresh=3):
-    col_idx = (np.sum(subset_x == 0, axis=0) == subset_x.shape[0]) & (
-    np.sum(subset_y == 0, axis=0) == subset_y.shape[0])
+    col_idx = (np.sum(subset_x == 0, axis=0) == subset_x.shape[0]) & (np.sum(subset_y == 0, axis=0) == subset_y.shape[0])
     subset_x = subset_x[:, ~col_idx]
     subset_y = subset_y[:, ~col_idx]
 
@@ -111,7 +110,7 @@ def correct_targets(subset_x, subset_y, feeder_x, feeder_y, contamination_thresh
     return x, y
 
 
-def remove_jumps_to_feeder(x, y, time, info, time_thresh=1.0, jump_thresh=20, dist_thresh=5):
+def remove_jumps_to_feeder(x, y, time, info, jump_thresh, dist_thresh):
     # Find those indices that have unnatural jumps in the position.
     # Remove jump points within to the feeder location.
     # Not including jumps due to jumps in time (eg. from stopping the recording).
@@ -125,8 +124,8 @@ def remove_jumps_to_feeder(x, y, time, info, time_thresh=1.0, jump_thresh=20, di
         jumps = np.append(np.array([0]), np.sqrt(np.diff(x) ** 2 + np.diff(y) ** 2))
         remove_idx = jumps > jump_thresh
 
-        time_jumps = np.append(np.diff(time) > time_thresh, np.array([False], dtype=bool))
-        remove_idx[time_jumps] = False
+        # time_jumps = np.append(np.diff(time) > time_thresh, np.array([False], dtype=bool))
+        # remove_idx[time_jumps] = False
 
         dist_feeder1 = np.sqrt((x - feeder1_x) ** 2 + (y - feeder1_y) ** 2)
         dist_feeder2 = np.sqrt((x - feeder2_x) ** 2 + (y - feeder2_y) ** 2)
@@ -213,7 +212,7 @@ def load_shortcut_position(info, filename, events):
     # (eg. subtracts the two targets, averages over two targets, etc.)
     if x.shape[1] == 1 and y.shape[1] == 1:
         # Remove jumps to feeder location
-        out_x, out_y, times = remove_jumps_to_feeder(out_x, out_y, times, info)
+        out_x, out_y, times = remove_jumps_to_feeder(out_x, out_y, times, info, jump_thresh=20, dist_thresh=4)
 
         # Apply a median filter
         out_x, out_y = median_filter(out_x, out_y)
@@ -246,7 +245,7 @@ def load_shortcut_position(info, filename, events):
         out_y[subset_idx] = subset_y
 
     # Remove jumps to feeder location
-    out_x, out_y, times = remove_jumps_to_feeder(out_x, out_y, times, info)
+    out_x, out_y, times = remove_jumps_to_feeder(out_x, out_y, times, info, jump_thresh=20, dist_thresh=4)
 
     # Apply a median filter
     out_x, out_y = median_filter(out_x, out_y)
@@ -255,3 +254,100 @@ def load_shortcut_position(info, filename, events):
     position = nept.Position(np.hstack(np.array([out_x, out_y])[..., np.newaxis]), times)
 
     return position
+
+
+def load_shortcut_pos(info, filename, events, variance_thresh=4., epsilon=0.01):
+    """Loads and corrects shortcut position.
+
+    Parameters
+    ----------
+    info: module
+    filename: str
+    events: dict
+    variance_thresh: float
+    epsilon: float
+
+    Returns
+    -------
+    position: nept.Position
+
+    """
+
+    # Load raw position from file
+    nvt_data = nept.load_nvt(filename)
+    targets = nvt_data['targets']
+    times = nvt_data['time']
+
+    # Initialize x, y arrays
+    x = np.zeros(targets.shape)
+    y = np.zeros(targets.shape)
+
+    # X and Y are stored in a custom bitfield. See Neuralynx data file format documentation for details.
+    # Briefly, each record contains up to 50 targets, each stored in 32bit field.
+    # X field at [20:31] and Y at [4:15].
+    # TODO: make into a separate function in nept
+    for target in range(targets.shape[1]):
+        this_sample = targets[:, target]
+        for sample in range(targets.shape[0]):
+            # When the bitfield is equal to zero there is no valid data for that field
+            # and remains zero for the rest of the bitfields in the record.
+            if this_sample[target] == 0:
+                break
+            x[sample, target], y[sample, target] = extract_xy(int(this_sample[sample]))
+
+    # Replacing targets with no samples with nan instead of 0
+    x[x == 0] = np.nan
+    y[y == 0] = np.nan
+
+    # Scale the positions
+    x = x / info.scale_targets[0]
+    y = y / info.scale_targets[1]
+
+    # Removing the sample that is more than std + buffer from the mean of the targets for both x and y
+    targets_x_mean = np.nanmean(x, axis=1)[:, np.newaxis]
+    targets_x_std = np.nanstd(x, axis=1)[:, np.newaxis] + epsilon
+    keep_x_idx = np.abs(x - targets_x_mean) < targets_x_std
+    x[~keep_x_idx] = np.nan
+
+    targets_y_mean = np.nanmean(y, axis=1)[:, np.newaxis]
+    targets_y_std = np.nanstd(y, axis=1)[:, np.newaxis] + epsilon
+    keep_y_idx = np.abs(y - targets_y_mean) < targets_y_std
+    y[~keep_y_idx] = np.nan
+
+    # Get the feeder locations
+    feeder_x, feeder_y = sort_led_locations(info, events, times)
+
+    # One target is contaminated when the distance between the targets is large
+    target_x_var = np.nanvar(x, axis=1)
+    target_y_var = np.nanvar(y, axis=1)
+
+    # Contaminated samples are using the feeder LED instead of the implant LEDs
+    contaminated_x_idx = target_x_var > variance_thresh
+    contaminated_y_idx = target_y_var > variance_thresh
+
+    # Removing the contaminated samples that are closest to the feeder location
+    x_arrays = x[contaminated_x_idx]
+    x_values = feeder_x[contaminated_x_idx]
+    for array, value in zip(x_arrays, x_values):
+        nidx = np.nanargmin(np.abs(array - value))
+        array[nidx] = np.nan
+    x[contaminated_x_idx] = x_arrays
+
+    y_arrays = y[contaminated_y_idx]
+    y_values = feeder_y[contaminated_y_idx]
+    for array, value in zip(y_arrays, y_values):
+        nidx = np.nanargmin(np.abs(array - value))
+        array[nidx] = np.nan
+    y[contaminated_y_idx] = y_arrays
+
+    # Calculating the mean of the remaining targets
+    xx = np.nanmean(x, axis=1)
+    yy = np.nanmean(y, axis=1)
+
+    # Remove jumps to feeder location
+    nojump_x, nojump_y, ttimes = remove_jumps_to_feeder(xx, yy, times, info, jump_thresh=10, dist_thresh=5)
+
+    # Apply a median filter
+    xx, yy = median_filter(nojump_x, nojump_y)
+
+    return nept.Position(np.hstack(np.array([xx, yy])[..., np.newaxis]), ttimes)

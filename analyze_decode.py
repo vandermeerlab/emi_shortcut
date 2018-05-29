@@ -1,7 +1,8 @@
 import os
 import numpy as np
+import scipy
 import pickle
-from shapely.geometry import Point, LineString
+from shapely.geometry import Point
 
 import nept
 
@@ -64,59 +65,65 @@ def point_in_zones(position, zones):
     return sorted_zones
 
 
-def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min_swr,
-                    window_size, window_advance, min_neurons, min_spikes):
+def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neurons, normalized, run_time,
+                speed_limit, shuffle_id, window, decoding_times, min_proportion_decoded,
+                decode_sequences, sequence_len=3, sequence_speed=5., min_epochs=3, random_shuffle=False):
     """Finds decoded for each session.
 
     Parameters
     ----------
     info: module
-    neurons: nept.Neurons
-    experiment_time: str
-    shuffle_id: bool
-    speed_limit: float
+    dt: float
+    gaussian_std: float
+    min_epochs: int
+    min_neurons: int
+    min_spikes: int
     min_swr: int
-    window_size: float
-    window_advance: float
+    neurons: nept.Neurons
+    normalized: boolean
+    run_time: boolean
+    speed_limit: float
+    sequence_speed: float
+    shuffle_id: boolean
+    window: float
+    min_proportion_decoded: float
+    decoding_times: nept.Epoch
+    decode_sequences: bool
+    sequence_len: int
+    sequence_speed: float
+    random_shuffle: bool
 
     Returns
     -------
-    likelihood: np.array
-    time_edges: np.array
-    xedges: np.array
-    yedges: np.array
-    epochs_interest: nept.Epoch
-    exp_position: nept.Position
+    decoded: nept.Position
+    decoded_epochs: nept.Epoch
+    errors: np.array
 
     """
-    track_times = ['phase1', 'phase2', 'phase3', 'tracks']
-    pedestal_times = ['pauseA', 'pauseB', 'prerecord', 'postrecord']
+    if decoding_times.n_epochs != 1:
+        raise AssertionError("decoding_times must only contain one epoch (start, stop)")
 
     events, position, all_spikes, lfp, lfp_theta = get_data(info)
     xedges, yedges = nept.get_xyedges(position)
 
-    exp_start = info.task_times[experiment_time].start
-    exp_stop = info.task_times[experiment_time].stop
+    sliced_spikes = neurons.time_slice(decoding_times.start, decoding_times.stop)
+    position = position.time_slice(decoding_times.start, decoding_times.stop)
 
-    sliced_spikes = neurons.time_slice(exp_start, exp_stop)
     sliced_spikes = sliced_spikes.spikes
-
-    if experiment_time in track_times:
-        run_position = speed_threshold(position, speed_limit=speed_limit)
-    else:
-        run_position = position
-
-    exp_position = run_position.time_slice(exp_start, exp_stop)
 
     if shuffle_id:
         tuning_curves = np.random.permutation(neurons.tuning_curves)
     else:
         tuning_curves = neurons.tuning_curves
 
-    if experiment_time in track_times:
-        epochs_interest = nept.Epoch(np.hstack([exp_start, exp_stop]))
-    elif experiment_time in pedestal_times:
-        sliced_lfp = lfp.time_slice(exp_start, exp_stop)
+    if run_time:
+        # limit position to only times when the subject is moving faster than a certain threshold
+        run_epoch = speed_threshold(position, speed_limit=speed_limit)
+        position = position[run_epoch]
+
+        epochs_interest = nept.Epoch(np.array([position.time[0], position.time[-1]]))
+    else:
+        sliced_lfp = lfp.time_slice(t_start, t_stop)
 
         z_thresh = 3.0
         power_thresh = 5.0
@@ -138,82 +145,77 @@ def get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min
         # print('sharp-wave ripples, used :', epochs_interest.n_epochs)
         # print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
 
-    else:
-        raise ValueError("unrecognized experimental phase. Must be in ['prerecord', 'phase1', 'pauseA', 'phase2', "
-                         "'pauseB', phase3', 'postrecord'].")
-
-    time_edges = nept.get_edges(exp_position, window_advance, lastbin=True)
-    counts = nept.bin_spikes(sliced_spikes, exp_position, window_size, window_advance,
-                             gaussian_std=None, normalized=True)
+    counts = nept.bin_spikes(sliced_spikes, position.time, dt=dt, window=window,
+                             gaussian_std=gaussian_std, normalized=normalized)
 
     tc_shape = tuning_curves.shape
     decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-    likelihood = nept.bayesian_prob(counts, decoding_tc, window_size, min_neurons=min_neurons, min_spikes=min_spikes)
+    likelihood = nept.bayesian_prob(counts, decoding_tc, window, min_neurons=min_neurons, min_spikes=min_spikes)
 
-    return likelihood, time_edges, xedges, yedges, epochs_interest, exp_position
-
-
-def get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest, exp_position,
-                sequence_speed, sequence_len, min_epochs):
-    """Finds decoded for each session.
-
-    Parameters
-    ----------
-    likelihood: np.array
-    time_edges: np.array
-    xedges: np.array
-    yedges: np.array
-    epochs_interest: nept.Epoch
-    exp_position: nept.Position
-    sequence_speed: float
-    sequence_len: int
-    min_epochs: int
-
-    Returns
-    -------
-    decoded: nept.Position
-    decoded_epochs: nept.Epoch
-    errors: np.array
-
-    """
     xcenters = (xedges[1:] + xedges[:-1]) / 2.
     ycenters = (yedges[1:] + yedges[:-1]) / 2.
     xy_centers = nept.cartesian(xcenters, ycenters)
 
-    decoded = nept.decode_location(likelihood, xy_centers, time_edges)
+    decoded = nept.decode_location(likelihood, xy_centers, counts.time)
     nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
     decoded = decoded[~nan_idx]
 
-    sequences = nept.remove_teleports(decoded, speed_thresh=sequence_speed, min_length=sequence_len)
-    decoded_epochs = epochs_interest.intersect(sequences)
-    decoded_epochs = decoded_epochs.expand(0.05)
+    if random_shuffle:
+        random_x = [np.random.choice(decoded.x) for val in decoded.x]
+        random_y = [np.random.choice(decoded.y) for val in decoded.y]
 
-    if decoded_epochs.n_epochs < min_epochs:
-        decoded = nept.Position(np.array([]), np.array([]))
+        decoded = nept.Position(np.array([random_x, random_y]).T, decoded.time)
+
+    if decode_sequences:
+        print('decoded n_samples before sequence:', decoded.n_samples)
+        sequences = nept.remove_teleports(decoded, speed_thresh=sequence_speed, min_length=sequence_len)
+        decoded_epochs = epochs_interest.intersect(sequences)
+        decoded_epochs = decoded_epochs.expand(0.002)
+
+        if decoded_epochs.n_epochs < min_epochs:
+            decoded = nept.Position(np.array([]), np.array([]))
+        else:
+            decoded = decoded[decoded_epochs]
+
+        print('decoded n_samples after sequence:', decoded.n_samples)
     else:
-        decoded = decoded[decoded_epochs]
+        decoded_epochs = epochs_interest
 
-    actual_x = np.interp(decoded.time, exp_position.time, exp_position.x)
-    actual_y = np.interp(decoded.time, exp_position.time, exp_position.y)
-    actual_position = nept.Position(np.hstack((actual_x[..., np.newaxis],
-                                               actual_y[..., np.newaxis])), decoded.time)
+    f_xy = scipy.interpolate.interp1d(position.time, position.data.T, kind="nearest")
+    decoded_xy = f_xy(decoded.time)
+    actual_position = nept.Position(np.hstack((decoded_xy[0][..., np.newaxis],
+                                               decoded_xy[1][..., np.newaxis])),
+                                    decoded.time)
+
     if decoded.n_samples > 0:
         errors = actual_position.distance(decoded)
     else:
-        errors = np.nan
+        errors = np.array([])
 
-    return decoded, decoded_epochs, errors
+    percent_decoded = (decoded.n_samples/counts.n_samples)*100
+
+    if (decoded.n_samples/counts.n_samples) < min_proportion_decoded:
+        print("Decoded bins make up %d%% of possible bins ..."
+              "removing due to too few bins" % percent_decoded)
+
+        decoded = nept.Position([np.array([]), np.array([])], np.array([]))
+        decoded_epochs = nept.Epoch([np.array([]), np.array([])])
+        errors = np.array([])
+        actual_position = nept.Position([np.array([]), np.array([])], np.array([]))
+
+    return decoded, decoded_epochs, errors, actual_position, likelihood, percent_decoded
 
 
-def get_decoded_zones(info, decoded, exp_position):
+def get_decoded_zones(info, decoded, position, experiment_time):
     """Assigns decoded position to zone and computes error
 
     Parameters
     ----------
     info: module
     decoded: nept.Position
-    exp_position: nept.Position
+    position: nept.Position
+    experiment_time: str
 
     Returns
     -------
@@ -234,13 +236,16 @@ def get_decoded_zones(info, decoded, exp_position):
     actual_position = dict()
     if experiment_time in ['phase1', 'phase2', 'phase3', 'tracks']:
         for trajectory in keys:
-            actual_x = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.x)
-            actual_y = np.interp(decoded_zones[trajectory].time, exp_position.time, exp_position.y)
+            actual_x = np.interp(decoded_zones[trajectory].time, position.time, position.x)
+            actual_y = np.interp(decoded_zones[trajectory].time, position.time, position.y)
             actual_position[trajectory] = nept.Position(np.hstack((actual_x[..., np.newaxis],
                                                                    actual_y[..., np.newaxis])),
                                                         decoded_zones[trajectory].time)
             if actual_position[trajectory].n_samples > 0:
                 errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
+            else:
+                errors[trajectory] = []
+
     else:
         for trajectory in decoded_zones:
             errors[trajectory] = []
@@ -249,49 +254,32 @@ def get_decoded_zones(info, decoded, exp_position):
     return decoded_zones, errors, actual_position
 
 
-def analyze(info, neurons, experiment_time, window_size, window_advance, speed_limit,
-            min_swr, sequence_speed, sequence_len, min_epochs, min_neurons, min_spikes, shuffle_id):
+def zone_sort(info, decoded, shuffle_id, experiment_time):
     """Evaluates decoded analysis
 
     Parameters
     ----------
     info: module
-    neurons: nept.Neurons
+    decoded: dict
+    shuffle_id: boolean
     experiment_time: str
-    shuffle_id: bool
-    window_size: float
-    window_advance: float
-    speed_limit: float
-    min_swr: int
-    sequence_speed: float
-    sequence_len: int
-    min_epochs: int
-    min_neurons: int
-    min_spikes: int
 
     Returns
     -------
     decoded_output: dict
 
     """
-    print('decoding:', info.session_id, experiment_time, 'shuffled:', shuffle_id)
-
-    (likelihood, time_edges, xedges, yedges,
-     epochs_interest, exp_position) = get_likelihoods(info, neurons, experiment_time, shuffle_id, speed_limit, min_swr,
-                                                      window_size, window_advance, min_neurons, min_spikes)
-    decoded, decoded_epochs, errors = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
-                                                  exp_position, sequence_speed, sequence_len, min_epochs)
-
-    decoded_zones, zone_errors, actual_position = get_decoded_zones(info, decoded, exp_position)
+    decoded_zones, zone_errors, actual_position = get_decoded_zones(info, decoded["decoded"], decoded["position"],
+                                                                    experiment_time)
 
     output = dict()
     output['zones'] = decoded_zones
-    output['errors'] = errors
+    output['errors'] = decoded["errors"]
     output['zone_errors'] = zone_errors
-    output['times'] = len(time_edges)
+    output['times'] = decoded["decoded"].n_samples
     output['actual'] = actual_position
-    output['decoded'] = decoded
-    output['epochs'] = decoded_epochs
+    output['decoded'] = decoded["decoded"]
+    output['epochs'] = decoded["decoded_epochs"]
 
     if shuffle_id:
         filename = info.session_id + '_decode-shuffled-' + experiment_time + '.pkl'
@@ -308,64 +296,48 @@ def analyze(info, neurons, experiment_time, window_size, window_advance, speed_l
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, info
-    infos = spike_sorted_infos
-    # infos = [info.r066d4]
-
-    speed_limit = 0.4
-    min_swr = 3
-    min_neurons = 2
-    min_spikes = 1
-    sequence_speed = 5.
-    sequence_len = 3
-    min_epochs = 3
-    window_size = 0.025
-    window_advance = 0.025
+    # infos = spike_sorted_infos
+    infos = [info.r063d2]
 
     if 1:
+        track_times = ['phase1', 'phase2', 'phase3', 'tracks']
+        experiment_time = "phase3"
+
         for session in infos:
             neurons_filename = session.session_id + '_neurons.pkl'
             pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
             with open(pickled_neurons, 'rb') as fileobj:
                 neurons = pickle.load(fileobj)
-            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
-            # experiment_times = ['pauseA', 'pauseB']
-            # experiment_times = ['phase3']
-            for experiment_time in experiment_times:
-                analyze(session, neurons, experiment_time, window_size, window_advance, speed_limit,
-                        min_swr, sequence_speed, sequence_len, min_epochs, min_neurons, min_spikes, shuffle_id=False)
 
-    # shuffled_id
-    if 1:
-        for session in infos:
-            neurons_filename = session.session_id + '_neurons.pkl'
-            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
-            with open(pickled_neurons, 'rb') as fileobj:
-                neurons = pickle.load(fileobj)
-            experiment_times = ['prerecord', 'phase1', 'pauseA', 'phase2', 'pauseB', 'phase3', 'postrecord']
-            # experiment_times = ['phase3']
-            for experiment_time in experiment_times:
-                analyze(session, neurons, experiment_time, window_size, window_advance, speed_limit,
-                        min_swr, sequence_speed, sequence_len, min_epochs, min_neurons, min_spikes, shuffle_id=True)
+            for shuffled in [True, False]:
+                t_start = session.task_times[experiment_time].start
+                t_stop = session.task_times[experiment_time].stop
 
-    if 0:
-        for session in infos:
-            neurons_filename = session.session_id + '_neurons.pkl'
-            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
-            with open(pickled_neurons, 'rb') as fileobj:
-                neurons = pickle.load(fileobj)
-            experiment_times = ['phase3']
-            for experiment_time in experiment_times:
-                windows = [0.025, 0.025]
-                advances = [0.025, 0.0125]
-                for window, advance in zip(windows, advances):
-                    window_size = window
-                    window_advance = advance
-                    shuffle_id = False
-                    (likelihood, time_edges, xedges, yedges,
-                     epochs_interest, exp_position) = get_likelihoods(session, neurons, experiment_time, shuffle_id,
-                                                                      speed_limit, min_swr, window_size, window_advance,
-                                                                      min_neurons, min_spikes)
-                    decoded, decoded_epochs, errors = get_decoded(likelihood, time_edges, xedges, yedges, epochs_interest,
-                                                                  exp_position, sequence_speed, sequence_len, min_epochs)
+                args = dict(min_swr=3,
+                            min_neurons=2,
+                            min_spikes=1,
+                            neurons=neurons,
+                            info=session,
+                            normalized=False,
+                            sequence_speed=5.,
+                            sequence_len=3,
+                            min_epochs=3,
+                            window=0.025,
+                            dt=0.025,
+                            gaussian_std=0.0075,
+                            experiment_time=experiment_time,
+                            speed_limit=4.)
+                if experiment_time in track_times:
+                    args["run_time"] = True
+                else:
+                    args["run_time"] = False
+                if shuffled:
+                    args["shuffle_id"] = True
+                else:
+                    args["shuffle_id"] = False
 
-                    print('window', window, 'advancing in', advance, ':', np.mean(errors))
+                print('decoding: %s %s; shuffled: %s' % (session.session_id, experiment_time, shuffled))
+
+                decode = {}
+                decode['decoded'], decode['decoded_epochs'], decode['errors'], decode['position'] = get_decoded(**args)
+                zone_sort(session, decode, shuffled, experiment_time)

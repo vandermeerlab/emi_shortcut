@@ -86,10 +86,10 @@ def get_trial_idx(low_priority, mid_priority, high_priority, feeder1_times, feed
     trials_idx['novel'] = high_priority_trials
     trials_idx['shortcut'] = mid_priority_trials
     trials_idx['u'] = low_priority_trials
-    trials_idx['start_trials'] = start_trials
-    trials_idx['stop_trials'] = stop_trials
 
-    return trials_idx
+    trials_epochs = nept.Epoch([start_trials, stop_trials])
+
+    return trials_idx, trials_epochs
 
 
 def spikes_by_position(spikes, zone, position):
@@ -368,8 +368,8 @@ def get_xyedges(position, binsize=3):
     return xedges, yedges
 
 
-def speed_threshold(position, t_smooth=0.5, speed_limit=0.4):
-    """Finds positions above a certain speed threshold
+def speed_threshold(position, t_smooth=0.5, speed_limit=4., rest=False):
+    """Finds times where position is above a certain speed threshold
 
     Parameters
     ----------
@@ -379,11 +379,21 @@ def speed_threshold(position, t_smooth=0.5, speed_limit=0.4):
 
     Returns
     -------
-    position_run: nept.Position
+    epoch_run: nept.Epoch
 
     """
 
     speed = position.speed(t_smooth)
-    run_idx = np.squeeze(speed.data) >= speed_limit
+    run_idx = np.where(np.diff(np.squeeze(speed.data) >= speed_limit / 10))[0]
+    if rest:
+        t_start = position.time[~run_idx[1::2]]
+        t_stop = position.time[~run_idx[::2]]
+    else:
+        t_start = position.time[run_idx[::2]]
+        t_stop = position.time[run_idx[1::2]]
 
-    return position[run_idx]
+    if len(t_start) != len(t_stop):
+        assert len(t_start) - len(t_stop) == 1
+        t_stop = np.hstack([t_stop, position.time[-1]])
+
+    return nept.Epoch(np.vstack((t_start, t_stop)))

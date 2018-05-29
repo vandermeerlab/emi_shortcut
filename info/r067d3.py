@@ -45,6 +45,10 @@ task_times['pauseB'] = nept.Epoch(np.array([1.7460e+04, 1.9270e+04]))
 task_times['phase3'] = nept.Epoch(np.array([1.9314e+04, 2.2017e+04]))
 task_times['postrecord'] = nept.Epoch(np.array([2.2077e+04, 2.2382e+04]))
 
+session_length = 0
+for phase in task_times.keys():
+    session_length += task_times[phase].durations
+
 pxl_to_cm = (7.3680, 7.1535)
 scale_targets = (3.7, 3.5)
 
@@ -83,6 +87,7 @@ path_pts['npt1'] = [119, 50]
 path_pts['npt2'] = [97, 61]
 path_pts['novel2'] = [95, 160]
 path_pts['pedestal'] = [339, 169]
+path_pts['stable1'] = [264, 375]
 
 path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
