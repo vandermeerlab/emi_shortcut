@@ -345,9 +345,9 @@ def load_shortcut_pos(info, filename, events, variance_thresh=4., epsilon=0.01):
     yy = np.nanmean(y, axis=1)
 
     # Remove jumps to feeder location
-    nojump_x, nojump_y, ttimes = remove_jumps_to_feeder(xx, yy, times, info, jump_thresh=10, dist_thresh=5)
+    xx, yy, ttimes = remove_jumps_to_feeder(xx, yy, times, info, jump_thresh=10, dist_thresh=5)
 
     # Apply a median filter
-    xx, yy = median_filter(nojump_x, nojump_y)
+    xx, yy = median_filter(xx, yy)
 
     return nept.Position(np.hstack(np.array([xx, yy])[..., np.newaxis]), ttimes)
