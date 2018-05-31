@@ -115,11 +115,6 @@ def remove_jumps_to_feeder(x, y, time, info, jump_thresh, dist_thresh):
     # Remove jump points within to the feeder location.
     # Not including jumps due to jumps in time (eg. from stopping the recording).
 
-    feeder1_x = info.path_pts['feeder1'][0]
-    feeder1_y = info.path_pts['feeder1'][1]
-    feeder2_x = info.path_pts['feeder2'][0]
-    feeder2_y = info.path_pts['feeder2'][1]
-
     while True:
         jumps = np.append(np.array([0]), np.sqrt(np.diff(x) ** 2 + np.diff(y) ** 2))
         remove_idx = jumps > jump_thresh
@@ -127,8 +122,8 @@ def remove_jumps_to_feeder(x, y, time, info, jump_thresh, dist_thresh):
         # time_jumps = np.append(np.diff(time) > time_thresh, np.array([False], dtype=bool))
         # remove_idx[time_jumps] = False
 
-        dist_feeder1 = np.sqrt((x - feeder1_x) ** 2 + (y - feeder1_y) ** 2)
-        dist_feeder2 = np.sqrt((x - feeder2_x) ** 2 + (y - feeder2_y) ** 2)
+        dist_feeder1 = np.sqrt((x - info.path_pts['feeder1'][0]) ** 2 + (y - info.path_pts['feeder1'][1]) ** 2)
+        dist_feeder2 = np.sqrt((x - info.path_pts['feeder2'][0]) ** 2 + (y - info.path_pts['feeder2'][1]) ** 2)
         dist_feeder = np.minimum(dist_feeder1, dist_feeder2)
         dist_jumps = dist_feeder > dist_thresh
         remove_idx[dist_jumps] = False
