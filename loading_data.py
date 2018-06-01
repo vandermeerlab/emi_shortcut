@@ -136,32 +136,32 @@ def get_data(info):
 if __name__ == "__main__":
     from run import spike_sorted_infos, info, r067_infos
     infos = spike_sorted_infos
-    # infos = [info.r063d8]
+    # infos = [info.r067d5]
     # infos = r067_infos
 
     for info in infos:
         print(info.session_id)
-        # save_data(info)
+        save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
-        events, position, spikes, lfp_swr, lfp_theta = load_data(info)
-
-
-
-        thisdir = os.getcwd()
-        dataloc = os.path.join(thisdir, 'cache', 'data')
-        pickle_filepath = os.path.join(thisdir, "cache", "pickled")
-        output_filepath = os.path.join(thisdir, "plots", "correcting_position")
-
-        # plot to check
-        fig, ax = plt.subplots()
-        plt.plot(position.time, position.y, "k.", ms=3)
-        plt.xlabel("time")
-        plt.ylabel("y")
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.yaxis.set_ticks_position('left')
-        ax.xaxis.set_ticks_position('bottom')
-        plt.title("n_samples:" + str(position.n_samples))
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_filepath, info.session_id+"_corrected-position_new_y.png"))
-        # plt.show()
+        # events, position, spikes, lfp_swr, lfp_theta = load_data(info)
+        #
+        #
+        #
+        # thisdir = os.getcwd()
+        # dataloc = os.path.join(thisdir, 'cache', 'data')
+        # pickle_filepath = os.path.join(thisdir, "cache", "pickled", "temp")
+        # output_filepath = os.path.join(thisdir, "plots", "correcting_position")
+        #
+        # # plot to check
+        # fig, ax = plt.subplots()
+        # plt.plot(position.time, position.y, "k.", ms=3)
+        # plt.xlabel("time")
+        # plt.ylabel("y")
+        # ax.spines['right'].set_visible(False)
+        # ax.spines['top'].set_visible(False)
+        # ax.yaxis.set_ticks_position('left')
+        # ax.xaxis.set_ticks_position('bottom')
+        # plt.title("n_samples:" + str(position.n_samples))
+        # plt.tight_layout()
+        # plt.savefig(os.path.join(output_filepath, info.session_id+"_corrected-position_new_y.png"))
+        # # plt.show()

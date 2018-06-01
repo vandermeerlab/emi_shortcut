@@ -334,10 +334,21 @@ def load_shortcut_pos(info, filename, events, variance_thresh=4., epsilon=0.01):
         targets = np.array(original_targets)
         stds = np.nanstd(targets, axis=1)[:, np.newaxis]
 
+        # find idx where there is a large variation between targets
         problem_samples = np.where(stds > std_thresh)[0]
 
         for i in problem_samples:
-            idx = np.nanargmax(np.abs(targets[i] - np.nanmean(targets[i - 1])))
+            # find the previous mean to help determine which target is an issue
+            previous_idx = i-1
+            previous_mean = np.nanmean(targets[previous_idx])
+
+            # if previous sample is nan, compare current sample to the one before that
+            while np.isnan(previous_mean):
+                previous_idx -= 1
+                previous_mean = np.nanmean(targets[previous_idx])
+
+            # remove problem target
+            idx = np.nanargmax(np.abs(targets[i] - previous_mean))
             targets[i][idx] = np.nan
 
         return targets
