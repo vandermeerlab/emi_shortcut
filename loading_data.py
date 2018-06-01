@@ -6,7 +6,7 @@ import nept
 
 import matplotlib.pyplot as plt
 
-from startup import load_shortcut_position, load_shortcut_pos
+from startup import load_shortcut_position
 
 warnings.filterwarnings("ignore")
 
@@ -52,7 +52,7 @@ def load_data(info):
 
     position_path = os.path.join(dataloc, 'data-working', info.rat_id, info.session+'_recording')
     unzip_nvt_file(position_path, info.session+'-VT1', info)
-    position = load_shortcut_pos(info, os.path.join(dataloc, info.position_filename), events)
+    position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events)
     os.remove(os.path.join(position_path, info.session+'-VT1.nvt'))
 
     spikes = nept.load_spikes(os.path.join(dataloc, info.spikes_filepath))
@@ -143,13 +143,13 @@ if __name__ == "__main__":
         print(info.session_id)
         save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
-        # events, position, spikes, lfp_swr, lfp_theta = load_data(info)
+        # events, position, _, _, _ = load_data(info)
         #
         #
         #
         # thisdir = os.getcwd()
         # dataloc = os.path.join(thisdir, 'cache', 'data')
-        # pickle_filepath = os.path.join(thisdir, "cache", "pickled", "temp")
+        # pickle_filepath = os.path.join(thisdir, "cache", "pickled")
         # output_filepath = os.path.join(thisdir, "plots", "correcting_position")
         #
         # # plot to check

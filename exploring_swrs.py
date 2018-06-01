@@ -170,13 +170,13 @@ def plot_swr_stats(info, remove_interneurons, resting_only, plot_example_swr_ras
 
 infos = spike_sorted_infos
 
-# import info.r068d5 as r068d5
-# infos = [r068d5]
+import info.r068d5 as r068d5
+infos = [r068d5]
 
 for info in infos:
-    plot_swr_stats(info, remove_interneurons=False, resting_only=False, plot_example_swr_rasters=False)
-    plot_swr_stats(info, remove_interneurons=True, resting_only=False, plot_example_swr_rasters=False)
-    plot_swr_stats(info, remove_interneurons=False, resting_only=False, plot_example_swr_rasters=True)
+    # plot_swr_stats(info, remove_interneurons=False, resting_only=False, plot_example_swr_rasters=False)
+    # plot_swr_stats(info, remove_interneurons=True, resting_only=False, plot_example_swr_rasters=False)
+    # plot_swr_stats(info, remove_interneurons=False, resting_only=False, plot_example_swr_rasters=True)
 
-    # plot_swr_stats(info, remove_interneurons=False, resting_only=True, plot_example_swr_rasters=False)
+    plot_swr_stats(info, remove_interneurons=False, resting_only=True, plot_example_swr_rasters=False)
     # plot_swr_stats(info, remove_interneurons=True, resting_only=True, plot_example_swr_rasters=False)
