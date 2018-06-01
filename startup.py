@@ -267,7 +267,6 @@ def load_shortcut_pos(info, filename, events, variance_thresh=4., epsilon=0.01):
     position: nept.Position
 
     """
-
     # Load raw position from file
     nvt_data = nept.load_nvt(filename)
     targets = nvt_data['targets']
@@ -298,49 +297,58 @@ def load_shortcut_pos(info, filename, events, variance_thresh=4., epsilon=0.01):
     x = x / info.scale_targets[0]
     y = y / info.scale_targets[1]
 
-    # Removing the sample that is more than std + buffer from the mean of the targets for both x and y
-    targets_x_mean = np.nanmean(x, axis=1)[:, np.newaxis]
-    targets_x_std = np.nanstd(x, axis=1)[:, np.newaxis] + epsilon
-    keep_x_idx = np.abs(x - targets_x_mean) < targets_x_std
-    x[~keep_x_idx] = np.nan
+    # Finding which feeder led is on over time
+    leds = []
+    leds.extend([(event, 'led1') for event in events['led1']])
+    leds.extend([(event, 'led2') for event in events['led2']])
+    sorted_leds = sorted(leds)
 
-    targets_y_mean = np.nanmean(y, axis=1)[:, np.newaxis]
-    targets_y_std = np.nanstd(y, axis=1)[:, np.newaxis] + epsilon
-    keep_y_idx = np.abs(y - targets_y_mean) < targets_y_std
-    y[~keep_y_idx] = np.nan
+    # Get an array of feeder locations when that feeder is actively flashing
+    feeder_x_location = np.empty(times.shape[0]) * np.nan
+    feeder_y_location = np.empty(times.shape[0]) * np.nan
 
-    # Get the feeder locations
-    feeder_x, feeder_y = sort_led_locations(info, events, times)
+    n_ledon = 6
+    for time, label in sorted_leds:
+        idx = nept.find_nearest_idx(times, time)
+        x_location = info.path_pts['feeder1'][0] if label == 'led1' else info.path_pts['feeder2'][0]
+        y_location = info.path_pts['feeder1'][1] if label == 'led1' else info.path_pts['feeder2'][1]
 
-    # One target is contaminated when the distance between the targets is large
-    target_x_var = np.nanvar(x, axis=1)
-    target_y_var = np.nanvar(y, axis=1)
-
-    # Contaminated samples are using the feeder LED instead of the implant LEDs
-    contaminated_x_idx = target_x_var > variance_thresh
-    contaminated_y_idx = target_y_var > variance_thresh
+        feeder_x_location[idx:idx + n_ledon] = x_location
+        feeder_y_location[idx:idx + n_ledon] = y_location
 
     # Removing the contaminated samples that are closest to the feeder location
-    x_arrays = x[contaminated_x_idx]
-    x_values = feeder_x[contaminated_x_idx]
-    for array, value in zip(x_arrays, x_values):
-        nidx = np.nanargmin(np.abs(array - value))
-        array[nidx] = np.nan
-    x[contaminated_x_idx] = x_arrays
+    def remove_feeder_contamination(original_targets, current_feeder, dist_to_feeder=5):
+        targets = np.array(original_targets)
+        for i, (target, feeder) in enumerate(zip(targets, current_feeder)):
+            if not np.isnan(feeder):
+                dist = np.abs(target - feeder) < dist_to_feeder
+                target[dist] = np.nan
+            targets[i] = target
+        return targets
 
-    y_arrays = y[contaminated_y_idx]
-    y_values = feeder_y[contaminated_y_idx]
-    for array, value in zip(y_arrays, y_values):
-        nidx = np.nanargmin(np.abs(array - value))
-        array[nidx] = np.nan
-    y[contaminated_y_idx] = y_arrays
+    x = remove_feeder_contamination(x, feeder_x_location)
+    y = remove_feeder_contamination(y, feeder_y_location)
+
+    # Removing the problem samples that are furthest from the previous location
+    def remove_based_on_std(original_targets, std_thresh=10):
+        targets = np.array(original_targets)
+        stds = np.nanstd(targets, axis=1)[:, np.newaxis]
+
+        problem_samples = np.where(stds > std_thresh)[0]
+
+        for i in problem_samples:
+            idx = np.nanargmax(np.abs(targets[i] - np.nanmean(targets[i - 1])))
+            targets[i][idx] = np.nan
+
+        return targets
+
+    x = remove_based_on_std(x)
+    y = remove_based_on_std(y)
 
     # Calculating the mean of the remaining targets
     xx = np.nanmean(x, axis=1)
     yy = np.nanmean(y, axis=1)
-
-    # Remove jumps to feeder location
-    xx, yy, ttimes = remove_jumps_to_feeder(xx, yy, times, info, jump_thresh=10, dist_thresh=5)
+    ttimes = times
 
     # Apply a median filter
     xx, yy = median_filter(xx, yy)

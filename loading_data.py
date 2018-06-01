@@ -52,7 +52,7 @@ def load_data(info):
 
     position_path = os.path.join(dataloc, 'data-working', info.rat_id, info.session+'_recording')
     unzip_nvt_file(position_path, info.session+'-VT1', info)
-    position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events)
+    position = load_shortcut_pos(info, os.path.join(dataloc, info.position_filename), events)
     os.remove(os.path.join(position_path, info.session+'-VT1.nvt'))
 
     spikes = nept.load_spikes(os.path.join(dataloc, info.spikes_filepath))
@@ -163,5 +163,5 @@ if __name__ == "__main__":
         ax.xaxis.set_ticks_position('bottom')
         plt.title("n_samples:" + str(position.n_samples))
         plt.tight_layout()
-        plt.savefig(os.path.join(output_filepath, info.session_id+"_corrected-position_old_y.png"))
+        plt.savefig(os.path.join(output_filepath, info.session_id+"_corrected-position_new_y.png"))
         # plt.show()
