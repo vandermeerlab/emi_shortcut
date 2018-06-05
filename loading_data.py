@@ -134,10 +134,10 @@ def get_data(info):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info, r067_infos
-    infos = spike_sorted_infos
+    from run import spike_sorted_infos, info, r066_infos
+    # infos = spike_sorted_infos
     # infos = [info.r067d5]
-    # infos = r067_infos
+    infos = r066_infos
 
     for info in infos:
         print(info.session_id)
