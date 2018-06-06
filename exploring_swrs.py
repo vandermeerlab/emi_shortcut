@@ -197,24 +197,35 @@ def plot_swr_stats(info, remove_interneurons, resting_only, plot_example_swr_ras
             epochs_of_interest = speed_threshold(sliced_position, speed_limit=4., rest=True)
             condition = condition + "_rest"
 
-        sliced_lfp = lfp.time_slice(epochs_of_interest.starts, epochs_of_interest.stops)
-        sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops) for spiketrain in
-                         spikes]
-
         z_thresh = 2.0
         power_thresh = 3.0
         merge_thresh = 0.02
         min_length = 0.05
-        swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
+        swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                        power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-        multi_swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
+        # Restrict SWRs to those during epochs of interest and with 4 or more participating neurons
+        sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops) for spiketrain in
+                         spikes]
+
+        epochs_of_interest = info.task_times[task_time]
+
+        phase_duration[i] = epochs_of_interest.durations[0] / 60.
+
+        if resting_only:
+            sliced_position = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
+            epochs_of_interest = speed_threshold(sliced_position, speed_limit=4., rest=True)
+            condition = condition + "_rest"
+
+        swrs = swrs.intersect(epochs_of_interest)
+
+        swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
 
         if plot_swr_spike_counts:
             savepath = os.path.join(output_filepath, "summary", info.session_id + "_" + task_time + "_swr-spike-count")
-            plot_spike_counts(multi_swrs, spikes, task_time, savepath=savepath)
+            plot_spike_counts(swrs, spikes, task_time, savepath=savepath)
 
-        n_swrs[i] = multi_swrs.n_epochs
+        n_swrs[i] = swrs.n_epochs
 
         if plot_example_swr_rasters:
             savepath = os.path.join(output_filepath, info.session_id + "_" + task_time + "_swr-raster")
@@ -230,10 +241,10 @@ def plot_swr_stats(info, remove_interneurons, resting_only, plot_example_swr_ras
 
 
 if __name__ == "__main__":
-    infos = spike_sorted_infos
+    # infos = spike_sorted_infos
 
-    # import info.r068d5 as r068d5
-    # infos = [r068d5]
+    import info.r068d5 as r068d5
+    infos = [r068d5]
 
     for info in infos:
         plot_swr_stats(info, remove_interneurons=True,

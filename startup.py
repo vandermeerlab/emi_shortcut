@@ -31,7 +31,7 @@ def extract_xy(target):
     return x, y
 
 
-def median_filter(x, y, kernel=3):
+def median_filter(x, y, kernel):
     # Applying a median filter to the x and y positions
 
     x = signal.medfilt(x, kernel_size=kernel)
@@ -98,10 +98,10 @@ def load_shortcut_position(info, filename, events, n_ledon=6, dist_to_feeder=5, 
     feeder_y_location = np.empty(times.shape[0]) * np.nan
 
     for time, label in sorted_leds:
-        idx = nept.find_nearest_idx(times, time)
         x_location = info.path_pts['feeder1'][0] if label == 'led1' else info.path_pts['feeder2'][0]
         y_location = info.path_pts['feeder1'][1] if label == 'led1' else info.path_pts['feeder2'][1]
 
+        idx = nept.find_nearest_idx(times, time)
         feeder_x_location[idx:idx + n_ledon] = x_location
         feeder_y_location[idx:idx + n_ledon] = y_location
 
