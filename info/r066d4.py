@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import nept
-from startup import convert_to_cm
+from utils_maze import convert_to_cm
 
 rat_id = 'R066_EI'
 session_id = 'R066d4'

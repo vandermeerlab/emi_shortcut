@@ -18,13 +18,6 @@ output_filepath = os.path.join(thisdir, "plots", "decode_wout_trial")
 # output_filepath = os.path.join(thisdir, "plots", "test")
 
 
-def get_trials(events, phase_epoch):
-    feeder_events = np.sort(np.append(events['feeder1'], events['feeder2']))
-    feeder_events = feeder_events[np.where((phase_epoch.start < feeder_events)*(feeder_events < phase_epoch.stop))[0]]
-
-    return nept.Epoch([feeder_events[:-1], feeder_events[1:]])
-
-
 def decode_trial(info, neurons, trial_times, trial_number, shuffled, random_shuffle=False):
     args = dict(info=info,
                 dt=0.025,

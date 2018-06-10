@@ -397,3 +397,17 @@ def speed_threshold(position, t_smooth=0.5, speed_limit=4., rest=False):
         t_stop = np.hstack([t_stop, position.time[-1]])
 
     return nept.Epoch(np.vstack((t_start, t_stop)))
+
+
+def get_trials(events, phase_epoch):
+    feeder_events = np.sort(np.append(events['feeder1'], events['feeder2']))
+    feeder_events = feeder_events[np.where((phase_epoch.start < feeder_events)*(feeder_events < phase_epoch.stop))[0]]
+
+    return nept.Epoch([feeder_events[:-1], feeder_events[1:]])
+
+
+def convert_to_cm(path_pts, xy_conversion):
+    for key in path_pts:
+        path_pts[key][0] = path_pts[key][0] / xy_conversion[0]
+        path_pts[key][1] = path_pts[key][1] / xy_conversion[1]
+    return path_pts
