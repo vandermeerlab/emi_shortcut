@@ -251,6 +251,12 @@ def save_data(info):
     with open(position_path, 'wb') as fileobj:
         pickle.dump(position, fileobj)
 
+    # Also save position as csv for ease of use in matlab
+    filename = os.path.join(dataloc, info.session_id + "-position.csv")
+    np.savetxt(filename,
+               np.hstack((position.x[:, np.newaxis], position.y[:, np.newaxis], position.time[:, np.newaxis])),
+               delimiter=",", header="x,y,time", comments="")
+
     spikes_path = os.path.join(dataloc, info.pickled_spikes)
     with open(spikes_path, 'wb') as fileobj:
         pickle.dump(spikes, fileobj)
