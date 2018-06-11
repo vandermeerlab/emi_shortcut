@@ -382,15 +382,16 @@ def speed_threshold(position, t_smooth=0.5, speed_limit=4., rest=False):
     epoch_run: nept.Epoch
 
     """
-
     speed = position.speed(t_smooth)
-    run_idx = np.where(np.diff(np.squeeze(speed.data) >= speed_limit / 10))[0]
+
+    idx = np.where(np.diff(np.squeeze(speed.data) > speed_limit / 10.))[0]
+
     if rest:
-        t_start = position.time[~run_idx[1::2]]
-        t_stop = position.time[~run_idx[::2]]
+        t_start = position.time[idx[1::2]]
+        t_stop = position.time[idx[2::2]]
     else:
-        t_start = position.time[run_idx[::2]]
-        t_stop = position.time[run_idx[1::2]]
+        t_start = position.time[idx[::2]]
+        t_stop = position.time[idx[1::2]]
 
     if len(t_start) != len(t_stop):
         assert len(t_start) - len(t_stop) == 1

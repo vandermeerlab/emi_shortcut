@@ -48,7 +48,7 @@ def plot_swrs_stats(data, texts, task_times, title, ylabel, savepath=None):
         plt.show()
 
 
-def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=1, savepath=None):
+def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=5, savepath=None):
     if swrs.n_epochs < n_plots:
         starts = swrs.starts
         stops = swrs.stops
@@ -101,8 +101,8 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=1, savepath=None)
         ax3 = plt.subplot2grid((rows + add_rows, 2), (0, 1), rowspan=int(0.5 * rows))
         ax3.plot(position.x, position.y, '.', color="#bdbdbd", ms=2)
 
-        start_idx = nept.find_nearest_idx(position.time, start_time)
-        stop_idx = nept.find_nearest_idx(position.time, stop_time)
+        start_idx = nept.find_nearest_idx(position.time, start)
+        stop_idx = nept.find_nearest_idx(position.time, stop)
 
         cmap = plt.get_cmap('Oranges')
         colours = cmap(np.linspace(0.25, 0.75, stop_idx - start_idx))
@@ -165,17 +165,17 @@ def plot_spike_counts(swrs, spikes, task_time, savepath=None):
         plt.show()
 
 
-def plot_swr_stats(info, remove_interneurons, resting_only, plot_example_swr_rasters, plot_swr_spike_counts=False):
+def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_counts=False):
     print(info.session_id)
     events, position, spikes, lfp, _ = get_data(info)
 
-    if remove_interneurons:
-        max_mean_firing = 5
-        interneurons = np.zeros(len(spikes), dtype=bool)
-        for i, spike in enumerate(spikes):
-            if len(spike.time) / info.session_length >= max_mean_firing:
-                interneurons[i] = True
-        spikes = spikes[~interneurons]
+    # Remove interneurons
+    max_mean_firing = 5
+    interneurons = np.zeros(len(spikes), dtype=bool)
+    for i, spike in enumerate(spikes):
+        if len(spike.time) / info.session_length >= max_mean_firing:
+            interneurons[i] = True
+    spikes = spikes[~interneurons]
 
     task_times = ["prerecord", "phase1", "pauseA", "phase2", "pauseB", "phase3", "postrecord"]
 
@@ -183,19 +183,7 @@ def plot_swr_stats(info, remove_interneurons, resting_only, plot_example_swr_ras
     phase_duration = np.zeros(len(task_times))
 
     for i, task_time in enumerate(task_times):
-        if remove_interneurons:
-            condition = "_no-interneurons"
-        else:
-            condition = ""
-
-        epochs_of_interest = info.task_times[task_time]
-
-        phase_duration[i] = epochs_of_interest.durations[0] / 60.
-
-        if resting_only:
-            sliced_position = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
-            epochs_of_interest = speed_threshold(sliced_position, speed_limit=4., rest=True)
-            condition = condition + "_rest"
+        condition = ""
 
         z_thresh = 2.0
         power_thresh = 3.0
@@ -204,31 +192,35 @@ def plot_swr_stats(info, remove_interneurons, resting_only, plot_example_swr_ras
         swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
                                        power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
 
-        # Restrict SWRs to those during epochs of interest and with 4 or more participating neurons
-        sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops) for spiketrain in
-                         spikes]
-
+        # Restrict SWRs to those during epochs of interest
         epochs_of_interest = info.task_times[task_time]
+
+        if resting_only:
+            position_of_interest = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
+            epochs_of_interest = speed_threshold(position_of_interest, speed_limit=4., rest=True)
+            condition = condition + "_rest"
+        else:
+            position_of_interest = position
 
         phase_duration[i] = epochs_of_interest.durations[0] / 60.
 
-        if resting_only:
-            sliced_position = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
-            epochs_of_interest = speed_threshold(sliced_position, speed_limit=4., rest=True)
-            condition = condition + "_rest"
-
         swrs = swrs.intersect(epochs_of_interest)
 
+        # Restrict SWRs to those with 4 or more participating neurons
+        sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops) for spiketrain in
+                         spikes]
         swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
 
         if plot_swr_spike_counts:
-            savepath = os.path.join(output_filepath, "summary", info.session_id + "_" + task_time + "_swr-spike-count")
+            filename = info.session_id + "_" + str(i) + task_time + "_swr-spike-count"
+            savepath = os.path.join(output_filepath, "summary", filename)
             plot_spike_counts(swrs, spikes, task_time, savepath=savepath)
 
         n_swrs[i] = swrs.n_epochs
 
         if plot_example_swr_rasters:
-            savepath = os.path.join(output_filepath, info.session_id + "_" + task_time + "_swr-raster")
+            filename = info.session_id + "_" + str(i) + task_time + "_swr-raster"
+            savepath = os.path.join(output_filepath, filename)
             plot_swr(swrs, lfp, position, sliced_spikes, savepath=savepath)
 
     title = info.session_id + ' SWRs rate ' + condition
@@ -247,20 +239,4 @@ if __name__ == "__main__":
     infos = [r068d5]
 
     for info in infos:
-        plot_swr_stats(info, remove_interneurons=True,
-                       resting_only=False,
-                       plot_example_swr_rasters=True,
-                       plot_swr_spike_counts=True)
-
-        # plot_swr_stats(info, remove_interneurons=True,
-        #                resting_only=True,
-        #                plot_example_swr_rasters=True,
-        #                plot_swr_spike_counts=True)
-
-        # plot_swr_stats(info, remove_interneurons=False, resting_only=False, plot_example_swr_rasters=False)
-        # plot_swr_stats(info, remove_interneurons=True, resting_only=False, plot_example_swr_rasters=False)
-        # plot_swr_stats(info, remove_interneurons=False, resting_only=True, plot_example_swr_rasters=False)
-
-        # plot_swr_stats(info, remove_interneurons=False, resting_only=True, plot_example_swr_rasters=False)
-        # plot_swr_stats(info, remove_interneurons=True, resting_only=True, plot_example_swr_rasters=False)
-        # plot_swr_stats(info, remove_interneurons=True, resting_only=True, plot_example_swr_rasters=True)
+        plot_swr_stats(info, resting_only=True, plot_example_swr_rasters=True, plot_swr_spike_counts=False)
