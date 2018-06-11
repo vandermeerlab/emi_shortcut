@@ -198,30 +198,31 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
         if resting_only:
             position_of_interest = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
             epochs_of_interest = speed_threshold(position_of_interest, speed_limit=4., rest=True)
-            condition = condition + "_rest"
+            condition += "_rest"
+
+        if epochs_of_interest.n_epochs == 0:
+            print("well then")
         else:
-            position_of_interest = position
+            phase_duration[i] = np.sum(epochs_of_interest.durations) / 60.
 
-        phase_duration[i] = epochs_of_interest.durations[0] / 60.
+            swrs = swrs.intersect(epochs_of_interest)
 
-        swrs = swrs.intersect(epochs_of_interest)
+            # Restrict SWRs to those with 4 or more participating neurons
+            sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops) for spiketrain in
+                             spikes]
+            swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
 
-        # Restrict SWRs to those with 4 or more participating neurons
-        sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops) for spiketrain in
-                         spikes]
-        swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
+            if plot_swr_spike_counts:
+                filename = info.session_id + "_" + str(i) + task_time + "_swr-spike-count"
+                savepath = os.path.join(output_filepath, "summary", filename)
+                plot_spike_counts(swrs, spikes, task_time, savepath=savepath)
 
-        if plot_swr_spike_counts:
-            filename = info.session_id + "_" + str(i) + task_time + "_swr-spike-count"
-            savepath = os.path.join(output_filepath, "summary", filename)
-            plot_spike_counts(swrs, spikes, task_time, savepath=savepath)
+            n_swrs[i] = swrs.n_epochs
 
-        n_swrs[i] = swrs.n_epochs
-
-        if plot_example_swr_rasters:
-            filename = info.session_id + "_" + str(i) + task_time + "_swr-raster"
-            savepath = os.path.join(output_filepath, filename)
-            plot_swr(swrs, lfp, position, sliced_spikes, savepath=savepath)
+            if plot_example_swr_rasters:
+                filename = info.session_id + "_" + str(i) + task_time + "_swr-raster"
+                savepath = os.path.join(output_filepath, filename)
+                plot_swr(swrs, lfp, position, sliced_spikes, savepath=savepath)
 
     title = info.session_id + ' SWRs rate ' + condition
     ylabel = "# swr / minute"
@@ -235,8 +236,8 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
 if __name__ == "__main__":
     # infos = spike_sorted_infos
 
-    import info.r068d5 as r068d5
-    infos = [r068d5]
+    import info.r066d1 as r066d1
+    infos = [r066d1]
 
     for info in infos:
         plot_swr_stats(info, resting_only=True, plot_example_swr_rasters=True, plot_swr_spike_counts=False)

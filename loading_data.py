@@ -83,9 +83,10 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
     info: module
     filename: str
     events: dict
-    n_ledon: int
+    led_padding: int
     dist_to_feeder: int
     std_thresh: float
+    output_filepath: str
 
     Returns
     -------
@@ -140,7 +141,7 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
         y_location = info.path_pts['feeder1'][1] if label == 'led1' else info.path_pts['feeder2'][1]
 
         # Find next off idx
-        while ledoff[off_idx] < time and off_idx < len(ledoff):
+        while off_idx < len(ledoff) and ledoff[off_idx] < time:
             off_idx += 1
 
         # Discount the last event when last off missing
@@ -149,8 +150,8 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
 
         start = nept.find_nearest_idx(times, time)
         stop = nept.find_nearest_idx(times, ledoff[off_idx])
-        feeder_x_location[start:stop + led_padding] = x_location
-        feeder_y_location[start:stop + led_padding] = y_location
+        feeder_x_location[start:stop+led_padding] = x_location
+        feeder_y_location[start:stop+led_padding] = y_location
 
     # Removing the contaminated samples that are closest to the feeder location
     def remove_feeder_contamination(original_targets, current_feeder, dist_to_feeder=dist_to_feeder):
@@ -225,7 +226,8 @@ def load_data(info, output_path=None):
 
     position_path = os.path.join(dataloc, 'data-working', info.rat_id, info.session+'_recording')
     unzip_nvt_file(position_path, info.session+'-VT1', info)
-    position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events, output_path)
+    position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events,
+                                      output_filepath=output_path)
     os.remove(os.path.join(position_path, info.session+'-VT1.nvt'))
 
     spikes = nept.load_spikes(os.path.join(dataloc, info.spikes_filepath))
@@ -349,10 +351,11 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info, r066_infos
-    infos = spike_sorted_infos
-    # infos = [info.r067d5]
-    # infos = r066_infos
+    # from run import spike_sorted_infos
+    # infos = spike_sorted_infos
+
+    import info.r066d5 as r066d5
+    infos = [r066d5]
 
     for info in infos:
         print(info.session_id)
