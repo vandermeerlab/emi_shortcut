@@ -6,7 +6,7 @@ from shapely.geometry import Point, LineString
 import nept
 
 from loading_data import get_data
-from utils_maze import spikes_by_position, speed_threshold
+from utils_maze import spikes_by_position
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -273,7 +273,7 @@ def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, spee
         filename = info.session_id + '_neurons' + str(trial_number) + '.pkl'
 
     # limit position to only times when the subject is moving faster than a certain threshold
-    run_epoch = speed_threshold(sliced_position, speed_limit=speed_limit)
+    run_epoch = nept.run_threshold(sliced_position, thresh=speed_limit)
     run_position = sliced_position[run_epoch]
 
     track_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]

@@ -368,38 +368,6 @@ def get_xyedges(position, binsize=3):
     return xedges, yedges
 
 
-def speed_threshold(position, t_smooth=0.5, speed_limit=4., rest=False):
-    """Finds times where position is above a certain speed threshold
-
-    Parameters
-    ----------
-    position: nept.Position
-    t_smooth: float
-    speed_limit: float
-
-    Returns
-    -------
-    epoch_run: nept.Epoch
-
-    """
-    speed = position.speed(t_smooth)
-
-    idx = np.where(np.diff(np.squeeze(speed.data) > speed_limit / 10.))[0]
-
-    if rest:
-        t_start = position.time[idx[1::2]]
-        t_stop = position.time[idx[2::2]]
-    else:
-        t_start = position.time[idx[::2]]
-        t_stop = position.time[idx[1::2]]
-
-    if len(t_start) != len(t_stop):
-        assert len(t_start) - len(t_stop) == 1
-        t_stop = np.hstack([t_stop, position.time[-1]])
-
-    return nept.Epoch(np.vstack((t_start, t_stop)))
-
-
 def get_trials(events, phase_epoch):
     feeder_events = np.sort(np.append(events['feeder1'], events['feeder2']))
     feeder_events = feeder_events[np.where((phase_epoch.start < feeder_events)*(feeder_events < phase_epoch.stop))[0]]

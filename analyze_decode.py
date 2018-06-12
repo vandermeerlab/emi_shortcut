@@ -7,7 +7,7 @@ from shapely.geometry import Point
 import nept
 
 from loading_data import get_data
-from utils_maze import find_zones, speed_threshold
+from utils_maze import find_zones
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -118,7 +118,7 @@ def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neuron
 
     if run_time:
         # limit position to only times when the subject is moving faster than a certain threshold
-        run_epoch = speed_threshold(position, speed_limit=speed_limit)
+        run_epoch = nept.run_threshold(position, thresh=speed_limit)
         position = position[run_epoch]
 
         epochs_interest = nept.Epoch(np.array([position.time[0], position.time[-1]]))

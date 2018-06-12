@@ -8,7 +8,6 @@ import scalebar
 
 from loading_data import get_data
 from run import spike_sorted_infos
-from utils_maze import speed_threshold
 
 
 thisdir = os.getcwd()
@@ -197,7 +196,7 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
 
         if resting_only:
             position_of_interest = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
-            epochs_of_interest = speed_threshold(position_of_interest, speed_limit=4., rest=True)
+            epochs_of_interest = nept.rest_threshold(position_of_interest, thresh=4.)
             condition += "_rest"
 
         if epochs_of_interest.n_epochs == 0:
