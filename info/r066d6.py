@@ -49,47 +49,28 @@ session_length = 0
 for phase in task_times.keys():
     session_length += task_times[phase].durations
 
-pxl_to_cm = (7.1209, 7.1628)
-scale_targets = (3.6, 3.5)
+# pxl_to_cm = (7.1209, 7.1628)
+scale_targets = (1.5, 1.5)
 
 fs = 2000
 
 path_pts = dict()
-path_pts['feeder1'] = [519, 453]
-path_pts['turn1'] = [523, 389]
-path_pts['pt1'] = [429, 384]
-path_pts['pt2'] = [306, 376]
-path_pts['pt3'] = [251, 369]
-path_pts['turn2'] = [201, 350]
-path_pts['pt4'] = [193, 285]
-path_pts['pt5'] = [202, 134]
-path_pts['turn3'] = [218, 72]
-path_pts['pt6'] = [269, 50]
-path_pts['pt7'] = [437, 48]
-path_pts['pt8'] = [536, 57]
-path_pts['feeder2'] = [622, 62]
-path_pts['shortcut1'] = [306, 376]
-path_pts['spt1'] = [312, 305]
-path_pts['spt2'] = [330, 281]
-path_pts['spt3'] = [484, 267]
-path_pts['spt4'] = [515, 249]
-path_pts['spt5'] = [524, 187]
-path_pts['shortcut2'] = [536, 57]
-path_pts['novel1'] = [201, 350]
-path_pts['novel2'] = [195, 459]
-path_pts['pedestal'] = [349, 163]
-path_pts['stable1'] = [198, 126]
+path_pts['feeder1'] = [208, 19]
+path_pts['turn1'] = [74, 25]
+path_pts['turn2'] = [74, 115]
+path_pts['turn3'] = [175, 125]
+path_pts['feeder2'] = [175, 155]
+path_pts['shortcut1'] = [175, 17.5]
+path_pts['spt1'] = [175, 80]
+path_pts['spt2'] = [110, 90]
+path_pts['shortcut2'] = [100, 125]
+path_pts['novel1'] = [74, 115]
+path_pts['novel2'] = [65, 160]
+path_pts['pedestal'] = [115, 60]
+path_pts['stable1'] = [130, 17.5]
 
-path_pts = convert_to_cm(path_pts, pxl_to_cm)
-
-full_u_trajectory = [path_pts[i] for i in ['feeder1', 'turn1', 'pt1', 'pt2', 'pt3', 'turn2', 'pt4', 'pt5', 'turn3',
-                                           'pt6', 'pt7', 'pt8', 'feeder2']]
-
-u_trajectory = [path_pts[i] for i in ['pt2', 'pt3', 'turn2', 'pt4', 'pt5', 'turn3',
-                                      'pt6', 'pt7', 'pt8']]
-
-shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4', 'spt5', 'shortcut2']]
-
+u_trajectory = [path_pts[i] for i in ['feeder1', 'turn1', 'turn2', 'turn3', 'feeder2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'shortcut2']]
 novel_trajectory = [path_pts[i] for i in ['novel1', 'novel2']]
 
 default = task_times['postrecord'].start

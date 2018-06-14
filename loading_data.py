@@ -75,7 +75,8 @@ def unzip_nvt_file(datapath, filename, info):
     file.close()
 
 
-def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder=5, std_thresh=2., output_filepath=None):
+def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder=30,
+                           std_thresh=2., output_filepath=None):
     """Loads and corrects shortcut position.
 
     Parameters

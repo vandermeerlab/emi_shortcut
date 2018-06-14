@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import nept
-from utils_maze import convert_to_cm
 
 rat_id = 'R068_EI'
 session_id = 'R068d5'
@@ -81,8 +80,6 @@ path_pts['npt1'] = [101, 75]
 path_pts['novel2'] = [108, 188]
 path_pts['pedestal'] = [514, 244]
 path_pts['stable1'] = [192, 268]
-
-path_pts = convert_to_cm(path_pts, pxl_to_cm)
 
 full_u_trajectory = [path_pts[i] for i in ['feeder1', 'pt1', 'turn1', 'pt2', 'pt3', 'pt3a', 'pt4', 'turn2',
                                            'pt5', 'turn3', 'pt6', 'pt7', 'feeder2']]
