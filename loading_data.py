@@ -1,10 +1,10 @@
 import os
 import numpy as np
+import scipy
 import pickle
 import zipfile
 import warnings
 import nept
-import scipy.signal as signal
 
 import matplotlib.pyplot as plt
 
@@ -36,8 +36,8 @@ def extract_xy(target):
 def median_filter(x, y, kernel):
     # Applying a median filter to the x and y positions
 
-    x = signal.medfilt(x, kernel_size=kernel)
-    y = signal.medfilt(y, kernel_size=kernel)
+    x = scipy.signal.medfilt(x, kernel_size=kernel)
+    y = scipy.signal.medfilt(y, kernel_size=kernel)
 
     return x, y
 
@@ -195,23 +195,54 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
     y = remove_based_on_std(y)
 
     # Calculating the mean of the remaining targets
-    xx = np.nanmean(x, axis=1)
-    yy = np.nanmean(y, axis=1)
-    ttimes = times
+    x = np.nanmean(x, axis=1)
+    y = np.nanmean(y, axis=1)
 
-    # Applying a median filter
-    xx, yy = median_filter(xx, yy, kernel=11)
+    def interpolate(time, array, nan_idx):
+        f = scipy.interpolate.interp1d(time[~nan_idx], array[~nan_idx], kind='linear', bounds_error=False)
+        array[nan_idx] = f(time[nan_idx])
+
+    # Interpolate positions to replace nans during maze phases
+    xx = np.array(x)
+    yy = np.array(y)
+    ttimes = np.array(times)
+
+    maze_phases = ["phase1", "phase2", "phase3"]
+    for task_time in info.task_times.keys():
+        if task_time in maze_phases:
+            trial_epochs = get_trials(events, info.task_times[task_time])
+            for start, stop in zip(trial_epochs.starts, trial_epochs.stops):
+                idx = (times >= start) & (times < stop)
+
+                this_x = x[idx]
+                this_y = y[idx]
+                this_times = times[idx]
+
+                # Finding nan idx
+                x_nan_idx = np.isnan(this_x)
+                y_nan_idx = np.isnan(this_y)
+                nan_idx = x_nan_idx | y_nan_idx
+
+                interpolate(this_times, this_x, nan_idx)
+                interpolate(this_times, this_y, nan_idx)
+
+                xx[idx] = this_x
+                yy[idx] = this_y
 
     # Finding nan idx
     x_nan_idx = np.isnan(xx)
     y_nan_idx = np.isnan(yy)
     nan_idx = x_nan_idx | y_nan_idx
 
-    # Removing nan samples
+    # Removing nan idx
     xx = xx[~nan_idx]
     yy = yy[~nan_idx]
     ttimes = ttimes[~nan_idx]
 
+    # Apply a median filter
+    xx, yy = median_filter(xx, yy, kernel=11)
+
+    # Construct a position object
     position = nept.Position(np.hstack(np.array([xx, yy])[..., np.newaxis]), ttimes)
 
     plot_correcting_position(info, position, targets, events, output_filepath)
@@ -315,7 +346,28 @@ def get_data(info, output_path=None):
     return events, position, spikes, lfp_swr, lfp_theta
 
 
+def plot_trials(info, position, events, savepath):
+    for phase in ["phase1", "phase2", "phase3"]:
+        trial_epochs = get_trials(events, info.task_times[phase])
+        for trial_idx in range(trial_epochs.n_epochs):
+            start = trial_epochs[trial_idx].start
+            stop = trial_epochs[trial_idx].stop
+
+            trial = position.time_slice(start, stop)
+            plt.plot(trial.x, trial.y, "k.")
+            title = info.session_id + " " + phase + " trial" + str(trial_idx)
+            plt.title(title)
+            if savepath is not None:
+                plt.savefig(savepath + title)
+                plt.close()
+            else:
+                plt.show()
+                plt.close()
+
+
 def plot_correcting_position(info, position, targets, events, savepath=None):
+    plot_trials(info, position, events, savepath)
+
     fig = plt.figure(figsize=(8, 8))
 
     fig.suptitle(info.session_id, y=1.)
@@ -356,17 +408,18 @@ if __name__ == "__main__":
     # infos = spike_sorted_infos
 
     import info.r068d5 as r068d5
-    infos = [r068d5]
+    import info.r068d6 as r068d6
+    infos = [r068d5, r068d6]
 
     for info in infos:
         print(info.session_id)
-        save_data(info)
+        # save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
-        # thisdir = os.getcwd()
-        # output_path = os.path.join(thisdir, "plots", "correcting_position")
-        #
-        # events, position, _, _, _ = load_data(info, output_path)
+        thisdir = os.getcwd()
+        output_path = os.path.join(thisdir, "plots", "correcting_position")
+
+        events, position, _, _, _ = load_data(info, output_path)
         #
         #
         #
