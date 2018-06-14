@@ -197,6 +197,11 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
         if resting_only:
             position_of_interest = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
             epochs_of_interest = nept.rest_threshold(position_of_interest, thresh=4.)
+
+            # Minimum epoch duration
+            min_rest_duration = 0.05
+            epochs_of_interest = epochs_of_interest[epochs_of_interest.durations > min_rest_duration]
+
             condition += "_rest"
 
         if epochs_of_interest.n_epochs == 0:
@@ -239,4 +244,4 @@ if __name__ == "__main__":
     infos = [r066d1]
 
     for info in infos:
-        plot_swr_stats(info, resting_only=True, plot_example_swr_rasters=True, plot_swr_spike_counts=False)
+        plot_swr_stats(info, resting_only=True, plot_example_swr_rasters=True, plot_swr_spike_counts=True)
