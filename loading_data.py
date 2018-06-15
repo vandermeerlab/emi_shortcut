@@ -407,21 +407,21 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos
-    infos = spike_sorted_infos
+    # infos = spike_sorted_infos
 
-    # import info.r068d5 as r068d5
-    # import info.r068d6 as r068d6
-    # infos = [r068d5, r068d6]
+    import info.r068d5 as r068d5
+    import info.r068d6 as r068d6
+    infos = [r068d5, r068d6]
 
     for info in infos:
         print(info.session_id)
-        save_data(info)
+        # save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
-        # thisdir = os.getcwd()
-        # output_path = os.path.join(thisdir, "plots", "correcting_position")
-        #
-        # events, position, _, _, _ = load_data(info, output_path)
+        thisdir = os.getcwd()
+        output_path = os.path.join(thisdir, "plots", "correcting_position")
+
+        events, position, _, _, _ = load_data(info, output_path)
 
 
 
