@@ -25,8 +25,8 @@ event_labels = dict(led1='TTL Output on AcqSystem1_0 board 0 port 2 value (0x000
 
 position_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-VT1.nvt')
 
-lfp_swr_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC05c.ncs')
-lfp_theta_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC08c.ncs')
+lfp_swr_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC09b.ncs')
+lfp_theta_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC15d.ncs')
 
 spikes_filepath = os.path.join('data-working', rat_id, session + '_recording')
 

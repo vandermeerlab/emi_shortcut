@@ -245,7 +245,7 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
     # Construct a position object
     position = nept.Position(np.hstack(np.array([xx, yy])[..., np.newaxis]), ttimes)
 
-    plot_correcting_position(info, position, targets, events, output_filepath)
+    # plot_correcting_position(info, position, targets, events, output_filepath)
 
     return position
 
@@ -358,7 +358,7 @@ def plot_trials(info, position, events, savepath):
             title = info.session_id + " " + phase + " trial" + str(trial_idx)
             plt.title(title)
             if savepath is not None:
-                plt.savefig(savepath + title)
+                plt.savefig(os.path.join(savepath, "trials", title))
                 plt.close()
             else:
                 plt.show()
@@ -366,8 +366,6 @@ def plot_trials(info, position, events, savepath):
 
 
 def plot_correcting_position(info, position, targets, events, savepath=None):
-    plot_trials(info, position, events, savepath)
-
     fig = plt.figure(figsize=(8, 8))
 
     fig.suptitle(info.session_id, y=1.)
@@ -399,30 +397,34 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
 
     if savepath:
         plt.savefig(os.path.join(savepath, info.session_id+"-correcting_position.png"))
+        plt.close()
     else:
         plt.show()
+        plt.close()
+
+    plot_trials(info, position, events, savepath)
 
 
 if __name__ == "__main__":
-    # from run import spike_sorted_infos
-    # infos = spike_sorted_infos
+    from run import spike_sorted_infos
+    infos = spike_sorted_infos
 
-    import info.r068d5 as r068d5
-    import info.r068d6 as r068d6
-    infos = [r068d5, r068d6]
+    # import info.r068d5 as r068d5
+    # import info.r068d6 as r068d6
+    # infos = [r068d5, r068d6]
 
     for info in infos:
         print(info.session_id)
-        # save_data(info)
+        save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
-        thisdir = os.getcwd()
-        output_path = os.path.join(thisdir, "plots", "correcting_position")
+        # thisdir = os.getcwd()
+        # output_path = os.path.join(thisdir, "plots", "correcting_position")
+        #
+        # events, position, _, _, _ = load_data(info, output_path)
 
-        events, position, _, _, _ = load_data(info, output_path)
-        #
-        #
-        #
+
+
         # thisdir = os.getcwd()
         # dataloc = os.path.join(thisdir, 'cache', 'data')
         # pickle_filepath = os.path.join(thisdir, "cache", "pickled")
