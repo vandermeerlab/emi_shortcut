@@ -372,7 +372,11 @@ def get_trials(events, phase_epoch):
     feeder_events = np.sort(np.append(events['feeder1'], events['feeder2']))
     feeder_events = feeder_events[np.where((phase_epoch.start < feeder_events)*(feeder_events < phase_epoch.stop))[0]]
 
-    return nept.Epoch([feeder_events[:-1], feeder_events[1:]])
+    # Insert first trial as phase start to first feeder firing during that phase
+    starts = np.insert(feeder_events[:-1], 0, phase_epoch.start)
+    stops = np.insert(feeder_events[1:], 0, feeder_events[0])
+
+    return nept.Epoch([starts, stops])
 
 
 def convert_to_cm(path_pts, xy_conversion):
