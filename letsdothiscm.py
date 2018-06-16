@@ -11,15 +11,8 @@ dataloc = os.path.join(thisdir, 'cache', 'data')
 pickle_filepath = os.path.join(thisdir, "cache", "pickled")
 output_filepath = os.path.join(thisdir, "plots", "correcting_position")
 
-import info.r068d1 as r068d1
-import info.r068d2 as r068d2
-import info.r068d3 as r068d3
-import info.r068d4 as r068d4
-import info.r068d5 as r068d5
-import info.r068d6 as r068d6
-import info.r068d7 as r068d7
-import info.r068d8 as r068d8
-info = r068d1
+import info.r067d8 as r067d8
+info = r067d8
 
 events = nept.load_events(os.path.join(dataloc, info.event_filename), info.event_labels)
 
@@ -51,7 +44,7 @@ x[x == 0] = np.nan
 y[y == 0] = np.nan
 
 # # Scale the positions
-scale_targets = 1.75
+scale_targets = 1.7
 x /= scale_targets
 y /= scale_targets
 
@@ -66,8 +59,8 @@ yymode, yycount = scipy.stats.mode(y[y != ymode], axis=None, nan_policy='omit')
 print("xy:", xxmode, yymode)
 
 plt.plot(x, y, "y.", ms=3)
-cornerx = 60
-cornery = 15
+cornerx = 64
+cornery = 18
 plt.plot(cornerx, cornery, "k.")
 plt.plot(cornerx, cornery+30*3, "k.")
 plt.plot(cornerx+30*4, cornery, "k.")
