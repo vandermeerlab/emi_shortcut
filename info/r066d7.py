@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import nept
-from utils_maze import convert_to_cm
 
 rat_id = 'R066_EI'
 session_id = 'R066d7'
@@ -49,47 +48,32 @@ session_length = 0
 for phase in task_times.keys():
     session_length += task_times[phase].durations
 
-pxl_to_cm = (7.4332, 6.8249)
-scale_targets = (3.7, 3.5)
+scale_targets = 1.55
 
 fs = 2000
 
 path_pts = dict()
-path_pts['feeder1'] = [524, 453]
-path_pts['turn1'] = [523, 389]
-path_pts['pt1'] = [429, 384]
-path_pts['pt2'] = [308, 382]
-path_pts['pt3'] = [251, 369]
-path_pts['turn2'] = [201, 350]
-path_pts['pt4'] = [193, 285]
-path_pts['pt5'] = [202, 134]
-path_pts['turn3'] = [215, 94]
-path_pts['pt6'] = [247, 77]
-path_pts['pt7'] = [315, 77]
-path_pts['pt8'] = [356, 72]
-path_pts['pt9'] = [536, 71]
-path_pts['feeder2'] = [632, 77]
-path_pts['shortcut1'] = [308, 382]
-path_pts['spt1'] = [312, 306]
-path_pts['spt2'] = [325, 249]
-path_pts['spt3'] = [327, 210]
-path_pts['spt4'] = [318, 146]
-path_pts['shortcut2'] = [315, 77]
-path_pts['novel1'] = [536, 71]
-path_pts['npt1'] = [522, 146]
-path_pts['npt2'] = [422, 175]
-path_pts['novel2'] = [421, 274]
-path_pts['pedestal'] = [603, 270]
-path_pts['stable1'] = [192, 220]
+path_pts['feeder1'] = [202.6, 25.2]
+path_pts['turn1'] = [68., 30.5]
+path_pts['pt1'] = [61.8, 75.2]
+path_pts['turn2'] = [67., 112.2]
+path_pts['turn3'] = [169.2, 121.]
+path_pts['feeder2'] = [169., 150.3]
+path_pts['shortcut1'] = [102.7, 24.2]
+path_pts['spt1'] = [103.6, 50.4]
+path_pts['spt2'] = [106., 73.8]
+path_pts['spt3'] = [100., 98.5]
+path_pts['shortcut2'] = [103.1, 122.2]
+path_pts['novel1'] = [171., 23.]
+path_pts['npt1'] = [168.7, 50.4]
+path_pts['npt2'] = [137.9, 56.9]
+path_pts['novel2'] = [134.4, 86.3]
+path_pts['pedestal'] = [194.3, 85.6]
+path_pts['stable1'] = [139.4, 122.6]
 
-path_pts = convert_to_cm(path_pts, pxl_to_cm)
+u_trajectory = [path_pts[i] for i in ['feeder1', 'novel1', 'shortcut1', 'turn1', 'pt1', 'turn2',
+                                      'shortcut2', 'stable1', 'turn3', 'feeder2']]
 
-full_u_trajectory = [path_pts[i] for i in ['feeder1', 'turn1', 'pt1', 'pt2', 'pt3', 'turn2', 'pt4', 'pt5', 'turn3',
-                                           'pt6', 'pt7', 'pt8', 'pt9', 'feeder2']]
-
-u_trajectory = [path_pts[i] for i in ['pt2', 'pt3', 'turn2', 'pt4', 'pt5', 'turn3',
-                                      'pt6', 'pt7', 'pt8',  'pt9']]
-
-shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4', 'shortcut2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'shortcut2']]
 
 novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'novel2']]

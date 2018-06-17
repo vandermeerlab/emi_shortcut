@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import nept
-from utils_maze import convert_to_cm
 
 rat_id = 'R066_EI'
 session_id = 'R066d6'
@@ -49,28 +48,31 @@ session_length = 0
 for phase in task_times.keys():
     session_length += task_times[phase].durations
 
-# pxl_to_cm = (7.1209, 7.1628)
-scale_targets = (1.5, 1.5)
+scale_targets = 1.65
 
 fs = 2000
 
 path_pts = dict()
-path_pts['feeder1'] = [208, 19]
-path_pts['turn1'] = [74, 25]
-path_pts['turn2'] = [74, 115]
-path_pts['turn3'] = [175, 125]
-path_pts['feeder2'] = [175, 155]
-path_pts['shortcut1'] = [175, 17.5]
-path_pts['spt1'] = [175, 80]
-path_pts['spt2'] = [110, 90]
-path_pts['shortcut2'] = [100, 125]
-path_pts['novel1'] = [74, 115]
-path_pts['novel2'] = [65, 160]
-path_pts['pedestal'] = [115, 60]
-path_pts['stable1'] = [130, 17.5]
+path_pts['feeder1'] = [189., 17.]
+path_pts['turn1'] = [66.5, 19.2]
+path_pts['pt1'] = [60.7, 62.4]
+path_pts['turn2'] = [61.9, 101.4]
+path_pts['pt2'] = [126.5, 115.7]
+path_pts['turn3'] = [158.8, 111.7]
+path_pts['feeder2'] = [158.8, 141.2]
+path_pts['shortcut1'] = [160.6, 15.4]
+path_pts['spt1'] = [156.6, 75.3]
+path_pts['spt2'] = [128.9, 80.8]
+path_pts['spt3'] = [96.4, 87.9]
+path_pts['shortcut2'] = [93.3, 113.1]
+path_pts['novel1'] = [61.9, 101.4]
+path_pts['novel2'] = [59.1, 142.5]
+path_pts['pedestal'] = [105.4, 48.7]
+path_pts['stable1'] = [114.6, 12.1]
 
-u_trajectory = [path_pts[i] for i in ['feeder1', 'turn1', 'turn2', 'turn3', 'feeder2']]
-shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'shortcut2']]
+u_trajectory = [path_pts[i] for i in ['feeder1', 'shortcut1', 'stable1', 'turn1', 'pt1', 'turn2',
+                                      'shortcut2', 'pt2', 'turn3', 'feeder2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'shortcut2']]
 novel_trajectory = [path_pts[i] for i in ['novel1', 'novel2']]
 
 default = task_times['postrecord'].start

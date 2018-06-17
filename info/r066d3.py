@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import nept
-from utils_maze import convert_to_cm
 
 rat_id = 'R066_EI'
 session_id = 'R066d3'
@@ -49,60 +48,36 @@ session_length = 0
 for phase in task_times.keys():
     session_length += task_times[phase].durations
 
-pxl_to_cm = (7.2599, 7.2286)
-scale_targets = (3.55, 3.5)
+scale_targets = 1.65
 
 fs = 2000
 
-run_threshold = 0.0
-
 path_pts = dict()
-path_pts['feeder1'] = [525, 471]
-path_pts['pt1'] = [528, 399]
-path_pts['turn1'] = [522, 373]
-path_pts['pt2'] = [511, 367]
-path_pts['pt3'] = [498, 377]
-path_pts['pt4'] = [480, 373]
-path_pts['pt5'] = [422, 380]
-path_pts['pt6'] = [357, 394]
-path_pts['pt7'] = [322, 389]
-path_pts['pt8'] = [225, 365]
-path_pts['turn2'] = [197, 358]
-path_pts['pt10'] = [198, 333]
-path_pts['pt11'] = [204, 83]
-path_pts['turn3'] = [211, 61]
-path_pts['pt13'] = [230, 53]
-path_pts['pt14'] = [395, 40]
-path_pts['feeder2'] = [650, 57]
-path_pts['shortcut1'] = [422, 380]
-path_pts['spt1'] = [420, 321]
-path_pts['spt2'] = [432, 284]
-path_pts['spt3'] = [461, 262]
-path_pts['spt4'] = [600, 270]
-path_pts['spt5'] = [634, 270]
-path_pts['spt6'] = [638, 245]
-path_pts['spt7'] = [630, 85]
-path_pts['shortcut2'] = [650, 57]
-path_pts['novel1'] = [211, 61]
-path_pts['npt1'] = [162, 37]
-path_pts['npt2'] = [124, 43]
-path_pts['npt3'] = [107, 75]
-path_pts['novel2'] = [104, 156]
-path_pts['pedestal'] = [338, 186]
-path_pts['stable1'] = [264, 375]
+path_pts['feeder1'] = [188.5, 17.]
+path_pts['turn1'] = [65.5, 18.5]
+path_pts['pt1'] = [60., 64.5]
+path_pts['turn2'] = [61.9, 103.5]
+path_pts['pt2'] = [94., 115.4]
+path_pts['turn3'] = [159., 113.]
+path_pts['feeder2'] = [158.8, 141.8]
+path_pts['shortcut1'] = [188.5, 17.]
+path_pts['spt1'] = [193., 49.3]
+path_pts['spt2'] = [191.2, 76.9]
+path_pts['spt3'] = [156.6, 80.8]
+path_pts['spt4'] = [130., 86.5]
+path_pts['shortcut2'] = [128.8, 109.8]
+path_pts['novel1'] = [65.5, 18.5]
+path_pts['npt1'] = [32.3, 14.7]
+path_pts['novel2'] = [30.7, 46.6]
+path_pts['pedestal'] = [101.5, 55.]
+path_pts['stable1'] = [125.2, 12.5]
 
-path_pts = convert_to_cm(path_pts, pxl_to_cm)
+u_trajectory = [path_pts[i] for i in ['feeder1', 'stable1', 'turn1', 'pt1', 'turn2', 'pt2',
+                                      'shortcut2', 'turn3', 'feeder2']]
 
-full_u_trajectory = [path_pts[i] for i in ['feeder1', 'pt1', 'turn1', 'pt2', 'pt3', 'pt4', 'pt5', 'pt6', 'pt7', 'pt8',
-                                           'turn2', 'pt10', 'pt11', 'turn3', 'pt13', 'pt14', 'feeder2']]
+shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4', 'shortcut2']]
 
-u_trajectory = [path_pts[i] for i in ['pt5', 'pt6', 'pt7', 'pt8', 'turn2', 'pt10',
-                                      'pt11', 'turn3', 'pt13', 'pt14', 'feeder2']]
-
-shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'spt4',
-                                             'spt5', 'spt6', 'spt7', 'shortcut2']]
-
-novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'npt2', 'npt3', 'novel2']]
+novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'novel2']]
 
 sequence = dict(u=dict(), shortcut=dict())
 sequence['u']['swr'] = nept.Epoch(np.array([[27888.2, 27888.6],
