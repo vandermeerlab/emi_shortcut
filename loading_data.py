@@ -75,7 +75,7 @@ def unzip_nvt_file(datapath, filename, info):
     file.close()
 
 
-def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder=20,
+def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh=20,
                            std_thresh=2., output_filepath=None):
     """Loads and corrects shortcut position.
 
@@ -126,42 +126,31 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
 
     # Finding which feeder led is on over time
     leds = []
-    leds.extend([(event, 'led1') for event in events['led1']])
-    leds.extend([(event, 'led2') for event in events['led2']])
+    leds.extend([(event, 'led2') for event in events['led1']])
+    leds.extend([(event, 'led1') for event in events['led2']])
     sorted_leds = sorted(leds)
+
+    ledoff = events["ledoff"]
 
     # Get an array of feeder locations when that feeder is actively flashing
     feeder_x_location = np.empty(times.shape[0]) * np.nan
     feeder_y_location = np.empty(times.shape[0]) * np.nan
 
-    ledoff = events["ledoff"]
-    off_idx = 0
+    for (start, label), stop in zip(sorted_leds, ledoff):
+        x_location = info.path_pts['feeder1'][0] if label == 'led1' else info.path_pts['feeder2'][0]
+        y_location = info.path_pts['feeder1'][1] if label == 'led1' else info.path_pts['feeder2'][1]
 
-    for time, label in sorted_leds:
-        x_location = info.path_pts['feeder2'][0] if label == 'led1' else info.path_pts['feeder1'][0]
-        y_location = info.path_pts['feeder2'][1] if label == 'led1' else info.path_pts['feeder1'][1]
-
-        # Find next off idx
-        while off_idx < len(ledoff) and ledoff[off_idx] < time:
-            off_idx += 1
-
-        # Discount the last event when last off missing
-        if off_idx >= len(ledoff):
-            break
-
-        start = nept.find_nearest_idx(times, time)
-        stop = nept.find_nearest_idx(times, ledoff[off_idx])
-        feeder_x_location[start:stop+led_padding] = x_location
-        feeder_y_location[start:stop+led_padding] = y_location
+        idx = np.where(np.logical_and(times>=start, times<=stop+led_padding))[0]
+        feeder_x_location[idx] = x_location
+        feeder_y_location[idx] = y_location
 
     # Removing the contaminated samples that are closest to the feeder location
-    def remove_feeder_contamination(original_targets, current_feeder, dist_to_feeder=dist_to_feeder):
-        targets = np.array(original_targets)
-        for i, (target, feeder) in enumerate(zip(targets, current_feeder)):
-            if not np.isnan(feeder):
-                dist = np.abs(target - feeder) < dist_to_feeder
-                target[dist] = np.nan
-            targets[i] = target
+    def remove_feeder_contamination(targets, current_feeder, dist_thresh=dist_thresh):
+        targets = np.array(targets)
+
+        remove_idx = np.abs(targets - current_feeder[:, np.newaxis]) < dist_thresh
+        targets[remove_idx] = np.nan
+
         return targets
 
     x = remove_feeder_contamination(x, feeder_x_location)
@@ -198,14 +187,15 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
     x = np.nanmean(x, axis=1)
     y = np.nanmean(y, axis=1)
 
-    def interpolate(time, array, nan_idx):
-        f = scipy.interpolate.interp1d(time[~nan_idx], array[~nan_idx], kind='linear', bounds_error=False)
-        array[nan_idx] = f(time[nan_idx])
-
-    # Interpolate positions to replace nans during maze phases
     xx = np.array(x)
     yy = np.array(y)
     ttimes = np.array(times)
+
+    # Interpolate positions to replace nans during maze phases
+    def interpolate(time, array, nan_idx):
+        f = scipy.interpolate.interp1d(time[~nan_idx], array[~nan_idx],
+                                       kind='linear', bounds_error=False)
+        array[nan_idx] = f(time[nan_idx])
 
     maze_phases = ["phase1", "phase2", "phase3"]
     for task_time in info.task_times.keys():
