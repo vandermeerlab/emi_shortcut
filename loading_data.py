@@ -75,7 +75,7 @@ def unzip_nvt_file(datapath, filename, info):
     file.close()
 
 
-def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder=30,
+def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder=20,
                            std_thresh=2., output_filepath=None):
     """Loads and corrects shortcut position.
 
@@ -121,8 +121,8 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
     y[y == 0] = np.nan
 
     # Scale the positions
-    x = x / info.scale_targets[0]
-    y = y / info.scale_targets[1]
+    x /= info.scale_targets
+    y /= info.scale_targets
 
     # Finding which feeder led is on over time
     leds = []
@@ -138,8 +138,8 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
     off_idx = 0
 
     for time, label in sorted_leds:
-        x_location = info.path_pts['feeder1'][0] if label == 'led1' else info.path_pts['feeder2'][0]
-        y_location = info.path_pts['feeder1'][1] if label == 'led1' else info.path_pts['feeder2'][1]
+        x_location = info.path_pts['feeder2'][0] if label == 'led1' else info.path_pts['feeder1'][0]
+        y_location = info.path_pts['feeder2'][1] if label == 'led1' else info.path_pts['feeder1'][1]
 
         # Find next off idx
         while off_idx < len(ledoff) and ledoff[off_idx] < time:
@@ -245,7 +245,7 @@ def load_shortcut_position(info, filename, events, led_padding=1, dist_to_feeder
     # Construct a position object
     position = nept.Position(np.hstack(np.array([xx, yy])[..., np.newaxis]), ttimes)
 
-    # plot_correcting_position(info, position, targets, events, output_filepath)
+    plot_correcting_position(info, position, targets, events, output_filepath)
 
     return position
 
@@ -409,9 +409,9 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     # infos = spike_sorted_infos
 
-    import info.r068d5 as r068d5
-    import info.r068d6 as r068d6
-    infos = [r068d5, r068d6]
+    import info.r063d5 as r063d5
+    import info.r063d6 as r063d6
+    infos = [r063d5, r063d6]
 
     for info in infos:
         print(info.session_id)
