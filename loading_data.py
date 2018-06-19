@@ -124,10 +124,12 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
     x /= info.scale_targets
     y /= info.scale_targets
 
+    off_delay = np.median(np.diff(times))
+
     # Finding which feeder led is on over time
     leds = []
-    leds.extend([(event, 'led2') for event in events['led1']])
-    leds.extend([(event, 'led1') for event in events['led2']])
+    leds.extend([(event, 'led1') for event in events['led1']])
+    leds.extend([(event, 'led2') for event in events['led2']])
     sorted_leds = sorted(leds)
 
     ledoff = events["ledoff"]
@@ -136,28 +138,33 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
     feeder_x_location = np.empty(times.shape[0]) * np.nan
     feeder_y_location = np.empty(times.shape[0]) * np.nan
 
-    for (start, label), stop in zip(sorted_leds, ledoff):
-        x_location = info.path_pts['feeder1'][0] if label == 'led1' else info.path_pts['feeder2'][0]
-        y_location = info.path_pts['feeder1'][1] if label == 'led1' else info.path_pts['feeder2'][1]
+    off_idx = 0
 
-        idx = np.where(np.logical_and(times>=start, times<=stop+led_padding))[0]
-        feeder_x_location[idx] = x_location
-        feeder_y_location[idx] = y_location
+    for start, label in sorted_leds:
+        # Find next off idx
+        while ledoff[off_idx] < start and off_idx < len(ledoff):
+            off_idx += 1
 
-    # Removing the contaminated samples that are closest to the feeder location
-    def remove_feeder_contamination(targets, current_feeder, dist_thresh=dist_thresh):
-        targets = np.array(targets)
+        # Discount the last event when last off missing
+        if off_idx >= len(ledoff):
+            break
 
-        remove_idx = np.abs(targets - current_feeder[:, np.newaxis]) < dist_thresh
-        targets[remove_idx] = np.nan
+        x_location = info.path_pts['feeder1'][0] if label == 'led2' else info.path_pts['feeder2'][0]
+        y_location = info.path_pts['feeder1'][1] if label == 'led2' else info.path_pts['feeder2'][1]
 
-        return targets
+        feeder_x_location[np.logical_and(times >= start, times < ledoff[off_idx] + off_delay)] = x_location
+        feeder_y_location[np.logical_and(times >= start, times < ledoff[off_idx] + off_delay)] = y_location
 
-    x = remove_feeder_contamination(x, feeder_x_location)
-    y = remove_feeder_contamination(y, feeder_y_location)
+    # Remove idx when led is on and target is close to active feeder location
+    x_idx = np.abs(x - feeder_x_location[..., np.newaxis]) <= dist_thresh
+    y_idx = np.abs(y - feeder_y_location[..., np.newaxis]) <= dist_thresh
+    remove_idx = x_idx & y_idx
+
+    x[remove_idx] = np.nan
+    y[remove_idx] = np.nan
 
     # Removing the problem samples that are furthest from the previous location
-    def remove_based_on_std(original_targets, std_thresh=std_thresh):
+    def remove_based_on_std(original_targets, std_thresh=2):
         targets = np.array(original_targets)
         stds = np.nanstd(targets, axis=1)[:, np.newaxis]
 
@@ -166,7 +173,7 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
 
         for i in problem_samples:
             # find the previous mean to help determine which target is an issue
-            previous_idx = i-1
+            previous_idx = i - 1
             previous_mean = np.nanmean(targets[previous_idx])
 
             # if previous sample is nan, compare current sample to the one before that
@@ -187,18 +194,18 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
     x = np.nanmean(x, axis=1)
     y = np.nanmean(y, axis=1)
 
+    # Interpolating for nan samples
+    def interpolate(time, array, nan_idx):
+        f = scipy.interpolate.interp1d(time[~nan_idx], array[~nan_idx], kind='linear', bounds_error=False)
+        array[nan_idx] = f(time[nan_idx])
+
     xx = np.array(x)
     yy = np.array(y)
     ttimes = np.array(times)
 
-    # Interpolate positions to replace nans during maze phases
-    def interpolate(time, array, nan_idx):
-        f = scipy.interpolate.interp1d(time[~nan_idx], array[~nan_idx],
-                                       kind='linear', bounds_error=False)
-        array[nan_idx] = f(time[nan_idx])
-
     maze_phases = ["phase1", "phase2", "phase3"]
     for task_time in info.task_times.keys():
+        # Interpolate positions to replace nans during maze phases
         if task_time in maze_phases:
             trial_epochs = get_trials(events, info.task_times[task_time])
             for start, stop in zip(trial_epochs.starts, trial_epochs.stops):
@@ -399,9 +406,9 @@ if __name__ == "__main__":
     from run import spike_sorted_infos
     # infos = spike_sorted_infos
 
-    import info.r063d5 as r063d5
+    import info.r068d5 as r068d5
     import info.r063d6 as r063d6
-    infos = [r063d5, r063d6]
+    infos = [r068d5, r063d6]
 
     for info in infos:
         print(info.session_id)
