@@ -124,7 +124,7 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=5, savepath=None)
             plt.show()
 
 
-def plot_spike_counts(swrs, spikes, task_time, savepath=None):
+def plot_spike_counts(info, swrs, spikes, task_time, savepath=None):
     spike_counts = []
 
     for i in range(swrs.n_epochs):
@@ -176,72 +176,75 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
             interneurons[i] = True
     spikes = spikes[~interneurons]
 
+    # Find SWRs for the whole session
+    z_thresh = 2.0
+    power_thresh = 3.0
+    merge_thresh = 0.02
+    min_length = 0.05
+    swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
+                                   power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+    print("Total swrs for this session:", str(swrs.n_epochs))
+
+    # Restrict SWRs to those with 4 or more participating neurons
+    swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=4)
+    print("N swrs for this session with at least 4 active neurons:", str(swrs.n_epochs))
+
+    # Find rest epochs for entire session
+    rest_epochs = nept.rest_threshold(position, thresh=0.5)
+
     task_times = ["prerecord", "phase1", "pauseA", "phase2", "pauseB", "phase3", "postrecord"]
 
     n_swrs = np.zeros(len(task_times))
-    phase_duration = np.zeros(len(task_times))
+    duration = np.zeros(len(task_times))
 
     for i, task_time in enumerate(task_times):
-        condition = ""
-
-        z_thresh = 2.0
-        power_thresh = 3.0
-        merge_thresh = 0.02
-        min_length = 0.05
-        swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
-                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
-
         # Restrict SWRs to those during epochs of interest
         epochs_of_interest = info.task_times[task_time]
 
         if resting_only:
-            position_of_interest = position.time_slice(epochs_of_interest.start, epochs_of_interest.stop)
-            epochs_of_interest = nept.rest_threshold(position_of_interest, thresh=4.)
-
-            # Minimum epoch duration
-            min_rest_duration = 0.05
-            epochs_of_interest = epochs_of_interest[epochs_of_interest.durations > min_rest_duration]
-
-            condition += "_rest"
+            epochs_of_interest = epochs_of_interest.intersect(rest_epochs)
 
         if epochs_of_interest.n_epochs == 0:
-            print("well then")
+            print("No epochs of interest identified.")
         else:
-            phase_duration[i] = np.sum(epochs_of_interest.durations) / 60.
+            duration[i] = np.sum(epochs_of_interest.durations) / 60.
 
-            swrs = swrs.intersect(epochs_of_interest)
+            phase_swrs = epochs_of_interest.overlaps(swrs)
+            phase_swrs = phase_swrs[phase_swrs.durations >= 0.05]
 
-            # Restrict SWRs to those with 4 or more participating neurons
-            sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops) for spiketrain in
-                             spikes]
-            swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
+            n_swrs[i] = phase_swrs.n_epochs
 
-            if plot_swr_spike_counts:
-                filename = info.session_id + "_" + str(i) + task_time + "_swr-spike-count"
-                savepath = os.path.join(output_filepath, "summary", filename)
-                plot_spike_counts(swrs, spikes, task_time, savepath=savepath)
+            if phase_swrs.n_epochs > 0:
+                if plot_swr_spike_counts:
+                    filename = info.session_id + "_" + str(i) + task_time + "_swr-spike-count"
+                    savepath = os.path.join(output_filepath, "summary", filename)
+                    plot_spike_counts(info, phase_swrs, spikes, task_time, savepath=savepath)
 
-            n_swrs[i] = swrs.n_epochs
+                if plot_example_swr_rasters:
+                    sliced_spikes = [spiketrain.time_slice(epochs_of_interest.starts, epochs_of_interest.stops)
+                                     for spiketrain in spikes]
 
-            if plot_example_swr_rasters:
-                filename = info.session_id + "_" + str(i) + task_time + "_swr-raster"
-                savepath = os.path.join(output_filepath, filename)
-                plot_swr(swrs, lfp, position, sliced_spikes, savepath=savepath)
+                    filename = info.session_id + "_" + str(i) + task_time + "_swr-raster"
+                    savepath = os.path.join(output_filepath, filename)
+                    plot_swr(phase_swrs, lfp, position, sliced_spikes, savepath=savepath)
+        print("N swrs for", task_time, ":", str(phase_swrs.n_epochs))
 
-    title = info.session_id + ' SWRs rate ' + condition
+    title = info.session_id + ' SWRs rate'
     ylabel = "# swr / minute"
     savepath = os.path.join(output_filepath, "summary", title)
-    plot_swrs_stats(n_swrs / phase_duration, n_swrs.astype(int), task_times, title, ylabel, savepath=savepath)
+    plot_swrs_stats(n_swrs / duration, n_swrs.astype(int), task_times, title, ylabel, savepath=savepath)
 
     print("n_swrs:", n_swrs)
-    print("swr_rate:", n_swrs / phase_duration)
+    print("swr_rate:", n_swrs / duration)
 
 
 if __name__ == "__main__":
     # infos = spike_sorted_infos
 
-    import info.r066d1 as r066d1
-    infos = [r066d1]
+    import info.r063d5 as r063d5
+    import info.r063d6 as r063d6
+
+    infos = [r063d5, r063d6]
 
     for info in infos:
         plot_swr_stats(info, resting_only=True, plot_example_swr_rasters=True, plot_swr_spike_counts=True)

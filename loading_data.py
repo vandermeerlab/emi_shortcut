@@ -75,8 +75,7 @@ def unzip_nvt_file(datapath, filename, info):
     file.close()
 
 
-def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh=20,
-                           std_thresh=2., output_filepath=None):
+def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2., output_filepath=None):
     """Loads and corrects shortcut position.
 
     Parameters
@@ -84,8 +83,7 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
     info: module
     filename: str
     events: dict
-    led_padding: int
-    dist_to_feeder: int
+    dist_thresh: float
     std_thresh: float
     output_filepath: str
 
@@ -142,7 +140,7 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
 
     for start, label in sorted_leds:
         # Find next off idx
-        while ledoff[off_idx] < start and off_idx < len(ledoff):
+        while off_idx < len(ledoff) and ledoff[off_idx] < start:
             off_idx += 1
 
         # Discount the last event when last off missing
@@ -152,8 +150,8 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
         x_location = info.path_pts['feeder1'][0] if label == 'led2' else info.path_pts['feeder2'][0]
         y_location = info.path_pts['feeder1'][1] if label == 'led2' else info.path_pts['feeder2'][1]
 
-        feeder_x_location[np.logical_and(times >= start, times < ledoff[off_idx] + off_delay)] = x_location
-        feeder_y_location[np.logical_and(times >= start, times < ledoff[off_idx] + off_delay)] = y_location
+        feeder_x_location[np.logical_and(times >= start - off_delay, times < ledoff[off_idx] + off_delay)] = x_location
+        feeder_y_location[np.logical_and(times >= start - off_delay, times < ledoff[off_idx] + off_delay)] = y_location
 
     # Remove idx when led is on and target is close to active feeder location
     x_idx = np.abs(x - feeder_x_location[..., np.newaxis]) <= dist_thresh
@@ -164,7 +162,7 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
     y[remove_idx] = np.nan
 
     # Removing the problem samples that are furthest from the previous location
-    def remove_based_on_std(original_targets, std_thresh=2):
+    def remove_based_on_std(original_targets, std_thresh=std_thresh):
         targets = np.array(original_targets)
         stds = np.nanstd(targets, axis=1)[:, np.newaxis]
 
@@ -242,7 +240,8 @@ def load_shortcut_position(info, filename, events, led_padding=0.03, dist_thresh
     # Construct a position object
     position = nept.Position(np.hstack(np.array([xx, yy])[..., np.newaxis]), ttimes)
 
-    plot_correcting_position(info, position, targets, events, output_filepath)
+    if output_filepath is not None:
+        plot_correcting_position(info, position, targets, events, output_filepath)
 
     return position
 
@@ -387,7 +386,7 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
     ax4 = plt.subplot(313)
     ax4 = plt.plot(position.time[start_idx:stop_idx], position.y[start_idx:stop_idx], "r.", ms=5)
 
-    plt.text(position.time[stop_idx], -25, str(round(position.n_samples / len(targets) * 100, 2))+"%")
+    plt.text(position.time[stop_idx]-20, -50, str(round(position.n_samples / len(targets) * 100, 2))+"%")
 
     # Cleaning up the plot
     plt.tight_layout()
@@ -403,16 +402,16 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-    # infos = spike_sorted_infos
+    from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
+    infos = spike_sorted_infos
 
-    import info.r068d5 as r068d5
-    import info.r063d6 as r063d6
-    infos = [r068d5, r063d6]
+    # import info.r063d5 as r063d5
+    # import info.r063d6 as r063d6
+    # infos = [r063d5, r063d6]
 
     for info in infos:
         print(info.session_id)
-        # save_data(info)
+        save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
         thisdir = os.getcwd()
