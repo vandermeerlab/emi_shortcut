@@ -66,7 +66,7 @@ def point_in_zones(position, zones):
 
 
 def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neurons, normalized, run_time,
-                speed_limit, shuffle_id, window, decoding_times, min_proportion_decoded,
+                speed_limit, t_smooth, shuffle_id, window, decoding_times, min_proportion_decoded,
                 decode_sequences, sequence_len=3, sequence_speed=5., min_epochs=3, random_shuffle=False):
     """Finds decoded for each session.
 
@@ -118,7 +118,7 @@ def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neuron
 
     if run_time:
         # limit position to only times when the subject is moving faster than a certain threshold
-        run_epoch = nept.run_threshold(position, thresh=speed_limit)
+        run_epoch = nept.run_threshold(position, thresh=speed_limit, t_smooth=t_smooth)
         position = position[run_epoch]
 
         epochs_interest = nept.Epoch(np.array([position.time[0], position.time[-1]]))
@@ -326,7 +326,8 @@ if __name__ == "__main__":
                             dt=0.025,
                             gaussian_std=0.0075,
                             experiment_time=experiment_time,
-                            speed_limit=4.)
+                            speed_limit=4.,
+                            t_smooth=0.5)
                 if experiment_time in track_times:
                     args["run_time"] = True
                 else:

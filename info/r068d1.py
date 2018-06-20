@@ -52,8 +52,6 @@ scale_targets = 1.75
 
 fs = 2000
 
-run_threshold = 0.0
-
 path_pts = dict()
 path_pts['feeder1'] = [177.7, 16.]
 path_pts['turn1'] = [60., 14.3]

@@ -15,18 +15,26 @@ pickle_filepath = os.path.join(thisdir, "cache", "pickled")
 output_filepath = os.path.join(thisdir, "plots", "exploring_swrs")
 
 
-def plot_swrs_stats(data, texts, task_times, title, ylabel, savepath=None):
+def plot_swrs_stats(n_swrs, durations, task_times, title, ylabel, savepath=None):
     fig, ax = plt.subplots()
     ind = np.arange(len(task_times))
 
-    plt.bar(ind, data)
+    rate = n_swrs / durations
 
-    labels = ["n=%d" % i for i in texts]
+    plt.bar(ind, rate)
+
+    labels = ["n=%d" % i for i in n_swrs]
     patches = ax.patches
     for patch, text in zip(patches, labels):
         txt_height = patch.get_height() + (patch.get_height() / 50)
         txt_location = patch.get_x() + (patch.get_width() / 2)
         ax.text(txt_location, txt_height, text, ha='center', va='bottom', size=10)
+
+    labels = ["of {:.1f} m".format(i) for i in durations]
+    patches = ax.patches
+    for patch, text in zip(patches, labels):
+        txt_location = patch.get_x() + (patch.get_width() / 2)
+        ax.text(txt_location, 0.1, text, ha='center', va='bottom', size=10)
 
     ax.set_xticks(ind)
     ax.set_xticklabels(task_times, rotation=75, fontsize=14)
@@ -47,7 +55,7 @@ def plot_swrs_stats(data, texts, task_times, title, ylabel, savepath=None):
         plt.show()
 
 
-def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=5, savepath=None):
+def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None):
     if swrs.n_epochs < n_plots:
         starts = swrs.starts
         stops = swrs.stops
@@ -190,7 +198,7 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
     print("N swrs for this session with at least 4 active neurons:", str(swrs.n_epochs))
 
     # Find rest epochs for entire session
-    rest_epochs = nept.rest_threshold(position, thresh=0.5)
+    rest_epochs = nept.rest_threshold(position, thresh=0.167, t_smooth=0.05)
 
     task_times = ["prerecord", "phase1", "pauseA", "phase2", "pauseB", "phase3", "postrecord"]
 
@@ -232,19 +240,20 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
     title = info.session_id + ' SWRs rate'
     ylabel = "# swr / minute"
     savepath = os.path.join(output_filepath, "summary", title)
-    plot_swrs_stats(n_swrs / duration, n_swrs.astype(int), task_times, title, ylabel, savepath=savepath)
+    plot_swrs_stats(n_swrs.astype(int), duration, task_times, title, ylabel, savepath=savepath)
 
     print("n_swrs:", n_swrs)
-    print("swr_rate:", n_swrs / duration)
+    return n_swrs, duration
 
 
 if __name__ == "__main__":
+    from run import spike_sorted_infos
     # infos = spike_sorted_infos
 
-    import info.r063d5 as r063d5
     import info.r063d6 as r063d6
-
-    infos = [r063d5, r063d6]
+    infos = [r063d6]
 
     for info in infos:
-        plot_swr_stats(info, resting_only=True, plot_example_swr_rasters=True, plot_swr_spike_counts=True)
+        n_swrs, duration = plot_swr_stats(info, resting_only=True,
+                                          plot_example_swr_rasters=True,
+                                          plot_swr_spike_counts=True)

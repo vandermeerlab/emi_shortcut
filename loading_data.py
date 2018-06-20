@@ -75,7 +75,8 @@ def unzip_nvt_file(datapath, filename, info):
     file.close()
 
 
-def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2., output_filepath=None):
+def load_shortcut_position(info, filename, events, with_interpolation,
+                           dist_thresh=20., std_thresh=2., output_filepath=None):
     """Loads and corrects shortcut position.
 
     Parameters
@@ -201,28 +202,29 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
     yy = np.array(y)
     ttimes = np.array(times)
 
-    maze_phases = ["phase1", "phase2", "phase3"]
-    for task_time in info.task_times.keys():
-        # Interpolate positions to replace nans during maze phases
-        if task_time in maze_phases:
-            trial_epochs = get_trials(events, info.task_times[task_time])
-            for start, stop in zip(trial_epochs.starts, trial_epochs.stops):
-                idx = (times >= start) & (times < stop)
+    if with_interpolation:
+        maze_phases = ["phase1", "phase2", "phase3"]
+        for task_time in info.task_times.keys():
+            # Interpolate positions to replace nans during maze phases
+            if task_time in maze_phases:
+                trial_epochs = get_trials(events, info.task_times[task_time])
+                for start, stop in zip(trial_epochs.starts, trial_epochs.stops):
+                    idx = (times >= start) & (times < stop)
 
-                this_x = x[idx]
-                this_y = y[idx]
-                this_times = times[idx]
+                    this_x = x[idx]
+                    this_y = y[idx]
+                    this_times = times[idx]
 
-                # Finding nan idx
-                x_nan_idx = np.isnan(this_x)
-                y_nan_idx = np.isnan(this_y)
-                nan_idx = x_nan_idx | y_nan_idx
+                    # Finding nan idx
+                    x_nan_idx = np.isnan(this_x)
+                    y_nan_idx = np.isnan(this_y)
+                    nan_idx = x_nan_idx | y_nan_idx
 
-                interpolate(this_times, this_x, nan_idx)
-                interpolate(this_times, this_y, nan_idx)
+                    interpolate(this_times, this_x, nan_idx)
+                    interpolate(this_times, this_y, nan_idx)
 
-                xx[idx] = this_x
-                yy[idx] = this_y
+                    xx[idx] = this_x
+                    yy[idx] = this_y
 
     # Finding nan idx
     x_nan_idx = np.isnan(xx)
@@ -241,7 +243,7 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
     position = nept.Position(np.hstack(np.array([xx, yy])[..., np.newaxis]), ttimes)
 
     if output_filepath is not None:
-        plot_correcting_position(info, position, targets, events, output_filepath)
+        plot_correcting_position(info, position, targets, events, output_filepath, with_interpolation)
 
     return position
 
@@ -254,8 +256,10 @@ def load_data(info, output_path=None):
 
     position_path = os.path.join(dataloc, 'data-working', info.rat_id, info.session+'_recording')
     unzip_nvt_file(position_path, info.session+'-VT1', info)
-    position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events,
-                                      output_filepath=output_path)
+    for with_interpolation in [True, False]:
+        position = load_shortcut_position(info, os.path.join(dataloc, info.position_filename), events,
+                                          with_interpolation=with_interpolation,
+                                          output_filepath=output_path)
     os.remove(os.path.join(position_path, info.session+'-VT1.nvt'))
 
     spikes = nept.load_spikes(os.path.join(dataloc, info.spikes_filepath))
@@ -350,7 +354,7 @@ def plot_trials(info, position, events, savepath):
             stop = trial_epochs[trial_idx].stop
 
             trial = position.time_slice(start, stop)
-            plt.plot(trial.x, trial.y, "k.")
+            plt.plot(trial.time, trial.y, "k.")
             title = info.session_id + " " + phase + " trial" + str(trial_idx)
             plt.title(title)
             if savepath is not None:
@@ -361,7 +365,7 @@ def plot_trials(info, position, events, savepath):
                 plt.close()
 
 
-def plot_correcting_position(info, position, targets, events, savepath=None):
+def plot_correcting_position(info, position, targets, events, savepath=None, with_interpolation=True):
     fig = plt.figure(figsize=(8, 8))
 
     fig.suptitle(info.session_id, y=1.)
@@ -392,7 +396,11 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
     plt.tight_layout()
 
     if savepath:
-        plt.savefig(os.path.join(savepath, info.session_id+"-correcting_position.png"))
+        if with_interpolation:
+            filename = info.session_id+"-interpolated-correcting_position.png"
+        else:
+            filename = info.session_id+"-correcting_position.png"
+        plt.savefig(os.path.join(savepath, filename))
         plt.close()
     else:
         plt.show()
@@ -403,11 +411,7 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
-    infos = spike_sorted_infos
-
-    # import info.r063d5 as r063d5
-    # import info.r063d6 as r063d6
-    # infos = [r063d5, r063d6]
+    infos = r068_infos
 
     for info in infos:
         print(info.session_id)

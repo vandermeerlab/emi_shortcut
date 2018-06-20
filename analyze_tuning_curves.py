@@ -206,8 +206,8 @@ def get_outputs_all(infos):
     return outputs
 
 
-def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=4., min_n_spikes=100,
-                      phase_id=None, trial_times=None, trial_number=None, cache=True):
+def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=4., t_smooth=0.5,
+                      min_n_spikes=100, phase_id=None, trial_times=None, trial_number=None, cache=True):
     """
 
     Parameters
@@ -273,7 +273,7 @@ def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, spee
         filename = info.session_id + '_neurons' + str(trial_number) + '.pkl'
 
     # limit position to only times when the subject is moving faster than a certain threshold
-    run_epoch = nept.run_threshold(sliced_position, thresh=speed_limit)
+    run_epoch = nept.run_threshold(sliced_position, thresh=speed_limit, t_smooth=t_smooth)
     run_position = sliced_position[run_epoch]
 
     track_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
