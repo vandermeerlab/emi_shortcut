@@ -206,7 +206,7 @@ def get_outputs_all(infos):
     return outputs
 
 
-def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=4., t_smooth=0.5,
+def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=0.167, t_smooth=0.5,
                       min_n_spikes=100, phase_id=None, trial_times=None, trial_number=None, cache=True):
     """
 
@@ -291,6 +291,8 @@ def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, spee
 
     tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, xedges, yedges,
                                          occupied_thresh=0.5, gaussian_std=0.3)
+
+    tuning_curves[np.isnan(tuning_curves)] = 0.
 
     neurons = nept.Neurons(np.array(filtered_spikes), tuning_curves)
 
