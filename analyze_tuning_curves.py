@@ -206,6 +206,34 @@ def get_outputs_all(infos):
     return outputs
 
 
+def get_only_tuning_curves(info, position, spikes, xedges, yedges, phase):
+    sliced_position = position.time_slice(info.task_times[phase].start, info.task_times[phase].stop)
+    sliced_spikes = [spiketrain.time_slice(info.task_times[phase].start, info.task_times[phase].stop) for spiketrain in
+                     spikes]
+
+    # Limit position and spikes to only running times
+    run_epoch = nept.run_threshold(sliced_position, thresh=0.167, t_smooth=0.5)
+    position = sliced_position[run_epoch]
+    spikes = np.asarray(
+        [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes])
+
+    # Remove neurons with too few or too many spikes
+    len_epochs = np.sum(run_epoch.durations)
+    min_n_spikes = 0.4 * len_epochs
+    max_n_spikes = 5 * len_epochs
+
+    keep_idx = np.zeros(len(spikes), dtype=bool)
+    for i, spiketrain in enumerate(spikes):
+        if len(spiketrain.time) >= min_n_spikes and len(spiketrain.time) <= max_n_spikes:
+            keep_idx[i] = True
+    spikes = spikes[keep_idx]
+
+    tuning_curves = nept.tuning_curve_2d(position, spikes, xedges, yedges, occupied_thresh=0.5, gaussian_std=0.3)
+    tuning_curves[np.isnan(tuning_curves)] = 0.
+
+    return tuning_curves
+
+
 def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=0.167, t_smooth=0.5,
                       min_n_spikes=100, phase_id=None, trial_times=None, trial_number=None, cache=True):
     """

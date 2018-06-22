@@ -16,50 +16,35 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, "plots", "tc_shift")
 
 
-def get_tuning_curves(position, spikes, xedges, yedges, phase):
+def get_tuning_curves(info, position, spikes, xedges, yedges, phase):
     sliced_position = position.time_slice(info.task_times[phase].start, info.task_times[phase].stop)
     sliced_spikes = [spiketrain.time_slice(info.task_times[phase].start, info.task_times[phase].stop) for spiketrain in
                      spikes]
 
     # Limit position and spikes to only running times
     run_epoch = nept.run_threshold(sliced_position, thresh=0.167, t_smooth=0.5)
-    run_position = sliced_position[run_epoch]
-    track_spikes = np.asarray(
+    position = sliced_position[run_epoch]
+    spikes = np.asarray(
         [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes])
 
-    # Remove neurons with too few or too many spikes
-    len_epochs = np.sum(run_epoch.durations)
-    min_n_spikes = 0.4 * len_epochs
-    max_n_spikes = 5 * len_epochs
-
-    keep_idx = np.zeros(len(track_spikes), dtype=bool)
-    for i, spiketrain in enumerate(track_spikes):
-        if len(spiketrain.time) >= min_n_spikes and len(spiketrain.time) <= max_n_spikes:
-            keep_idx[i] = True
-    tuning_spikes = track_spikes[keep_idx]
-
-    tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, xedges, yedges, occupied_thresh=0.5,
-                                         gaussian_std=0.3)
+    tuning_curves = nept.tuning_curve_2d(position, spikes, xedges, yedges, occupied_thresh=0.5, gaussian_std=0.3)
     tuning_curves[np.isnan(tuning_curves)] = 0.
 
     return tuning_curves
 
 
-def get_pearsons_correlation(phase1, phase2, xedges, yedges, position, spikes):
-    neurons1 = get_tuning_curves(position, spikes, xedges, yedges, phase=phase1)
-    neurons2 = get_tuning_curves(position, spikes, xedges, yedges, phase=phase2)
+def get_pearsons_correlation(info, phase1, phase2, xedges, yedges, position, spikes):
+    tuning_curves1 = get_tuning_curves(info, position, spikes, xedges, yedges, phase=phase1)
+    tuning_curves2 = get_tuning_curves(info, position, spikes, xedges, yedges, phase=phase2)
 
-    shape = neurons1.tuning_shape
-    n_neurons = neurons1.n_neurons
-
-    correlation = np.zeros(shape)
-    for ii in range(shape[0]):
-        for jj in range(shape[1]):
+    correlation = np.zeros((tuning_curves1.shape[1], tuning_curves1.shape[2]))
+    for ii in range(tuning_curves1.shape[1]):
+        for jj in range(tuning_curves1.shape[2]):
             neurons1_pixel = []
             neurons2_pixel = []
-            for neuron in range(n_neurons):
-                neurons1_pixel.append(neurons1.tuning_curves[neuron][ii][jj])
-                neurons2_pixel.append(neurons2.tuning_curves[neuron][ii][jj])
+            for neuron in range(len(tuning_curves1)):
+                neurons1_pixel.append(tuning_curves1[neuron][ii][jj])
+                neurons2_pixel.append(tuning_curves2[neuron][ii][jj])
 
                 correlation[ii][jj] = np.corrcoef(neurons1_pixel, neurons2_pixel)[1, 0]
 
@@ -136,10 +121,10 @@ if __name__ == "__main__":
         novel_neighbours = find_neighbours(tc_shape, novel_points, neighbour_size=2)
         stable_neighbours = find_neighbours(tc_shape, stable_points, neighbour_size=2)
 
-        corr12 = get_pearsons_correlation("phase1", "phase2", xedges, yedges, position, spikes)
-        corr13 = get_pearsons_correlation("phase1", "phase3", xedges, yedges, position, spikes)
-        corr23 = get_pearsons_correlation("phase2", "phase3", xedges, yedges, position, spikes)
-        corr33 = get_pearsons_correlation("phase3", "phase3", xedges, yedges, position, spikes)
+        corr12 = get_pearsons_correlation(info, "phase1", "phase2", xedges, yedges, position, spikes)
+        corr13 = get_pearsons_correlation(info, "phase1", "phase3", xedges, yedges, position, spikes)
+        corr23 = get_pearsons_correlation(info, "phase2", "phase3", xedges, yedges, position, spikes)
+        corr33 = get_pearsons_correlation(info, "phase3", "phase3", xedges, yedges, position, spikes)
 
         stable12, novel12 = compare_correlations(corr12, stable_neighbours, novel_neighbours)
         stable13, novel13 = compare_correlations(corr13, stable_neighbours, novel_neighbours)

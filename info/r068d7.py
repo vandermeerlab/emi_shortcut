@@ -53,12 +53,12 @@ scale_targets = 1.65
 fs = 2000
 
 path_pts = dict()
-path_pts['feeder1'] = [159.4, 143.]
+path_pts['feeder1'] = [189., 21.8]
 path_pts['turn1'] = [63.7, 26.4]
 path_pts['pt1'] = [59.5, 66.3]
 path_pts['turn2'] = [63., 109.5]
 path_pts['turn3'] = [157.3, 112.2]
-path_pts['feeder2'] = [189., 21.8]
+path_pts['feeder2'] = [159.4, 143.]
 path_pts['shortcut1'] = [90.8, 23.9]
 path_pts['spt1'] = [100.6, 67.6]
 path_pts['shortcut2'] = [88.7, 112.5]

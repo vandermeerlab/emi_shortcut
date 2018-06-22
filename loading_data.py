@@ -162,6 +162,16 @@ def load_shortcut_position(info, filename, events, with_interpolation,
     x[remove_idx] = np.nan
     y[remove_idx] = np.nan
 
+    # Remove samples close to error location (impossible locations)
+    if 'error' in info.path_pts.keys():
+        for error_pt in info.path_pts['error']:
+            x_idx = np.abs(x - error_pt[0]) <= 20.
+            y_idx = np.abs(y - error_pt[1]) <= 20.
+            remove_idx = x_idx & y_idx
+
+            x[remove_idx] = np.nan
+            y[remove_idx] = np.nan
+
     # Removing the problem samples that are furthest from the previous location
     def remove_based_on_std(original_targets, std_thresh=std_thresh):
         targets = np.array(original_targets)
@@ -411,7 +421,9 @@ def plot_correcting_position(info, position, targets, events, savepath=None, wit
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
-    infos = r068_infos
+    import info.r066d7 as r066d7
+    infos = [r066d7]
+    # infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)

@@ -48,7 +48,7 @@ session_length = 0
 for phase in task_times.keys():
     session_length += task_times[phase].durations
 
-scale_targets = (3.7, 3.5)
+scale_targets = 1.75
 
 fs = 2000
 

@@ -70,6 +70,7 @@ path_pts['npt2'] = [137.9, 56.9]
 path_pts['novel2'] = [134.4, 86.3]
 path_pts['pedestal'] = [194.3, 85.6]
 path_pts['stable1'] = [139.4, 122.6]
+path_pts['error'] = [[35., 10.], [135., -12.]]
 
 u_trajectory = [path_pts[i] for i in ['feeder1', 'novel1', 'shortcut1', 'turn1', 'pt1', 'turn2',
                                       'shortcut2', 'stable1', 'turn3', 'feeder2']]
