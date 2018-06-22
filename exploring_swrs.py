@@ -64,8 +64,8 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None
         stops = swrs.stops[:n_plots]
 
     for i, (start, stop) in enumerate(zip(starts, stops)):
-        start_time = start - buffer
-        stop_time = stop + buffer
+        start = start - buffer
+        stop = stop + buffer
 
         rows = len(spikes)
         add_rows = int(rows / 8)
@@ -77,20 +77,21 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None
         fig = plt.figure(figsize=(8, 8))
         ax1 = plt.subplot2grid((rows + add_rows, 2), (0, 0), rowspan=rows)
 
+        sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
+
         # Plotting the spike raster
-        for idx, neuron_spikes in enumerate(spikes):
+        for idx, neuron_spikes in enumerate(sliced_spikes):
             ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time)) + (idx * spike_loc), '|',
                      color='k', ms=ms, mew=mew)
 
         ax1.set_xticks([])
-        ax1.set_xlim([start_time, stop_time])
         ax1.set_ylim([0.5, len(spikes) * spike_loc + 0.5])
 
         # Plotting the LFP
         ax2 = plt.subplot2grid((rows + add_rows, 2), (rows, 0), rowspan=add_rows, sharex=ax1)
 
-        start_idx = nept.find_nearest_idx(lfp.time, start_time)
-        stop_idx = nept.find_nearest_idx(lfp.time, stop_time)
+        start_idx = nept.find_nearest_idx(lfp.time, start)
+        stop_idx = nept.find_nearest_idx(lfp.time, stop)
         ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], '#3288bd', lw=0.3)
 
         start_idx = nept.find_nearest_idx(lfp.time, start)
@@ -98,7 +99,6 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None
         ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], 'r', lw=0.4)
 
         ax2.set_xticks([])
-        ax2.set_xlim([start_time, stop_time])
         ax2.set_yticks([])
 
         scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
@@ -248,12 +248,24 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
 
 if __name__ == "__main__":
     from run import spike_sorted_infos
-    # infos = spike_sorted_infos
+    infos = spike_sorted_infos
 
     import info.r063d6 as r063d6
-    infos = [r063d6]
+    # infos = [r063d6]
+
+    task_times = ["prerecord", "phase1", "pauseA", "phase2", "pauseB", "phase3", "postrecord"]
+    all_swrs = np.zeros(len(task_times))
+    all_durations = np.zeros(len(task_times))
 
     for info in infos:
-        n_swrs, duration = plot_swr_stats(info, resting_only=True,
+        n_swrs, durations = plot_swr_stats(info, resting_only=True,
                                           plot_example_swr_rasters=True,
                                           plot_swr_spike_counts=True)
+
+        all_swrs += n_swrs
+        all_durations += durations
+
+    title = 'Average SWRs rate for all sessions'
+    ylabel = "# swr / minute"
+    savepath = os.path.join(output_filepath, "summary", title)
+    plot_swrs_stats(all_swrs, all_durations, task_times, title, ylabel, savepath=savepath)
