@@ -172,6 +172,18 @@ def load_shortcut_position(info, filename, events, with_interpolation,
             x[remove_idx] = np.nan
             y[remove_idx] = np.nan
 
+    # Remove problem samples along u-trajectory for R066d7
+    if info.session_id == "R066d7":
+        starts_idx = nept.find_nearest_indices(times, info.position_problem_trials.starts)
+        stops_idx = nept.find_nearest_indices(times, info.position_problem_trials.stops)
+        for start, stop in zip(starts_idx, stops_idx):
+            x_idx = x[start:stop] <= 100.
+            y_idx = y[start:stop] <= 60.
+            remove_idx = x_idx & y_idx
+
+            x[start:stop][remove_idx] = np.nan
+            y[start:stop][remove_idx] = np.nan
+
     # Removing the problem samples that are furthest from the previous location
     def remove_based_on_std(original_targets, std_thresh=std_thresh):
         targets = np.array(original_targets)
