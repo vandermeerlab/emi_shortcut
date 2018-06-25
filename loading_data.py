@@ -434,12 +434,12 @@ def plot_correcting_position(info, position, targets, events, savepath=None, wit
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
     import info.r066d7 as r066d7
-    infos = [r066d7]
-    # infos = spike_sorted_infos
+    # infos = [r066d7]
+    infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)
-        save_data(info)
+        # save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
         thisdir = os.getcwd()
