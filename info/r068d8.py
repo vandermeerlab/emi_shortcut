@@ -68,7 +68,10 @@ path_pts['novel1'] = [62.2, 107.3]
 path_pts['npt1'] = [58.7, 134.5]
 path_pts['novel2'] = [34., 138.5]
 path_pts['pedestal'] = [102.5, 55.8]
-path_pts['stable1'] = [60., 64.]
+path_pts['stable1'] = [60., 60.]
+path_pts['error'] = [[220., 40.]]
+
+problem_positions = nept.Epoch(np.array([[924.7, 924.9]]))
 
 u_trajectory = [path_pts[i] for i in ['feeder1', 'shortcut1', 'pt1', 'turn1', 'stable1', 'turn2',
                                       'pt2', 'shortcut2', 'turn3', 'feeder2']]

@@ -41,7 +41,7 @@ task_times['phase1'] = nept.Epoch(np.array([1706.3, 2232.6]))
 task_times['pauseA'] = nept.Epoch(np.array([2265.3, 2868.4]))
 task_times['phase2'] = nept.Epoch(np.array([2894.8, 4143.0]))
 task_times['pauseB'] = nept.Epoch(np.array([4167.1, 5995.2]))
-task_times['phase3'] = nept.Epoch(np.array([6033.7, 8743.2]))
+task_times['phase3'] = nept.Epoch(np.array([6034., 8743.2]))
 task_times['postrecord'] = nept.Epoch(np.array([8780.8, 9129.5]))
 
 session_length = 0
@@ -71,6 +71,11 @@ path_pts['npt2'] = [53.5, 135.8]
 path_pts['novel2'] = [27.5, 135.4]
 path_pts['pedestal'] = [106.5, 60.1]
 path_pts['stable1'] = [117.3, 14.4]
+path_pts['error'] = [[36., 6.5]]
+
+problem_positions = nept.Epoch(np.array([[6033.6, 6034.],
+                                         [6106.9, 6107.4],
+                                         [7508.6, 7509.]]))
 
 u_trajectory = [path_pts[i] for i in ['feeder1', 'stable1', 'turn1', 'pt1', 'pt2', 'turn2', 'novel1',
                                       'pt3', 'turn3', 'feeder2']]

@@ -8,9 +8,6 @@ import nept
 from loading_data import get_data
 from run import info, spike_sorted_infos
 
-infos = [info.r068d7, info.r068d8]
-# infos = spike_sorted_infos
-
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, "plots", "tc_shift")
@@ -87,7 +84,7 @@ def plot_tc_corr(corr, stable_points, novel_points, filename=None):
     for point in novel_points:
         plt.plot(point[0], point[1], 'b.', ms=15)
     plt.colorbar()
-    plt.axis('off')
+    # plt.axis('off')
     if filename is not None:
         plt.savefig(filename)
         plt.close()
@@ -96,6 +93,10 @@ def plot_tc_corr(corr, stable_points, novel_points, filename=None):
 
 
 if __name__ == "__main__":
+    from run import spike_sorted_infos
+    # infos = [info.r068d7, info.r068d8]
+    infos = spike_sorted_infos
+
     corr_stable12 = []
     corr_stable13 = []
     corr_stable23 = []
@@ -105,7 +106,8 @@ if __name__ == "__main__":
     corr_novel23 = []
 
     for info in infos:
-        events, position, spikes, lfp, lfp_theta = get_data(info)
+        print(info.session_id)
+        events, position, spikes, lfp, _ = get_data(info)
         xedges, yedges = nept.get_xyedges(position, binsize=3)
 
         tc_shape = (len(yedges) - 1, len(xedges) - 1)

@@ -56,8 +56,8 @@ path_pts = dict()
 path_pts['feeder1'] = [202.5, 25.8]
 path_pts['pt1'] = [157.2, 24.]
 path_pts['turn1'] = [69.5, 28.2]
+path_pts['pt2'] = [63.1, 70.]
 path_pts['turn2'] = [63.9, 111.6]
-path_pts['pt2'] = [141.6, 121.5]
 path_pts['turn3'] = [170.2, 121.1]
 path_pts['feeder2'] = [169.7, 152.3]
 path_pts['shortcut1'] = [103.7, 23.6]
@@ -71,10 +71,10 @@ path_pts['npt2'] = [134.7, 55.8]
 path_pts['novel2'] = [131.6, 86.7]
 path_pts['pedestal'] = [197., 89.5]
 path_pts['pedestal1'] = [155.3, 78.5]
-path_pts['stable1'] = [63.1, 70.]
+path_pts['stable1'] = [[141.6, 121.5]]
 
-u_trajectory = [path_pts[i] for i in ['feeder1', 'novel1', 'pt1', 'shortcut1', 'turn1', 'stable1', 'turn2',
-                                      'shortcut2', 'pt2', 'turn3', 'feeder2']]
+u_trajectory = [path_pts[i] for i in ['feeder1', 'novel1', 'pt1', 'shortcut1', 'turn1', 'pt2', 'turn2',
+                                      'shortcut2', 'stable1', 'turn3', 'feeder2']]
 
 shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'shortcut2']]
 

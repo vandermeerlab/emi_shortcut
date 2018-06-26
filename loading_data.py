@@ -94,7 +94,7 @@ def load_shortcut_position(info, filename, events, with_interpolation,
 
     """
     # Load raw position from file
-    nvt_data = nept.load_nvt(filename)
+    nvt_data = nept.load_nvt(filename, remove_empty=False)
     targets = nvt_data['targets']
     times = nvt_data['time']
 
@@ -165,8 +165,8 @@ def load_shortcut_position(info, filename, events, with_interpolation,
             x[remove_idx] = np.nan
             y[remove_idx] = np.nan
 
-        starts_idx = nept.find_nearest_indices(times, info.position_problem_trials.starts)
-        stops_idx = nept.find_nearest_indices(times, info.position_problem_trials.stops)
+        starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
+        stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
         for start, stop in zip(starts_idx, stops_idx):
             x_idx = x[start:stop] <= 100.
             y_idx = y[start:stop] <= 60.
@@ -178,11 +178,29 @@ def load_shortcut_position(info, filename, events, with_interpolation,
     # Remove problem samples for individual session
     # While both LEDs are active for R067d1
     if info.session_id == "R067d1":
-        starts_idx = nept.find_nearest_indices(times, info.position_problem_trials.starts)
-        stops_idx = nept.find_nearest_indices(times, info.position_problem_trials.stops)
+        starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
+        stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
         for start, stop in zip(starts_idx, stops_idx):
-            feeder_x_location = info.path_pts['feeder1'][0]
-            feeder_y_location = info.path_pts['feeder1'][1]
+            feeder_x_location[start:stop] = info.path_pts['feeder1'][0]
+            feeder_y_location[start:stop] = info.path_pts['feeder1'][1]
+
+    # Remove problem samples for individual session
+    # At the beginning of Phase3 for R068d4
+    if info.session_id == "R068d4":
+        starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
+        stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
+        for start, stop in zip(starts_idx, stops_idx):
+            x[start:stop] = np.nan
+            y[start:stop] = np.nan
+
+    # Remove problem samples for individual session
+    # Points between pedestal locations for R068d6
+    if info.session_id == "R068d6":
+        starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
+        stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
+        for start, stop in zip(starts_idx, stops_idx):
+            x[start:stop] = np.nan
+            y[start:stop] = np.nan
 
     # Remove idx when led is on and target is close to active feeder location
     x_idx = np.abs(x - feeder_x_location[..., np.newaxis]) <= dist_thresh
@@ -441,13 +459,13 @@ def plot_correcting_position(info, position, targets, events, savepath=None, wit
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
-    import info.r066d7 as r066d7
-    # infos = [r066d7]
+    import info.r068d4 as r068d4
+    # infos = [r068d4]
     infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)
-        # save_data(info)
+        save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
         thisdir = os.getcwd()
