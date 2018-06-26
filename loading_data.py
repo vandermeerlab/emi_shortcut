@@ -154,16 +154,9 @@ def load_shortcut_position(info, filename, events, with_interpolation,
         feeder_x_location[np.logical_and(times >= start - off_delay, times < ledoff[off_idx] + off_delay)] = x_location
         feeder_y_location[np.logical_and(times >= start - off_delay, times < ledoff[off_idx] + off_delay)] = y_location
 
-    # Remove idx when led is on and target is close to active feeder location
-    x_idx = np.abs(x - feeder_x_location[..., np.newaxis]) <= dist_thresh
-    y_idx = np.abs(y - feeder_y_location[..., np.newaxis]) <= dist_thresh
-    remove_idx = x_idx & y_idx
-
-    x[remove_idx] = np.nan
-    y[remove_idx] = np.nan
-
-    # Remove samples close to error location (impossible locations)
-    if 'error' in info.path_pts.keys():
+    # Remove problem samples for individual session
+    # In impossible locations and along the u-trajectory for R066d7
+    if info.session_id == "R066d7":
         for error_pt in info.path_pts['error']:
             x_idx = np.abs(x - error_pt[0]) <= 20.
             y_idx = np.abs(y - error_pt[1]) <= 20.
@@ -172,8 +165,6 @@ def load_shortcut_position(info, filename, events, with_interpolation,
             x[remove_idx] = np.nan
             y[remove_idx] = np.nan
 
-    # Remove problem samples along u-trajectory for R066d7
-    if info.session_id == "R066d7":
         starts_idx = nept.find_nearest_indices(times, info.position_problem_trials.starts)
         stops_idx = nept.find_nearest_indices(times, info.position_problem_trials.stops)
         for start, stop in zip(starts_idx, stops_idx):
@@ -183,6 +174,23 @@ def load_shortcut_position(info, filename, events, with_interpolation,
 
             x[start:stop][remove_idx] = np.nan
             y[start:stop][remove_idx] = np.nan
+
+    # Remove problem samples for individual session
+    # While both LEDs are active for R067d1
+    if info.session_id == "R067d1":
+        starts_idx = nept.find_nearest_indices(times, info.position_problem_trials.starts)
+        stops_idx = nept.find_nearest_indices(times, info.position_problem_trials.stops)
+        for start, stop in zip(starts_idx, stops_idx):
+            feeder_x_location = info.path_pts['feeder1'][0]
+            feeder_y_location = info.path_pts['feeder1'][1]
+
+    # Remove idx when led is on and target is close to active feeder location
+    x_idx = np.abs(x - feeder_x_location[..., np.newaxis]) <= dist_thresh
+    y_idx = np.abs(y - feeder_y_location[..., np.newaxis]) <= dist_thresh
+    remove_idx = x_idx & y_idx
+
+    x[remove_idx] = np.nan
+    y[remove_idx] = np.nan
 
     # Removing the problem samples that are furthest from the previous location
     def remove_based_on_std(original_targets, std_thresh=std_thresh):
