@@ -229,7 +229,6 @@ def get_only_tuning_curves(info, position, spikes, xedges, yedges, phase):
     spikes = spikes[keep_idx]
 
     tuning_curves = nept.tuning_curve_2d(position, spikes, xedges, yedges, occupied_thresh=0.5, gaussian_std=0.3)
-    tuning_curves[np.isnan(tuning_curves)] = 0.
 
     return spikes, tuning_curves
 
