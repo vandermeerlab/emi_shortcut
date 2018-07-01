@@ -198,7 +198,7 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
     print("N swrs for this session with at least 4 active neurons:", str(swrs.n_epochs))
 
     # Find rest epochs for entire session
-    rest_epochs = nept.rest_threshold(position, thresh=4., t_smooth=0.05)
+    rest_epochs = nept.rest_threshold(position, thresh=4., t_smooth=0.5)
 
     task_times = ["prerecord", "phase1", "pauseA", "phase2", "pauseB", "phase3", "postrecord"]
 
@@ -248,10 +248,10 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
 
 if __name__ == "__main__":
     from run import spike_sorted_infos
-    infos = spike_sorted_infos
+    # infos = spike_sorted_infos
 
     import info.r063d6 as r063d6
-    # infos = [r063d6]
+    infos = [r063d6]
 
     task_times = ["prerecord", "phase1", "pauseA", "phase2", "pauseB", "phase3", "postrecord"]
     all_swrs = np.zeros(len(task_times))
