@@ -64,9 +64,6 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None
         stops = swrs.stops[:n_plots]
 
     for i, (start, stop) in enumerate(zip(starts, stops)):
-        start = start - buffer
-        stop = stop + buffer
-
         rows = len(spikes)
         add_rows = int(rows / 8)
 
@@ -77,7 +74,7 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None
         fig = plt.figure(figsize=(8, 8))
         ax1 = plt.subplot2grid((rows + add_rows, 2), (0, 0), rowspan=rows)
 
-        sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
+        sliced_spikes = [spiketrain.time_slice(start-buffer, stop+buffer) for spiketrain in spikes]
 
         # Plotting the spike raster
         for idx, neuron_spikes in enumerate(sliced_spikes):
@@ -90,8 +87,8 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None
         # Plotting the LFP
         ax2 = plt.subplot2grid((rows + add_rows, 2), (rows, 0), rowspan=add_rows, sharex=ax1)
 
-        start_idx = nept.find_nearest_idx(lfp.time, start)
-        stop_idx = nept.find_nearest_idx(lfp.time, stop)
+        start_idx = nept.find_nearest_idx(lfp.time, start - buffer)
+        stop_idx = nept.find_nearest_idx(lfp.time, stop + buffer)
         ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], '#3288bd', lw=0.3)
 
         start_idx = nept.find_nearest_idx(lfp.time, start)
@@ -108,8 +105,8 @@ def plot_swr(swrs, lfp, position, spikes, buffer=0.15, n_plots=20, savepath=None
         ax3 = plt.subplot2grid((rows + add_rows, 2), (0, 1), rowspan=int(0.5 * rows))
         ax3.plot(position.x, position.y, '.', color="#bdbdbd", ms=2)
 
-        start_idx = nept.find_nearest_idx(position.time, start)
-        stop_idx = nept.find_nearest_idx(position.time, stop)
+        start_idx = nept.find_nearest_idx(position.time, start-buffer)
+        stop_idx = nept.find_nearest_idx(position.time, stop+buffer)
 
         cmap = plt.get_cmap('Oranges')
         colours = cmap(np.linspace(0.25, 0.75, stop_idx - start_idx))
