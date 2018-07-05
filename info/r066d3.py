@@ -36,13 +36,13 @@ pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
-task_times['prerecord'] = nept.Epoch(np.array([20258.0, 20593.0]))
-task_times['phase1'] = nept.Epoch(np.array([20688.0, 21165.0]))
-task_times['pauseA'] = nept.Epoch(np.array([21218.0, 21828.0]))
-task_times['phase2'] = nept.Epoch(np.array([21879.0, 23081.0]))
-task_times['pauseB'] = nept.Epoch(np.array([23136.0, 24962.0]))
-task_times['phase3'] = nept.Epoch(np.array([25009.0, 27649.0]))
-task_times['postrecord'] = nept.Epoch(np.array([27698.0, 28011.0]))
+task_times['prerecord'] = nept.Epoch(np.array([20258.1, 20593.0]))
+task_times['phase1'] = nept.Epoch(np.array([20688.5, 21165.3]))
+task_times['pauseA'] = nept.Epoch(np.array([21217.7, 21827.7]))
+task_times['phase2'] = nept.Epoch(np.array([21879.3, 23081.1]))
+task_times['pauseB'] = nept.Epoch(np.array([23136.5, 24961.2]))
+task_times['phase3'] = nept.Epoch(np.array([25009.9, 27648.9]))
+task_times['postrecord'] = nept.Epoch(np.array([27698.4, 28011.0]))
 
 session_length = 0
 for phase in task_times.keys():
