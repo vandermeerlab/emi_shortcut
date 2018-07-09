@@ -574,7 +574,6 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersi
         plt.show()
 
 
-
 def plot_decoded_session_errors(decode_errors, shuffled_errors, n_sessions, fliersize=1, savepath=None, transparent=False):
     """Plots boxplot distance between decoded and actual position for decoded and shuffled_id
 

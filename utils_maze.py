@@ -387,11 +387,12 @@ def convert_to_cm(path_pts, xy_conversion):
 
 
 def align_to_event(analogsignal, event, t_before, t_after):
-    sliced = analogsignal.time_slice(event - t_before, event + t_after)
+    idx = nept.find_nearest_idx(analogsignal.time, event)
+    event_of_interest = analogsignal.time[idx]
 
-    idx = nept.find_nearest_idx(sliced.time, event)
+    sliced = analogsignal.time_slice(event_of_interest - t_before, event_of_interest + t_after)
 
-    time = sliced.time - sliced.time[idx]
+    time = sliced.time - event_of_interest
     data = np.squeeze(sliced.data)
 
     return nept.AnalogSignal(data, time)

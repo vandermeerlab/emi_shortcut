@@ -201,6 +201,17 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
             x[start:stop] = np.nan
             y[start:stop] = np.nan
 
+    # Remove problem samples for individual session
+    # In impossible locations for R068d8
+    if info.session_id == "R068d8":
+        for error_pt in info.path_pts['error']:
+            x_idx = np.abs(x - error_pt[0]) <= 20.
+            y_idx = np.abs(y - error_pt[1]) <= 20.
+            remove_idx = x_idx & y_idx
+
+            x[remove_idx] = np.nan
+            y[remove_idx] = np.nan
+
     # Remove idx when led is on and target is close to active feeder location
     x_idx = np.abs(x - feeder_x_location[..., np.newaxis]) <= dist_thresh
     y_idx = np.abs(y - feeder_y_location[..., np.newaxis]) <= dist_thresh
@@ -451,8 +462,8 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
     import info.r068d8 as r068d8
-    # infos = [r068d8]
-    infos = spike_sorted_infos
+    infos = [r068d8]
+    # infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)

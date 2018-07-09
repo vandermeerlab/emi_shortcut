@@ -33,14 +33,15 @@ def get_pearsons_correlation(info, phase1, phase2, xedges, yedges, position, spi
     tuning_curves1 = get_tuning_curves(info, position, spikes, xedges, yedges, phase=phase1)
     tuning_curves2 = get_tuning_curves(info, position, spikes, xedges, yedges, phase=phase2)
 
-    correlation = np.zeros((tuning_curves1.shape[1], tuning_curves1.shape[2]))
+    correlation = np.empty((tuning_curves1.shape[1], tuning_curves1.shape[2])) * np.nan
     for ii in range(tuning_curves1.shape[1]):
         for jj in range(tuning_curves1.shape[2]):
             neurons1_pixel = []
             neurons2_pixel = []
             for neuron in range(len(tuning_curves1)):
-                neurons1_pixel.append(tuning_curves1[neuron][ii][jj])
-                neurons2_pixel.append(tuning_curves2[neuron][ii][jj])
+                if not (np.isnan(tuning_curves1[neuron][ii][jj]) | np.isnan(tuning_curves2[neuron][ii][jj])):
+                    neurons1_pixel.append(tuning_curves1[neuron][ii][jj])
+                    neurons2_pixel.append(tuning_curves2[neuron][ii][jj])
 
                 correlation[ii][jj] = np.corrcoef(neurons1_pixel, neurons2_pixel)[1, 0]
 
@@ -70,14 +71,14 @@ def compare_correlations(correlations, stable_neighbours, novel_neighbours):
     stable_corr = [correlations[pt[1]][pt[0]] for pt in stable_neighbours]
     novel_corr = [correlations[pt[1]][pt[0]] for pt in novel_neighbours]
 
-    stable = np.nansum(stable_corr) / np.count_nonzero(~np.isnan(stable_corr))
-    novel = np.nansum(novel_corr) / np.count_nonzero(~np.isnan(novel_corr))
+    stable = np.nanmean(stable_corr)
+    novel = np.nanmean(novel_corr)
 
     return stable, novel
 
 
 def plot_tc_corr(corr, stable_points, novel_points, filename=None):
-    plt.imshow(corr, vmin=0.0, vmax=1.0, cmap="pink_r")
+    plt.imshow(corr, vmax=1.0, cmap="pink_r")
     for point in stable_points:
         plt.plot(point[0], point[1], 'r.', ms=15)
     for point in novel_points:
