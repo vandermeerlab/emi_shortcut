@@ -19,7 +19,7 @@ def get_tuning_curves(info, position, spikes, xedges, yedges, phase):
                      spikes]
 
     # Limit position and spikes to only running times
-    run_epoch = nept.run_threshold(sliced_position, thresh=4., t_smooth=0.5)
+    run_epoch = nept.run_threshold(sliced_position, thresh=15., t_smooth=1.)
     position = sliced_position[run_epoch]
     spikes = np.asarray(
         [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes])
