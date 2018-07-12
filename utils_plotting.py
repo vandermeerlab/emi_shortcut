@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import SymLogNorm
@@ -7,6 +8,7 @@ import seaborn as sns
 import pandas as pd
 
 import nept
+from utils_maze import get_trials
 
 sns.set_style('white')
 sns.set_style('ticks')
@@ -574,6 +576,7 @@ def plot_decoded_errors(decode_errors, shuffled_errors, experiment_time, fliersi
         plt.show()
 
 
+
 def plot_decoded_session_errors(decode_errors, shuffled_errors, n_sessions, fliersize=1, savepath=None, transparent=False):
     """Plots boxplot distance between decoded and actual position for decoded and shuffled_id
 
@@ -835,3 +838,63 @@ def plot_cooccur_weighted_pauses(cooccur_1, epochs_1, cooccur_2, epochs_2, label
         plt.close()
     else:
         plt.show()
+
+
+def plot_trials(info, position, events, savepath):
+    for phase in ["phase1", "phase2", "phase3"]:
+        trial_epochs = get_trials(events, info.task_times[phase])
+        for trial_idx in range(trial_epochs.n_epochs):
+            start = trial_epochs[trial_idx].start
+            stop = trial_epochs[trial_idx].stop
+
+            trial = position.time_slice(start, stop)
+            plt.plot(trial.time, trial.y, "k.")
+            title = info.session_id + " " + phase + " trial" + str(trial_idx)
+            plt.title(title)
+            if savepath is not None:
+                plt.savefig(os.path.join(savepath, "trials", title))
+                plt.close()
+            else:
+                plt.show()
+                plt.close()
+
+
+def plot_correcting_position(info, position, targets, events, savepath=None):
+    fig = plt.figure(figsize=(8, 8))
+
+    fig.suptitle(info.session_id, y=1.)
+
+    ax1 = plt.subplot(321)
+    ax1 = plt.plot(position.x, position.y, "k.", ms=5)
+
+    trial_epochs = get_trials(events, info.task_times["phase3"])
+    trial_idx = 3
+    start = trial_epochs[trial_idx].start
+    stop = trial_epochs[trial_idx].stop
+    trial = position.time_slice(start, stop)
+    ax2 = plt.subplot(322)
+    ax2 = plt.plot(trial.x, trial.y, "g.", ms=5)
+
+    ax3 = plt.subplot(312)
+    ax3 = plt.plot(position.time, position.y, "b.", ms=5)
+
+    start_idx = nept.find_nearest_idx(position.time, info.task_times["phase3"].start)
+    n_idx = 10000
+    stop_idx = start_idx + n_idx
+    ax4 = plt.subplot(313)
+    ax4 = plt.plot(position.time[start_idx:stop_idx], position.y[start_idx:stop_idx], "r.", ms=5)
+
+    plt.text(position.time[stop_idx]-20, -50, str(round(position.n_samples / len(targets) * 100, 2))+"%")
+
+    # Cleaning up the plot
+    plt.tight_layout()
+
+    if savepath:
+        filename = info.session_id+"-correcting_position.png"
+        plt.savefig(os.path.join(savepath, filename))
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
+
+    plot_trials(info, position, events, savepath)

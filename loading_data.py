@@ -6,9 +6,7 @@ import zipfile
 import warnings
 import nept
 
-import matplotlib.pyplot as plt
-
-from utils_maze import get_trials
+from utils_plotting import plot_correcting_position
 
 warnings.filterwarnings("ignore")
 
@@ -260,7 +258,7 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
     yy = np.array(y)
     ttimes = np.array(times)
 
-   # Interpolate positions to replace nans during experiment phases
+    # Interpolate positions to replace nans during experiment phases
     phases = ["prerecord", "phase1", "pauseA", "phase2", "pauseB", "phase3", "postrecord"]
     for phase in phases:
         for start, stop in zip(info.task_times[phase].starts, info.task_times[phase].stops):
@@ -399,66 +397,6 @@ def get_data(info, output_path=None):
     return events, position, spikes, lfp_swr, lfp_theta
 
 
-def plot_trials(info, position, events, savepath):
-    for phase in ["phase1", "phase2", "phase3"]:
-        trial_epochs = get_trials(events, info.task_times[phase])
-        for trial_idx in range(trial_epochs.n_epochs):
-            start = trial_epochs[trial_idx].start
-            stop = trial_epochs[trial_idx].stop
-
-            trial = position.time_slice(start, stop)
-            plt.plot(trial.time, trial.y, "k.")
-            title = info.session_id + " " + phase + " trial" + str(trial_idx)
-            plt.title(title)
-            if savepath is not None:
-                plt.savefig(os.path.join(savepath, "trials", title))
-                plt.close()
-            else:
-                plt.show()
-                plt.close()
-
-
-def plot_correcting_position(info, position, targets, events, savepath=None):
-    fig = plt.figure(figsize=(8, 8))
-
-    fig.suptitle(info.session_id, y=1.)
-
-    ax1 = plt.subplot(321)
-    ax1 = plt.plot(position.x, position.y, "k.", ms=5)
-
-    trial_epochs = get_trials(events, info.task_times["phase3"])
-    trial_idx = 3
-    start = trial_epochs[trial_idx].start
-    stop = trial_epochs[trial_idx].stop
-    trial = position.time_slice(start, stop)
-    ax2 = plt.subplot(322)
-    ax2 = plt.plot(trial.x, trial.y, "g.", ms=5)
-
-    ax3 = plt.subplot(312)
-    ax3 = plt.plot(position.time, position.y, "b.", ms=5)
-
-    start_idx = nept.find_nearest_idx(position.time, info.task_times["phase3"].start)
-    n_idx = 10000
-    stop_idx = start_idx + n_idx
-    ax4 = plt.subplot(313)
-    ax4 = plt.plot(position.time[start_idx:stop_idx], position.y[start_idx:stop_idx], "r.", ms=5)
-
-    plt.text(position.time[stop_idx]-20, -50, str(round(position.n_samples / len(targets) * 100, 2))+"%")
-
-    # Cleaning up the plot
-    plt.tight_layout()
-
-    if savepath:
-        filename = info.session_id+"-correcting_position.png"
-        plt.savefig(os.path.join(savepath, filename))
-        plt.close()
-    else:
-        plt.show()
-        plt.close()
-
-    plot_trials(info, position, events, savepath)
-
-
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
     # import info.r068d8 as r068d8
@@ -467,31 +405,10 @@ if __name__ == "__main__":
 
     for info in infos:
         print(info.session_id)
-        save_data(info)
+        # save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
         thisdir = os.getcwd()
         output_path = os.path.join(thisdir, "plots", "correcting_position")
 
         events, position, _, _, _ = load_data(info, output_path)
-
-
-
-        # thisdir = os.getcwd()
-        # dataloc = os.path.join(thisdir, 'cache', 'data')
-        # pickle_filepath = os.path.join(thisdir, "cache", "pickled")
-        # output_filepath = os.path.join(thisdir, "plots", "correcting_position")
-        #
-        # # plot to check
-        # fig, ax = plt.subplots()
-        # plt.plot(position.time, position.y, "k.", ms=3)
-        # plt.xlabel("time")
-        # plt.ylabel("y")
-        # ax.spines['right'].set_visible(False)
-        # ax.spines['top'].set_visible(False)
-        # ax.yaxis.set_ticks_position('left')
-        # ax.xaxis.set_ticks_position('bottom')
-        # plt.title("n_samples:" + str(position.n_samples))
-        # plt.tight_layout()
-        # plt.savefig(os.path.join(output_filepath, info.session_id+"_corrected-position_new_y.png"))
-        # # plt.show()
