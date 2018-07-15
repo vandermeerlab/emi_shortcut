@@ -206,29 +206,25 @@ def get_outputs_all(infos):
     return outputs
 
 
-def get_only_tuning_curves(info, position, spikes, xedges, yedges, phase):
-    sliced_position = position.time_slice(info.task_times[phase].start, info.task_times[phase].stop)
-    sliced_spikes = [spiketrain.time_slice(info.task_times[phase].start, info.task_times[phase].stop) for spiketrain in spikes]
+def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest, min_n_spikes=100, max_n_spikes=5000):
+    sliced_position = position.time_slice(epoch_of_interest.start, epoch_of_interest.stop)
+    sliced_spikes = [spiketrain.time_slice(epoch_of_interest.start, epoch_of_interest.stop) for spiketrain in spikes]
 
     # Limit position and spikes to only running times
     run_epoch = nept.run_threshold(sliced_position, thresh=15.0, t_smooth=1.0)
     run_position = sliced_position[run_epoch]
-    track_spikes = np.asarray([spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes])
+    tuning_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
 
     # Remove neurons with too few or too many spikes
-    len_epochs = np.sum(run_epoch.durations)
-    min_n_spikes = 0.4 * len_epochs
-    max_n_spikes = 5 * len_epochs
-
-    keep_idx = np.zeros(len(track_spikes), dtype=bool)
-    for i, spiketrain in enumerate(track_spikes):
-        if len(spiketrain.time) >= min_n_spikes and len(spiketrain.time) <= max_n_spikes:
-            keep_idx[i] = True
-    tuning_spikes = track_spikes[keep_idx]
+    # keep_idx = np.zeros(len(tuning_spikes), dtype=bool)
+    # for i, spiketrain in enumerate(tuning_spikes):
+    #     if len(spiketrain.time) >= min_n_spikes and len(spiketrain.time) <= max_n_spikes:
+    #         keep_idx[i] = True
+    # tuning_spikes = tuning_spikes[keep_idx]
 
     tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, xedges, yedges, occupied_thresh=0.5, gaussian_std=0.3)
 
-    return tuning_spikes, tuning_curves
+    return tuning_curves
 
 
 def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=15.0, t_smooth=1.0,
