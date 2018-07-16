@@ -326,8 +326,8 @@ if __name__ == "__main__":
                             dt=0.025,
                             gaussian_std=0.0075,
                             experiment_time=experiment_time,
-                            speed_limit=15.,
-                            t_smooth=1.)
+                            speed_limit=10.,
+                            t_smooth=0.8)
                 if experiment_time in track_times:
                     args["run_time"] = True
                 else:

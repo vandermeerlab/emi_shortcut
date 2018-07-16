@@ -22,7 +22,7 @@ for info in infos:
     events, position, spikes, lfp, lfp_theta = get_data(info)
     xedges, yedges = nept.get_xyedges(position)
 
-    speed = position.speed(t_smooth=0.5)
+    speed = position.speed(t_smooth=0.8)
     run_idx = np.squeeze(speed.data) >= 0.1
     run_pos = position[run_idx]
 

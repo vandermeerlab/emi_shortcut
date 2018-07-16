@@ -405,7 +405,7 @@ if __name__ == "__main__":
 
     for info in infos:
         print(info.session_id)
-        # save_data(info)
+        save_data(info)
         # events, position, spikes, lfp_swr, lfp_theta = get_data(info)
 
         thisdir = os.getcwd()

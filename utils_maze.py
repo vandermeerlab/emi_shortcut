@@ -368,13 +368,17 @@ def get_xyedges(position, binsize=3):
     return xedges, yedges
 
 
-def get_trials(events, phase_epoch):
+def get_trials(events, phase_epoch, first_trial=False):
     feeder_events = np.sort(np.append(events['feeder1'], events['feeder2']))
     feeder_events = feeder_events[np.where((phase_epoch.start < feeder_events)*(feeder_events < phase_epoch.stop))[0]]
 
+    starts = feeder_events[:-1]
+    stops = feeder_events[1:]
+
     # Insert first trial as phase start to first feeder firing during that phase
-    starts = np.insert(feeder_events[:-1], 0, phase_epoch.start)
-    stops = np.insert(feeder_events[1:], 0, feeder_events[0])
+    if first_trial:
+        starts = np.insert(starts, 0, phase_epoch.start)
+        stops = np.insert(stops, 0, feeder_events[0])
 
     return nept.Epoch([starts, stops])
 

@@ -211,7 +211,7 @@ def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest, 
     sliced_spikes = [spiketrain.time_slice(epoch_of_interest.start, epoch_of_interest.stop) for spiketrain in spikes]
 
     # Limit position and spikes to only running times
-    run_epoch = nept.run_threshold(sliced_position, thresh=15.0, t_smooth=1.0)
+    run_epoch = nept.run_threshold(sliced_position, thresh=10., t_smooth=0.8)
     run_position = sliced_position[run_epoch]
     tuning_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
 
@@ -227,7 +227,7 @@ def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest, 
     return tuning_curves
 
 
-def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=15.0, t_smooth=1.0,
+def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=10.0, t_smooth=0.8,
                       min_n_spikes=100, phase_id=None, trial_times=None, trial_number=None, cache=True):
     """
 
@@ -334,8 +334,8 @@ if __name__ == "__main__":
     if 1:
         for info in infos:
             events, position, spikes, lfp, lfp_theta = get_data(info)
-            xedges, yedges = nept.get_xyedges(position)
-            get_tuning_curves(info, position, spikes, xedges, yedges, speed_limit=4.,
+            xedges, yedges = nept.get_xyedges(position, binsize=8)
+            get_tuning_curves(info, position, spikes, xedges, yedges,
                               min_n_spikes=None, trial_times=None, trial_number=None, cache=True)
     if 0:
         for info in infos:
