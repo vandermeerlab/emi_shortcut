@@ -399,9 +399,9 @@ def get_data(info, output_path=None):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
-    # import info.r068d8 as r068d8
-    # infos = [r068d8]
-    infos = spike_sorted_infos
+    import info.r066d1 as r066d1
+    infos = [r066d1]
+    # infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)

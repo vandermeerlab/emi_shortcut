@@ -104,7 +104,7 @@ def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neuron
         raise AssertionError("decoding_times must only contain one epoch (start, stop)")
 
     events, position, all_spikes, lfp, lfp_theta = get_data(info)
-    xedges, yedges = nept.get_xyedges(position)
+    xedges, yedges = nept.get_xyedges(position, binsize=8)
 
     sliced_spikes = neurons.time_slice(decoding_times.start, decoding_times.stop)
     position = position.time_slice(decoding_times.start, decoding_times.stop)
