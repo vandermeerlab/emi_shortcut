@@ -315,6 +315,15 @@ def load_data(info, output_path=None):
 
     spikes = nept.load_spikes(os.path.join(dataloc, info.spikes_filepath))
 
+    # Remove neurons that have a rate greater than 5 Hz
+    max_rate = 5.
+    session_length = info.task_times["postrecord"].stop - info.task_times["prerecord"].start
+    spikes = [spiketrain for spiketrain in spikes if spiketrain.n_spikes / session_length < max_rate]
+
+    # Remove neurons that have fewer than 100 spikes in a session
+    min_spikes = 100
+    spikes = np.asarray([spiketrain for spiketrain in spikes if spiketrain.n_spikes > 100])
+
     lfp_swr = nept.load_lfp(os.path.join(dataloc, info.lfp_swr_filename))
 
     lfp_theta = nept.load_lfp(os.path.join(dataloc, info.lfp_theta_filename))
