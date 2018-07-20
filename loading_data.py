@@ -346,7 +346,7 @@ def save_data(info):
         pickle.dump(position, fileobj)
 
     # Also save position as csv for ease of use in matlab
-    filename = os.path.join(dataloc, info.session_id + "-position.csv")
+    filename = os.path.join(dataloc, info.session + "-position.csv")
     np.savetxt(filename,
                np.hstack((position.x[:, np.newaxis], position.y[:, np.newaxis], position.time[:, np.newaxis])),
                delimiter=",", header="x,y,time", comments="")
@@ -409,8 +409,8 @@ def get_data(info, output_path=None):
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
     import info.r066d1 as r066d1
-    infos = [r066d1]
-    # infos = spike_sorted_infos
+    # infos = [r066d1]
+    infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)
