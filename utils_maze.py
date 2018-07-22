@@ -76,11 +76,11 @@ def get_trial_idx(low_priority, mid_priority, high_priority, feeder1_times, feed
     low_priority_trials = []
 
     for trial in high_priority_time:
-        high_priority_trials.append((nept.find_nearest_idx(np.array(start_trials), trial), 'novel'))
+        high_priority_trials.append(nept.find_nearest_idx(np.array(start_trials), trial))
     for trial in mid_priority_time:
-        mid_priority_trials.append((nept.find_nearest_idx(np.array(start_trials), trial), 'shortcut'))
+        mid_priority_trials.append(nept.find_nearest_idx(np.array(start_trials), trial))
     for trial in low_priority_time:
-        low_priority_trials.append((nept.find_nearest_idx(np.array(start_trials), trial), 'u'))
+        low_priority_trials.append(nept.find_nearest_idx(np.array(start_trials), trial))
 
     trials_idx = dict()
     trials_idx['novel'] = high_priority_trials
