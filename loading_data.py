@@ -322,7 +322,7 @@ def load_data(info, output_path=None):
 
     # Remove neurons that have fewer than 100 spikes in a session
     min_spikes = 100
-    spikes = np.asarray([spiketrain for spiketrain in spikes if spiketrain.n_spikes > 100])
+    spikes = np.asarray([spiketrain for spiketrain in spikes if spiketrain.n_spikes > min_spikes])
 
     lfp_swr = nept.load_lfp(os.path.join(dataloc, info.lfp_swr_filename))
 

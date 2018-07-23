@@ -206,7 +206,7 @@ def get_outputs_all(infos):
     return outputs
 
 
-def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest, min_n_spikes=100, max_n_spikes=5000):
+def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest):
     sliced_position = position.time_slice(epoch_of_interest.start, epoch_of_interest.stop)
     sliced_spikes = [spiketrain.time_slice(epoch_of_interest.start, epoch_of_interest.stop) for spiketrain in spikes]
 

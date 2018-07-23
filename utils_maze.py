@@ -348,26 +348,6 @@ def trajectory_fields(tuning_curves, spikes, zone, xedges, yedges, field_thresh)
     return fields_tc, fields_neuron
 
 
-def get_xyedges(position, binsize=3):
-    """Gets edges based on position min and max.
-
-    Parameters
-    ----------
-    position: 2D nept.Position
-    binsize: int
-
-    Returns
-    -------
-    xedges: np.array
-    yedges: np.array
-
-    """
-    xedges = np.arange(position.x.min(), position.x.max() + binsize, binsize)
-    yedges = np.arange(position.y.min(), position.y.max() + binsize, binsize)
-
-    return xedges, yedges
-
-
 def get_trials(events, phase_epoch, first_trial=False):
     feeder_events = np.sort(np.append(events['feeder1'], events['feeder2']))
     feeder_events = feeder_events[np.where((phase_epoch.start < feeder_events)*(feeder_events < phase_epoch.stop))[0]]
