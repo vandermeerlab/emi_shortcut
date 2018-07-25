@@ -152,6 +152,15 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
         feeder_y_location[np.logical_and(times >= start - off_delay, times < ledoff[off_idx] + off_delay)] = y_location
 
     # Remove problem samples for individual session
+    # While both LEDs are active for R063d8
+    if info.session_id == "R063d8":
+        starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
+        stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
+        for start, stop in zip(starts_idx, stops_idx):
+            x[start:stop] = np.nan
+            y[start:stop] = np.nan
+
+    # Remove problem samples for individual session
     # In impossible locations and along the u-trajectory for R066d7
     if info.session_id == "R066d7":
         for error_pt in info.path_pts['error']:
@@ -178,8 +187,19 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
         starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
         stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
         for start, stop in zip(starts_idx, stops_idx):
-            feeder_x_location[start:stop] = info.path_pts['feeder1'][0]
-            feeder_y_location[start:stop] = info.path_pts['feeder1'][1]
+            feeder_x_location[start:stop] = np.nan
+            feeder_y_location[start:stop] = np.nan
+
+    # Remove problem samples for individual session
+    # In impossible locations for R068d3
+    if info.session_id == "R068d3":
+        for error_pt in info.path_pts['error']:
+            x_idx = np.abs(x - error_pt[0]) <= 10.
+            y_idx = np.abs(y - error_pt[1]) <= 10.
+            remove_idx = x_idx & y_idx
+
+            x[remove_idx] = np.nan
+            y[remove_idx] = np.nan
 
     # Remove problem samples for individual session
     # At the beginning of Phase3 for R068d4
@@ -408,9 +428,12 @@ def get_data(info, output_path=None):
 
 if __name__ == "__main__":
     from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
-    import info.r066d1 as r066d1
-    # infos = [r066d1]
-    infos = spike_sorted_infos
+    import info.r063d8 as r063d8
+    import info.r067d1 as r067d1
+    import info.r068d3 as r068d3
+    import info.r068d6 as r068d6
+    infos = [r068d3, r063d8, r067d1, r068d6]
+    # infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)
