@@ -427,7 +427,7 @@ def get_data(info, output_path=None):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
+    # from run import spike_sorted_infos, r063_infos, r066_infos, r067_infos, r068_infos
     import info.r063d8 as r063d8
     import info.r067d1 as r067d1
     import info.r068d3 as r068d3
