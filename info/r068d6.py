@@ -38,7 +38,7 @@ pickled_spikes = session + '-spike.pkl'
 task_times = dict()
 task_times['prerecord'] = nept.Epoch(np.array([1622.5, 1923.8]))
 task_times['phase1'] = nept.Epoch(np.array([1959.6, 2450.2]))
-task_times['pauseA'] = nept.Epoch(np.array([2574.1, 3088.2]))
+task_times['pauseA'] = nept.Epoch(np.array([2651.2, 3088.2]))
 task_times['phase2'] = nept.Epoch(np.array([3155.0, 4628.0]))
 task_times['pauseB'] = nept.Epoch(np.array([4657.3, 6482.2]))
 task_times['phase3'] = nept.Epoch(np.array([6524.4, 9276.9]))
@@ -70,7 +70,8 @@ path_pts['pedestal'] = [96.4, 41.5]
 path_pts['pedestal1'] = [192., 78.]
 path_pts['stable1'] = [100.9, 12.6]
 
-problem_positions = nept.Epoch(np.array([[2569.9, 2574.],
+problem_positions = nept.Epoch(np.array([[2569.9, 2574.0],
+                                         [2647.2, 2651.2],
                                          [9498.5, 9504.2]]))
 
 u_trajectory = [path_pts[i] for i in ['feeder1', 'shortcut1', 'stable1', 'turn1', 'pt1', 'turn2',

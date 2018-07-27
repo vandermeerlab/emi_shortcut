@@ -152,8 +152,7 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
         feeder_y_location[np.logical_and(times >= start - off_delay, times < ledoff[off_idx] + off_delay)] = y_location
 
     # Remove problem samples for individual session
-    # While both LEDs are active for R063d8
-    if info.session_id == "R063d8":
+    if info.session_id in ["R063d8", "R068d4", "R068d6"]:
         starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
         stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
         for start, stop in zip(starts_idx, stops_idx):
@@ -200,24 +199,6 @@ def load_shortcut_position(info, filename, events, dist_thresh=20., std_thresh=2
 
             x[remove_idx] = np.nan
             y[remove_idx] = np.nan
-
-    # Remove problem samples for individual session
-    # At the beginning of Phase3 for R068d4
-    if info.session_id == "R068d4":
-        starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
-        stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
-        for start, stop in zip(starts_idx, stops_idx):
-            x[start:stop] = np.nan
-            y[start:stop] = np.nan
-
-    # Remove problem samples for individual session
-    # Points between pedestal locations for R068d6
-    if info.session_id == "R068d6":
-        starts_idx = nept.find_nearest_indices(times, info.problem_positions.starts)
-        stops_idx = nept.find_nearest_indices(times, info.problem_positions.stops)
-        for start, stop in zip(starts_idx, stops_idx):
-            x[start:stop] = np.nan
-            y[start:stop] = np.nan
 
     # Remove problem samples for individual session
     # In impossible locations for R068d8
@@ -432,7 +413,7 @@ if __name__ == "__main__":
     import info.r067d1 as r067d1
     import info.r068d3 as r068d3
     import info.r068d6 as r068d6
-    infos = [r068d3, r063d8, r067d1, r068d6]
+    infos = [r068d6]
     # infos = spike_sorted_infos
 
     for info in infos:
