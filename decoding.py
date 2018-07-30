@@ -66,13 +66,13 @@ def get_decoded(info, position, spikes, xedges, yedges, shuffled_id):
         counts = nept.bin_spikes(sliced_spikes, sliced_position.time, dt=0.025, window=0.025,
                                  gaussian_std=0.0075, normalized=False)
 
-        min_neurons = 2
-        min_spikes = 2
+        min_neurons = 0
+        min_spikes = 0
 
         tc_shape = tuning_curves.shape
         decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-        likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=0.025, min_neurons=2,
+        likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=0.025, min_neurons=min_neurons,
                                         min_spikes=min_spikes)
 
         # Find decoded location based on max likelihood for each valid timestep
@@ -180,12 +180,12 @@ def plot_over_space(values, positions, xedges, yedges):
 
 
 if __name__ == "__main__":
-    import info.r063d5 as r063d5
+    import info.r063d2 as r063d2
     import info.r063d6 as r063d6
-    # infos = [r063d5]
+    infos = [r063d2]
 
     from run import spike_sorted_infos
-    infos = spike_sorted_infos
+    # infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)
@@ -229,6 +229,8 @@ if __name__ == "__main__":
             output["errors"] = errors
             output["n_active"] = n_active
             output["session_n_running"] = session_n_running
+            output["xedges"] = xedge
+            output["yedges"] = yedge
             with open(pickled_path, 'wb') as fileobj:
                 pickle.dump(output, fileobj)
 
