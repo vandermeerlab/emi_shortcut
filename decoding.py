@@ -14,6 +14,8 @@ from utils_maze import get_trials
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, "plots", "decode-video")
+if not os.path.exists(pickle_filepath):
+    os.makedirs(pickle_filepath)
 if not os.path.exists(output_filepath):
     os.makedirs(output_filepath)
 

@@ -215,13 +215,6 @@ def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest):
     run_position = sliced_position[run_epoch]
     tuning_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
 
-    # Remove neurons with too few or too many spikes
-    # keep_idx = np.zeros(len(tuning_spikes), dtype=bool)
-    # for i, spiketrain in enumerate(tuning_spikes):
-    #     if len(spiketrain.time) >= min_n_spikes and len(spiketrain.time) <= max_n_spikes:
-    #         keep_idx[i] = True
-    # tuning_spikes = tuning_spikes[keep_idx]
-
     tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, xedges, yedges, occupied_thresh=0.5, gaussian_std=0.3)
 
     return tuning_curves
