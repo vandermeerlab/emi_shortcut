@@ -66,8 +66,8 @@ def get_decoded(info, position, spikes, xedges, yedges, shuffled_id):
         counts = nept.bin_spikes(sliced_spikes, sliced_position.time, dt=0.025, window=0.025,
                                  gaussian_std=0.0075, normalized=False)
 
-        min_neurons = 0
-        min_spikes = 0
+        min_neurons = 2
+        min_spikes = 2
 
         tc_shape = tuning_curves.shape
         decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
@@ -181,8 +181,8 @@ def plot_over_space(values, positions, xedges, yedges):
 
 if __name__ == "__main__":
     import info.r063d2 as r063d2
-    import info.r063d6 as r063d6
-    infos = [r063d2]
+    import info.r063d3 as r063d3
+    infos = [r063d2, r063d3]
 
     from run import spike_sorted_infos
     # infos = spike_sorted_infos
@@ -191,6 +191,7 @@ if __name__ == "__main__":
         print(info.session_id)
         events, position, spikes, _, _ = get_data(info)
 
+        # for binsize in [6, 20]:
         for binsize in [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 50, 100, 150, 200]:
             print("binsize:", binsize)
 
