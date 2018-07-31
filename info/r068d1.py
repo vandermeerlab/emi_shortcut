@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import nept
+import info.meta
 
 rat_id = 'R068_EI'
 session_id = 'R068d1'
@@ -28,6 +29,9 @@ lfp_swr_filename = os.path.join('data-working', rat_id, session + '_recording', 
 lfp_theta_filename = os.path.join('data-working', rat_id, session + '_recording', session + '-CSC13b.ncs')
 
 spikes_filepath = os.path.join('data-working', rat_id, session + '_recording')
+
+xedges = np.arange(5.571428571428571, 197.57142857142856+info.meta.binsize, info.meta.binsize)
+yedges = np.arange(-4.714285714285714, 139.28571428571428+info.meta.binsize, info.meta.binsize)
 
 pickled_events = session + '-event.pkl'
 pickled_position = session + '-position.pkl'
@@ -69,6 +73,8 @@ path_pts['stable1'] = [88.7, 110.3]
 
 u_trajectory = [path_pts[i] for i in ['feeder1', 'shortcut1', 'turn1', 'novel1', 'turn2',
                                       'stable1', 'shortcut2', 'turn3', 'feeder2']]
+
+u_segment = [path_pts[i] for i in ['shortcut1', 'turn1']]
 
 shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'shortcut2']]
 
