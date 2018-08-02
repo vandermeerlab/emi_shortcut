@@ -7,6 +7,7 @@ import pickle
 import os
 import nept
 
+import info.meta
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
 from utils_maze import get_trials
@@ -66,6 +67,8 @@ def get_decoded(info, position, spikes, xedges, yedges, shuffled_id):
         counts = nept.bin_spikes(sliced_spikes, sliced_position.time, dt=0.025, window=0.025,
                                  gaussian_std=0.0075, normalized=False)
 
+        n_timebins = len(counts.time)
+
         min_neurons = 2
         min_spikes = 2
 
@@ -106,7 +109,7 @@ def get_decoded(info, position, spikes, xedges, yedges, shuffled_id):
         trial_errors = true_position.distance(decoded)
         session_errors.append(trial_errors)
 
-    return session_decoded, session_actual, session_likelihoods, session_errors, session_n_active, session_n_running
+    return session_decoded, session_actual, session_likelihoods, session_errors, session_n_active, n_timebins
 
 
 def plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename=None):
@@ -191,49 +194,41 @@ if __name__ == "__main__":
         print(info.session_id)
         events, position, spikes, _, _ = get_data(info)
 
-        # for binsize in [6, 20]:
-        for binsize in [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 50, 100, 150, 200]:
-            print("binsize:", binsize)
+        decoded_filename = info.session_id + '_decoded_binsize' + str(info.meta.binsize) + 'cm.pkl'
+        pickled_path = os.path.join(pickle_filepath, decoded_filename)
+        decoded, actual, likelihoods, errors, n_active, session_n_running = get_decoded(info,
+                                                     position,
+                                                     spikes,
+                                                     info.xedges,
+                                                     info.yedges,
+                                                     shuffled_id=False)
+        output = dict()
+        output["decoded"] = decoded
+        output["actual"] = actual
+        output["likelihoods"] = likelihoods
+        output["errors"] = errors
+        output["n_active"] = n_active
+        output["session_n_running"] = session_n_running
+        with open(pickled_path, 'wb') as fileobj:
+            pickle.dump(output, fileobj)
 
-            xedge, yedge = nept.get_xyedges(position, binsize=binsize)
-
-            decoded_filename = info.session_id + '_decoded_binsize' + str(binsize) + 'cm.pkl'
-            pickled_path = os.path.join(pickle_filepath, decoded_filename)
-            decoded, actual, likelihoods, errors, n_active, session_n_running = get_decoded(info,
-                                                         position,
-                                                         spikes,
-                                                         xedge,
-                                                         yedge,
-                                                         shuffled_id=False)
-            output = dict()
-            output["decoded"] = decoded
-            output["actual"] = actual
-            output["likelihoods"] = likelihoods
-            output["errors"] = errors
-            output["n_active"] = n_active
-            output["session_n_running"] = session_n_running
-            with open(pickled_path, 'wb') as fileobj:
-                pickle.dump(output, fileobj)
-
-            shuffled_filename = info.session_id + '_decoded-shuffled_binsize' + str(binsize) + 'cm.pkl'
-            pickled_path = os.path.join(pickle_filepath, shuffled_filename)
-            decoded, actual, likelihoods, errors, n_active, session_n_running = get_decoded(info,
-                                                         position,
-                                                         spikes,
-                                                         xedge,
-                                                         yedge,
-                                                         shuffled_id=True)
-            output = dict()
-            output["decoded"] = decoded
-            output["actual"] = actual
-            output["likelihoods"] = likelihoods
-            output["errors"] = errors
-            output["n_active"] = n_active
-            output["session_n_running"] = session_n_running
-            output["xedges"] = xedge
-            output["yedges"] = yedge
-            with open(pickled_path, 'wb') as fileobj:
-                pickle.dump(output, fileobj)
+        shuffled_filename = info.session_id + '_decoded-shuffled_binsize' + str(info.meta.binsize) + 'cm.pkl'
+        pickled_path = os.path.join(pickle_filepath, shuffled_filename)
+        decoded, actual, likelihoods, errors, n_active, n_timebins = get_decoded(info,
+                                                     position,
+                                                     spikes,
+                                                     info.xedges,
+                                                     info.yedges,
+                                                     shuffled_id=True)
+        output = dict()
+        output["decoded"] = decoded
+        output["actual"] = actual
+        output["likelihoods"] = likelihoods
+        output["errors"] = errors
+        output["n_active"] = n_active
+        output["n_timebins"] = n_timebins
+        with open(pickled_path, 'wb') as fileobj:
+            pickle.dump(output, fileobj)
 
 
 

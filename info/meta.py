@@ -1,1 +1,1 @@
-binsize = 10
+binsize = 12
