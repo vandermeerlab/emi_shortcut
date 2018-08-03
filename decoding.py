@@ -7,7 +7,7 @@ import pickle
 import os
 import nept
 
-import info.meta
+import info.meta as meta
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
 from utils_maze import get_trials
@@ -21,13 +21,13 @@ if not os.path.exists(output_filepath):
     os.makedirs(output_filepath)
 
 
-def get_decoded(info, position, spikes, xedges, yedges, shuffled_id):
+def get_decoded(info, position, spikes, shuffled_id):
 
     phase = info.task_times["phase3"]
     trials = get_trials(events, phase)
 
-    error_byactual_position = np.zeros((len(yedges), len(xedges)))
-    n_byactual_position = np.ones((len(yedges), len(xedges)))
+    error_byactual_position = np.zeros((len(info.yedges), len(info.xedges)))
+    n_byactual_position = np.ones((len(info.yedges), len(info.xedges)))
 
     session_n_active = []
     session_likelihoods = []
@@ -39,10 +39,9 @@ def get_decoded(info, position, spikes, xedges, yedges, shuffled_id):
     for trial in trials:
         epoch_of_interest = phase.excludes(trial)
 
-        tuning_curves = get_only_tuning_curves(position,
+        tuning_curves = get_only_tuning_curves(info,
+                                               position,
                                                spikes,
-                                               xedges,
-                                               yedges,
                                                epoch_of_interest)
 
         if shuffled_id:
@@ -79,8 +78,8 @@ def get_decoded(info, position, spikes, xedges, yedges, shuffled_id):
                                         min_spikes=min_spikes)
 
         # Find decoded location based on max likelihood for each valid timestep
-        xcenters = (xedges[1:] + xedges[:-1]) / 2.
-        ycenters = (yedges[1:] + yedges[:-1]) / 2.
+        xcenters = (info.xedges[1:] + info.xedges[:-1]) / 2.
+        ycenters = (info.yedges[1:] + info.yedges[:-1]) / 2.
         xy_centers = nept.cartesian(xcenters, ycenters)
         decoded = nept.decode_location(likelihood, xy_centers, counts.time)
 
@@ -162,12 +161,12 @@ def plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename=None):
         plt.show()
 
 
-def plot_over_space(values, positions, xedges, yedges):
-    xcenters = xedges[:-1] + (xedges[1:] - xedges[:-1]) / 2
-    ycenters = yedges[:-1] + (yedges[1:] - yedges[:-1]) / 2
+def plot_over_space(info, values, positions):
+    xcenters = info.xedges[:-1] + (info.xedges[1:] - info.xedges[:-1]) / 2
+    ycenters = info.yedges[:-1] + (info.yedges[1:] - info.yedges[:-1]) / 2
 
-    count_position = np.zeros((len(yedges), len(xedges)))
-    n_position = np.ones((len(yedges), len(xedges)))
+    count_position = np.zeros((len(info.yedges), len(info.xedges)))
+    n_position = np.ones((len(info.yedges), len(info.xedges)))
 
     for trial_values, trial_positions in zip(values, positions):
         for these_values, x, y in zip(trial_values, trial_positions.x, trial_positions.y):
@@ -188,19 +187,17 @@ if __name__ == "__main__":
     infos = [r063d2, r063d3]
 
     from run import spike_sorted_infos
-    # infos = spike_sorted_infos
+    infos = spike_sorted_infos
 
     for info in infos:
         print(info.session_id)
         events, position, spikes, _, _ = get_data(info)
 
-        decoded_filename = info.session_id + '_decoded_binsize' + str(info.meta.binsize) + 'cm.pkl'
+        decoded_filename = info.session_id + '_decoded_binsize' + str(meta.binsize) + 'cm.pkl'
         pickled_path = os.path.join(pickle_filepath, decoded_filename)
-        decoded, actual, likelihoods, errors, n_active, session_n_running = get_decoded(info,
+        decoded, actual, likelihoods, errors, n_active, n_timebins = get_decoded(info,
                                                      position,
                                                      spikes,
-                                                     info.xedges,
-                                                     info.yedges,
                                                      shuffled_id=False)
         output = dict()
         output["decoded"] = decoded
@@ -208,17 +205,15 @@ if __name__ == "__main__":
         output["likelihoods"] = likelihoods
         output["errors"] = errors
         output["n_active"] = n_active
-        output["session_n_running"] = session_n_running
+        output["n_timebins"] = n_timebins
         with open(pickled_path, 'wb') as fileobj:
             pickle.dump(output, fileobj)
 
-        shuffled_filename = info.session_id + '_decoded-shuffled_binsize' + str(info.meta.binsize) + 'cm.pkl'
+        shuffled_filename = info.session_id + '_decoded-shuffled_binsize' + str(meta.binsize) + 'cm.pkl'
         pickled_path = os.path.join(pickle_filepath, shuffled_filename)
         decoded, actual, likelihoods, errors, n_active, n_timebins = get_decoded(info,
                                                      position,
                                                      spikes,
-                                                     info.xedges,
-                                                     info.yedges,
                                                      shuffled_id=True)
         output = dict()
         output["decoded"] = decoded
@@ -274,7 +269,7 @@ if __name__ == "__main__":
         #                                          yedge,
         #                                          shuffled_id=True)
         #
-        #     likelihood_byactual = plot_over_space(likelihoods, actual, xedge, yedge)
+        #     likelihood_byactual = plot_over_space(info, likelihoods, actual)
         #     pp = plt.pcolormesh(xx, yy, likelihood_byactual, vmin=0., cmap='bone_r')
         #     plt.colorbar(pp)
         #     title = info.session_id+" posterior"
@@ -283,7 +278,7 @@ if __name__ == "__main__":
         #     plt.savefig(os.path.join(output_filepath, info.session_id+"_posterior-byactual.png"))
         #     plt.close()
         #
-        #     errors_byactual = plot_over_space(errors, actual, xedge, yedge)
+        #     errors_byactual = plot_over_space(info, errors, actual)
         #     pp = plt.pcolormesh(xx, yy, errors_byactual, vmin=0., cmap='bone_r')
         #     plt.colorbar(pp)
         #     title = info.session_id+" decoding error (cm)"

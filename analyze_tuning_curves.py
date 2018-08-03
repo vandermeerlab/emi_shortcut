@@ -206,7 +206,7 @@ def get_outputs_all(infos):
     return outputs
 
 
-def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest):
+def get_only_tuning_curves(info, position, spikes, epoch_of_interest):
     sliced_position = position.time_slice(epoch_of_interest.start, epoch_of_interest.stop)
     sliced_spikes = [spiketrain.time_slice(epoch_of_interest.start, epoch_of_interest.stop) for spiketrain in spikes]
 
@@ -215,7 +215,8 @@ def get_only_tuning_curves(position, spikes, xedges, yedges, epoch_of_interest):
     run_position = sliced_position[run_epoch]
     tuning_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
 
-    tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, xedges, yedges, occupied_thresh=0.5, gaussian_std=0.3)
+    tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, info.xedges, info.yedges,
+                                         occupied_thresh=0.5, gaussian_std=0.3)
 
     return tuning_curves
 
