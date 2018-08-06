@@ -68,14 +68,12 @@ def get_decoded(info, position, spikes, shuffled_id):
 
         n_timebins = len(counts.time)
 
-        min_neurons = 2
-        min_spikes = 2
+        min_neurons = 3
 
         tc_shape = tuning_curves.shape
         decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-        likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=0.025, min_neurons=min_neurons,
-                                        min_spikes=min_spikes)
+        likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=0.025, min_neurons=min_neurons, min_spikes=1)
 
         # Find decoded location based on max likelihood for each valid timestep
         xcenters = (info.xedges[1:] + info.xedges[:-1]) / 2.
@@ -184,7 +182,7 @@ def plot_over_space(info, values, positions):
 if __name__ == "__main__":
     import info.r063d2 as r063d2
     import info.r063d3 as r063d3
-    infos = [r063d2, r063d3]
+    # infos = [r063d2, r063d3]
 
     from run import spike_sorted_infos
     infos = spike_sorted_infos

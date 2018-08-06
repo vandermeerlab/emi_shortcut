@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
+import matplotlib
 from matplotlib.colors import SymLogNorm
 import scipy.stats as stats
 from collections import OrderedDict
@@ -898,3 +900,209 @@ def plot_correcting_position(info, position, targets, events, savepath=None):
         plt.close()
 
     plot_trials(info, position, events, savepath)
+
+
+def plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename=None):
+    all_errors = np.concatenate([np.concatenate(errors, axis=0) for errors in all_errors], axis=0)
+    all_errors_id_shuffled = np.concatenate([np.concatenate(errors, axis=0) for errors in all_errors_id_shuffled],
+                                            axis=0)
+
+    fliersize = 1
+
+    decoded_dict = dict(error=all_errors, label='Decoded')
+    shuffled_id_dict = dict(error=all_errors_id_shuffled, label='ID shuffled')
+    decoded_errors = pd.DataFrame(decoded_dict)
+    shuffled_id = pd.DataFrame(shuffled_id_dict)
+    data = pd.concat([shuffled_id, decoded_errors])
+    colours = ['#ffffff', '#bdbdbd']
+
+    plt.figure(figsize=(6, 4))
+    flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
+    ax = sns.boxplot(x='label', y='error', data=data, flierprops=flierprops)
+
+    edge_colour = '#252525'
+    for i, artist in enumerate(ax.artists):
+        artist.set_edgecolor(edge_colour)
+        artist.set_facecolor(colours[i])
+
+        for j in range(i * 6, i * 6 + 6):
+            line = ax.lines[j]
+            line.set_color(edge_colour)
+            line.set_mfc(edge_colour)
+            line.set_mec(edge_colour)
+
+    ax.text(1., 1., "N sessions: %d \nmean-error: %.1f cm \nmedian-error: %.1f cm" % (n_sessions,
+                                                                                      np.mean(all_errors),
+                                                                                      np.median(all_errors)),
+            horizontalalignment='right',
+            verticalalignment='top',
+            transform=ax.transAxes,
+            fontsize=10)
+
+    ax.set(xlabel=' ', ylabel="Error (cm)")
+    plt.xticks(fontsize=14)
+
+    sns.despine()
+    plt.tight_layout()
+
+    if filename is not None:
+        plt.savefig(filename)
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_over_space(info, values, positions, title, filepath=None):
+    xcenters = info.xedges[:-1] + (info.xedges[1:] - info.xedges[:-1]) / 2.
+    ycenters = info.yedges[:-1] + (info.yedges[1:] - info.yedges[:-1]) / 2.
+
+    count_position = np.zeros((len(info.yedges), len(info.xedges)))
+    n_position = np.ones((len(info.yedges), len(info.xedges)))
+
+    for trial_values, trial_positions in zip(values, positions):
+        for these_values, x, y in zip(trial_values, trial_positions.x, trial_positions.y):
+            x_idx = nept.find_nearest_idx(xcenters, x)
+            y_idx = nept.find_nearest_idx(ycenters, y)
+            if np.isscalar(these_values):
+                count_position[y_idx][x_idx] += these_values
+            else:
+                count_position[y_idx][x_idx] += these_values[y_idx][x_idx]
+            n_position[y_idx][x_idx] += 1
+    over_space = count_position / n_position
+
+    xx, yy = np.meshgrid(info.xedges, info.yedges)
+    pp = plt.pcolormesh(xx, yy, over_space, vmin=0., cmap='bone_r')
+    plt.colorbar(pp)
+    plt.title(title)
+    plt.axis('off')
+    if filepath is not None:
+        plt.savefig(filepath)
+        plt.close()
+    else:
+        plt.show()
+
+    return over_space
+
+
+def make_animation(session_id, decoded, trial_idx, xedge, yedge, binsize, filepath):
+    decoded_position = decoded["decoded"][trial_idx]
+    true_position = decoded["actual"][trial_idx]
+    likelihoods = np.array(decoded["likelihoods"][trial_idx])
+    n_active = decoded["n_active"][trial_idx]
+    errors = decoded["errors"][trial_idx]
+
+    fig = plt.figure(figsize=(12, 10))
+    gs = gridspec.GridSpec(5, 4)
+
+    xx, yy = np.meshgrid(xedge, yedge)
+
+    ax1 = plt.subplot2grid((5, 4), (0, 0), colspan=3, rowspan=3)
+
+    pad_amount = binsize*2
+    ax1.set_xlim((np.floor(np.min(true_position.x))-pad_amount, np.ceil(np.max(true_position.x))+pad_amount))
+    ax1.set_ylim((np.floor(np.min(true_position.y))-pad_amount, np.ceil(np.max(true_position.y))+pad_amount))
+
+    n_timebins = decoded_position.n_samples
+#     n_timebins = 10
+
+    n_colours = 20.
+    colours = [(1., 1., 1.)]
+    colours.extend(matplotlib.cm.copper_r(np.linspace(0, 1, n_colours-1)))
+    cmap = matplotlib.colors.ListedColormap(colours)
+
+    likelihoods_withnan = np.array(likelihoods)
+    likelihoods[np.isnan(likelihoods)] = -0.01
+
+    xcenters = xedge[:-1] + (xedge[1:] - xedge[:-1]) / 2
+    ycenters = yedge[:-1] + (yedge[1:] - yedge[:-1]) / 2
+
+    x_idx = [nept.find_nearest_idx(xcenters, true_position.x[timestep]) for timestep in range(true_position.n_samples)]
+    y_idx = [nept.find_nearest_idx(ycenters, true_position.y[timestep]) for timestep in range(true_position.n_samples)]
+
+    x_dec_idx = [nept.find_nearest_idx(xcenters, decoded_position.x[timestep]) for timestep in range(decoded_position.n_samples)]
+    y_dec_idx = [nept.find_nearest_idx(ycenters, decoded_position.y[timestep]) for timestep in range(decoded_position.n_samples)]
+
+    posterior_position = ax1.pcolormesh(xx[:-1], yy[:-1], likelihoods[0], vmax=0.2, cmap=cmap)
+    colorbar = fig.colorbar(posterior_position, ax=ax1)
+
+    estimated_position, = ax1.plot([], [], "o", color="c")
+    rat_position, = ax1.plot([], [], "<", color="b")
+
+    ax2 = plt.subplot2grid((5, 4), (3, 0), colspan=3)
+
+    binwidth = 5.
+    error_bins = np.arange(-binwidth, np.max(errors)+binwidth, binwidth)
+
+    _, _, errors_bin = ax2.hist([np.clip(errors, error_bins[0], error_bins[-1])], bins=error_bins, rwidth=0.9, color="k")
+    errors_idx = np.digitize(errors, error_bins)
+
+    fontsize = 14
+    likelihood_at_actual = ax2.text(0.6, 1, [],
+             horizontalalignment='left',
+             verticalalignment='top',
+             transform = ax2.transAxes,
+             fontsize=fontsize)
+
+    ax2.set_xlabel("Error (cm)", fontsize=fontsize)
+    ax2.set_ylabel("# bins", fontsize=fontsize)
+    ax2.spines['right'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax2.yaxis.set_ticks_position('left')
+    ax2.xaxis.set_ticks_position('bottom')
+    xticks = binwidth * np.arange(0, len(error_bins), 4)
+    plt.xticks(xticks, fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+
+    ax3 = plt.subplot2grid((5, 4), (4, 0), colspan=3)
+
+    n_active_bins = np.arange(-0.5, np.max(n_active)+1)
+
+    _, _, n_neurons_bin = ax3.hist(n_active, bins=n_active_bins, rwidth=0.9, color="k", align="mid")
+
+    ax3.set_xlabel("Number of active neurons", fontsize=fontsize)
+    ax3.set_ylabel("# bins", fontsize=fontsize)
+    ax3.spines['right'].set_visible(False)
+    ax3.spines['top'].set_visible(False)
+    ax3.yaxis.set_ticks_position('left')
+    ax3.xaxis.set_ticks_position('bottom')
+    plt.yticks(fontsize=fontsize)
+
+    fig.tight_layout()
+
+
+    def init():
+        posterior_position.set_array([])
+        estimated_position.set_data([], [])
+        rat_position.set_data([], [])
+        likelihood_at_actual.set_text([])
+        return (posterior_position, estimated_position, rat_position, likelihood_at_actual)
+
+
+    def animate(i):
+        posterior_position.set_array(likelihoods[i].ravel())
+        estimated_position.set_data(decoded_position.x[i], decoded_position.y[i])
+        rat_position.set_data(true_position.x[i], true_position.y[i])
+
+        for patch in errors_bin:
+            patch.set_fc('k')
+        errors_bin[errors_idx[i]-1].set_fc('r')
+
+        for patch in n_neurons_bin:
+            patch.set_fc('k')
+        n_neurons_bin[n_active[i]].set_fc('b')
+
+        likelihood_at_actual.set_text("posterior at true position: %.3f \nposterior at decoded position: %.3f " %
+                                      (likelihoods_withnan[i][y_idx[i]][x_idx[i]],
+                                       likelihoods_withnan[i][y_dec_idx[i]][x_dec_idx[i]]))
+
+        return (posterior_position, estimated_position, rat_position, likelihood_at_actual)
+
+    anim = matplotlib.animation.FuncAnimation(fig, animate, frames=n_timebins, interval=200,
+                                   blit=False, repeat=False)
+
+
+    writer = matplotlib.animation.writers['ffmpeg'](fps=10)
+    dpi = 600
+    filename = session_id+'_decoded_trial'+str(trial_idx)+'.mp4'
+    anim.save(os.path.join(filepath, filename), writer=writer, dpi=dpi)
+    plt.close()
