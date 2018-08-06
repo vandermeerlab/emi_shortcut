@@ -380,3 +380,10 @@ def align_to_event(analogsignal, event, t_before, t_after):
     data = np.squeeze(sliced.data)
 
     return nept.AnalogSignal(data, time)
+
+
+def get_bin_centers(info):
+    xcenters = info.xedges[:-1] + (info.xedges[1:] - info.xedges[:-1]) / 2
+    ycenters = info.yedges[:-1] + (info.yedges[1:] - info.yedges[:-1]) / 2
+
+    return xcenters, ycenters

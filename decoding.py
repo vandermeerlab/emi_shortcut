@@ -10,7 +10,7 @@ import nept
 import info.meta as meta
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
-from utils_maze import get_trials
+from utils_maze import get_trials, get_bin_centers
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -76,8 +76,7 @@ def get_decoded(info, position, spikes, shuffled_id):
         likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=0.025, min_neurons=min_neurons, min_spikes=1)
 
         # Find decoded location based on max likelihood for each valid timestep
-        xcenters = (info.xedges[1:] + info.xedges[:-1]) / 2.
-        ycenters = (info.yedges[1:] + info.yedges[:-1]) / 2.
+        xcenters, ycenters = get_bin_centers(info)
         xy_centers = nept.cartesian(xcenters, ycenters)
         decoded = nept.decode_location(likelihood, xy_centers, counts.time)
 

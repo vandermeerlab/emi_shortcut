@@ -4,13 +4,14 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import matplotlib
 from matplotlib.colors import SymLogNorm
+from matplotlib import animation
 import scipy.stats as stats
 from collections import OrderedDict
 import seaborn as sns
 import pandas as pd
 
 import nept
-from utils_maze import get_trials
+from utils_maze import get_trials, get_bin_centers
 
 sns.set_style('white')
 sns.set_style('ticks')
@@ -984,7 +985,7 @@ def plot_over_space(info, values, positions, title, filepath=None):
     return over_space
 
 
-def make_animation(session_id, decoded, trial_idx, xedge, yedge, binsize, filepath):
+def make_animation(info, decoded, trial_idx, filepath, binsize=12):
     decoded_position = decoded["decoded"][trial_idx]
     true_position = decoded["actual"][trial_idx]
     likelihoods = np.array(decoded["likelihoods"][trial_idx])
@@ -994,7 +995,7 @@ def make_animation(session_id, decoded, trial_idx, xedge, yedge, binsize, filepa
     fig = plt.figure(figsize=(12, 10))
     gs = gridspec.GridSpec(5, 4)
 
-    xx, yy = np.meshgrid(xedge, yedge)
+    xx, yy = np.meshgrid(info.xedges, info.yedges)
 
     ax1 = plt.subplot2grid((5, 4), (0, 0), colspan=3, rowspan=3)
 
@@ -1013,8 +1014,7 @@ def make_animation(session_id, decoded, trial_idx, xedge, yedge, binsize, filepa
     likelihoods_withnan = np.array(likelihoods)
     likelihoods[np.isnan(likelihoods)] = -0.01
 
-    xcenters = xedge[:-1] + (xedge[1:] - xedge[:-1]) / 2
-    ycenters = yedge[:-1] + (yedge[1:] - yedge[:-1]) / 2
+    xcenters, ycenters = get_bin_centers(info)
 
     x_idx = [nept.find_nearest_idx(xcenters, true_position.x[timestep]) for timestep in range(true_position.n_samples)]
     y_idx = [nept.find_nearest_idx(ycenters, true_position.y[timestep]) for timestep in range(true_position.n_samples)]
@@ -1097,12 +1097,11 @@ def make_animation(session_id, decoded, trial_idx, xedge, yedge, binsize, filepa
 
         return (posterior_position, estimated_position, rat_position, likelihood_at_actual)
 
-    anim = matplotlib.animation.FuncAnimation(fig, animate, frames=n_timebins, interval=200,
+    anim = animation.FuncAnimation(fig, animate, frames=n_timebins, interval=200,
                                    blit=False, repeat=False)
 
-
-    writer = matplotlib.animation.writers['ffmpeg'](fps=10)
+    writer = animation.writers['ffmpeg'](fps=10)
     dpi = 600
-    filename = session_id+'_decoded_trial'+str(trial_idx)+'.mp4'
+    filename = info.session_id+'_decoded_trial'+str(trial_idx)+'.mp4'
     anim.save(os.path.join(filepath, filename), writer=writer, dpi=dpi)
     plt.close()
