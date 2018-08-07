@@ -34,7 +34,7 @@ def get_decoded(info, position, spikes, shuffled_id):
     session_decoded = []
     session_actual = []
     session_errors = []
-    session_n_running = 0
+    n_timebins = []
 
     for trial in trials:
         epoch_of_interest = phase.excludes(trial)
@@ -56,24 +56,24 @@ def get_decoded(info, position, spikes, shuffled_id):
         run_epoch = nept.run_threshold(sliced_position, thresh=10., t_smooth=0.8)
         sliced_position = sliced_position[run_epoch]
 
-        session_n_running += sliced_position.n_samples
-
         sliced_spikes = [spiketrain.time_slice(run_epoch.start,
                                                run_epoch.stop) for spiketrain in sliced_spikes]
 
         # epochs_interest = nept.Epoch(np.array([sliced_position.time[0], sliced_position.time[-1]]))
 
-        counts = nept.bin_spikes(sliced_spikes, sliced_position.time, dt=0.025, window=0.025,
+        t_window = 0.025  # 0.1 for running, 0.025 for swr
+
+        counts = nept.bin_spikes(sliced_spikes, sliced_position.time, dt=t_window, window=t_window,
                                  gaussian_std=0.0075, normalized=False)
 
-        n_timebins = len(counts.time)
+        n_timebins.append(len(counts.time))
 
         min_neurons = 3
 
         tc_shape = tuning_curves.shape
         decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-        likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=0.025, min_neurons=min_neurons, min_spikes=1)
+        likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=t_window, min_neurons=min_neurons, min_spikes=1)
 
         # Find decoded location based on max likelihood for each valid timestep
         xcenters, ycenters = get_bin_centers(info)
