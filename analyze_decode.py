@@ -1,344 +1,315 @@
-import os
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+import pandas as pd
+import seaborn as sns
 import pickle
-from shapely.geometry import Point
-
+import os
 import nept
 
+import info.meta as meta
 from loading_data import get_data
-from utils_maze import find_zones
+from analyze_tuning_curves import get_only_tuning_curves
+from utils_maze import get_trials, get_bin_centers
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
+output_filepath = os.path.join(thisdir, "plots", "decode-video")
+if not os.path.exists(pickle_filepath):
+    os.makedirs(pickle_filepath)
+if not os.path.exists(output_filepath):
+    os.makedirs(output_filepath)
 
 
-def point_in_zones(position, zones):
-    """Assigns points if contained in shortcut zones
+def get_decoded(info, position, spikes, shuffled_id):
 
-    Parameters
-    ----------
-    position : nept.Position
-    zones : dict
-        With u, shortcut, novel, pedestal as keys
+    phase = info.task_times["phase3"]
+    trials = get_trials(events, phase)
 
-    Returns
-    -------
-    sorted_zones : dict
-        With u, shortcut, novel, other as keys, each a nept.Position object
+    error_byactual_position = np.zeros((len(info.yedges), len(info.xedges)))
+    n_byactual_position = np.ones((len(info.yedges), len(info.xedges)))
 
-    """
-    u_data = []
-    u_times = []
-    shortcut_data = []
-    shortcut_times = []
-    novel_data = []
-    novel_times = []
-    other_data = []
-    other_times = []
+    session_n_active = []
+    session_likelihoods = []
+    session_decoded = []
+    session_actual = []
+    session_errors = []
+    n_timebins = []
 
-    if not position.isempty:
-        for x, y, time in zip(position.x, position.y, position.time):
-            point = Point([x, y])
-            if zones['u'].contains(point):
-                u_data.append([x, y])
-                u_times.append(time)
-                continue
-            elif zones['shortcut'].contains(point):
-                shortcut_data.append([x, y])
-                shortcut_times.append(time)
-                continue
-            elif zones['novel'].contains(point):
-                novel_data.append([x, y])
-                novel_times.append(time)
-                continue
-            else:
-                other_data.append([x, y])
-                other_times.append(time)
+    for trial in trials:
+        epoch_of_interest = phase.excludes(trial)
 
-    sorted_zones = dict()
-    sorted_zones['u'] = nept.Position(u_data, u_times)
-    sorted_zones['shortcut'] = nept.Position(shortcut_data, shortcut_times)
-    sorted_zones['novel'] = nept.Position(novel_data, novel_times)
-    sorted_zones['other'] = nept.Position(other_data, other_times)
+        tuning_curves = get_only_tuning_curves(info,
+                                               position,
+                                               spikes,
+                                               epoch_of_interest)
 
-    return sorted_zones
+        if shuffled_id:
+            tuning_curves = np.random.permutation(tuning_curves)
 
+        sliced_position = position.time_slice(trial.start, trial.stop)
 
-def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neurons, normalized, run_time,
-                speed_limit, t_smooth, shuffle_id, window, decoding_times, min_proportion_decoded,
-                decode_sequences, sequence_len=3, sequence_speed=5., min_epochs=3, random_shuffle=False):
-    """Finds decoded for each session.
+        sliced_spikes = [spiketrain.time_slice(trial.start,
+                                               trial.stop) for spiketrain in spikes]
 
-    Parameters
-    ----------
-    info: module
-    dt: float
-    gaussian_std: float
-    min_epochs: int
-    min_neurons: int
-    min_spikes: int
-    min_swr: int
-    neurons: nept.Neurons
-    normalized: boolean
-    run_time: boolean
-    speed_limit: float
-    sequence_speed: float
-    shuffle_id: boolean
-    window: float
-    min_proportion_decoded: float
-    decoding_times: nept.Epoch
-    decode_sequences: bool
-    sequence_len: int
-    sequence_speed: float
-    random_shuffle: bool
-
-    Returns
-    -------
-    decoded: nept.Position
-    decoded_epochs: nept.Epoch
-    errors: np.array
-
-    """
-    if decoding_times.n_epochs != 1:
-        raise AssertionError("decoding_times must only contain one epoch (start, stop)")
-
-    events, position, all_spikes, lfp, lfp_theta = get_data(info)
-    xedges, yedges = nept.get_xyedges(position, binsize=8)
-
-    sliced_spikes = neurons.time_slice(decoding_times.start, decoding_times.stop)
-    position = position.time_slice(decoding_times.start, decoding_times.stop)
-
-    sliced_spikes = sliced_spikes.spikes
-
-    if shuffle_id:
-        tuning_curves = np.random.permutation(neurons.tuning_curves)
-    else:
-        tuning_curves = neurons.tuning_curves
-
-    if run_time:
         # limit position to only times when the subject is moving faster than a certain threshold
-        run_epoch = nept.run_threshold(position, thresh=speed_limit, t_smooth=t_smooth)
-        position = position[run_epoch]
+        run_epoch = nept.run_threshold(sliced_position, thresh=10., t_smooth=0.8)
+        sliced_position = sliced_position[run_epoch]
 
-        epochs_interest = nept.Epoch(np.array([position.time[0], position.time[-1]]))
+        sliced_spikes = [spiketrain.time_slice(run_epoch.start,
+                                               run_epoch.stop) for spiketrain in sliced_spikes]
+
+        # epochs_interest = nept.Epoch(np.array([sliced_position.time[0], sliced_position.time[-1]]))
+
+        t_window = 0.025  # 0.1 for running, 0.025 for swr
+
+        counts = nept.bin_spikes(sliced_spikes, sliced_position.time, dt=t_window, window=t_window,
+                                 gaussian_std=0.0075, normalized=False)
+
+        n_timebins.append(len(counts.time))
+
+        min_neurons = 3
+
+        tc_shape = tuning_curves.shape
+        decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
+
+        likelihood = nept.bayesian_prob(counts, decoding_tc, binsize=t_window, min_neurons=min_neurons, min_spikes=1)
+
+        # Find decoded location based on max likelihood for each valid timestep
+        xcenters, ycenters = get_bin_centers(info)
+        xy_centers = nept.cartesian(xcenters, ycenters)
+        decoded = nept.decode_location(likelihood, xy_centers, counts.time)
+
+        session_decoded.append(decoded)
+
+        # Remove nans from likelihood and reshape for plotting
+        keep_idx = np.sum(np.isnan(likelihood), axis=1) < likelihood.shape[1]
+        likelihood = likelihood[keep_idx]
+        likelihood = likelihood.reshape(np.shape(likelihood)[0], tc_shape[1], tc_shape[2])
+
+        session_likelihoods.append(likelihood)
+
+        n_active_neurons = np.asarray([n_active if n_active >= min_neurons else 0
+                                       for n_active in np.sum(counts.data >= 1, axis=1)])
+        n_active_neurons = n_active_neurons[keep_idx]
+        session_n_active.append(n_active_neurons)
+
+        f_xy = scipy.interpolate.interp1d(sliced_position.time, sliced_position.data.T, kind="nearest")
+        counts_xy = f_xy(decoded.time)
+        true_position = nept.Position(np.hstack((counts_xy[0][..., np.newaxis],
+                                                 counts_xy[1][..., np.newaxis])),
+                                      decoded.time)
+
+        session_actual.append(true_position)
+
+        trial_errors = true_position.distance(decoded)
+        session_errors.append(trial_errors)
+
+    return session_decoded, session_actual, session_likelihoods, session_errors, session_n_active, n_timebins
+
+
+def plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename=None):
+
+    all_errors = np.concatenate([np.concatenate(errors, axis=0) for errors in all_errors], axis=0)
+    all_errors_id_shuffled = np.concatenate([np.concatenate(errors, axis=0) for errors in all_errors_id_shuffled], axis=0)
+
+    fliersize = 1
+
+    decoded_dict = dict(error=all_errors, label='Decoded')
+    shuffled_id_dict = dict(error=all_errors_id_shuffled, label='ID shuffled')
+    decoded_errors = pd.DataFrame(decoded_dict)
+    shuffled_id = pd.DataFrame(shuffled_id_dict)
+    data = pd.concat([shuffled_id, decoded_errors])
+    colours = ['#ffffff', '#bdbdbd']
+
+    plt.figure(figsize=(6, 4))
+    flierprops = dict(marker='o', markersize=fliersize, linestyle='none')
+    ax = sns.boxplot(x='label', y='error', data=data, flierprops=flierprops)
+
+    edge_colour = '#252525'
+    for i, artist in enumerate(ax.artists):
+        artist.set_edgecolor(edge_colour)
+        artist.set_facecolor(colours[i])
+
+        for j in range(i*6, i*6+6):
+            line = ax.lines[j]
+            line.set_color(edge_colour)
+            line.set_mfc(edge_colour)
+            line.set_mec(edge_colour)
+
+    ax.text(1., 1., "N sessions: %d \nmean-error: %.1f cm \nmedian-error: %.1f cm" % (n_sessions,
+                                                                                      np.mean(all_errors),
+                                                                                      np.median(all_errors)),
+            horizontalalignment='right',
+            verticalalignment='top',
+            transform = ax.transAxes,
+            fontsize=10)
+
+    ax.set(xlabel=' ', ylabel="Error (cm)")
+    plt.xticks(fontsize=14)
+
+    sns.despine()
+    plt.tight_layout()
+
+    if filename is not None:
+        plt.savefig(filename)
+        plt.close()
     else:
-        sliced_lfp = lfp.time_slice(t_start, t_stop)
-
-        z_thresh = 3.0
-        power_thresh = 5.0
-        merge_thresh = 0.02
-        min_length = 0.05
-        swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
-                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
-
-        min_involved = 4
-        multi_swr = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=min_involved)
-
-        if multi_swr.n_epochs < min_swr:
-            epochs_interest = nept.Epoch(np.array([[], []]))
-        else:
-            epochs_interest = multi_swr
-
-        # print('sharp-wave ripples, total:', swrs.n_epochs)
-        # print('sharp-wave ripples, min', min_involved, 'neurons :', multi_swr.n_epochs)
-        # print('sharp-wave ripples, used :', epochs_interest.n_epochs)
-        # print('sharp-wave ripples, mean durations: ', np.mean(epochs_interest.durations))
-
-    counts = nept.bin_spikes(sliced_spikes, position.time, dt=dt, window=window,
-                             gaussian_std=gaussian_std, normalized=normalized)
-
-    tc_shape = tuning_curves.shape
-    decoding_tc = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
-
-    likelihood = nept.bayesian_prob(counts, decoding_tc, window, min_neurons=min_neurons, min_spikes=min_spikes)
-
-    xcenters = (xedges[1:] + xedges[:-1]) / 2.
-    ycenters = (yedges[1:] + yedges[:-1]) / 2.
-    xy_centers = nept.cartesian(xcenters, ycenters)
-
-    decoded = nept.decode_location(likelihood, xy_centers, counts.time)
-    nan_idx = np.logical_and(np.isnan(decoded.x), np.isnan(decoded.y))
-    decoded = decoded[~nan_idx]
-
-    if random_shuffle:
-        random_x = [np.random.choice(decoded.x) for val in decoded.x]
-        random_y = [np.random.choice(decoded.y) for val in decoded.y]
-
-        decoded = nept.Position(np.array([random_x, random_y]).T, decoded.time)
-
-    if decode_sequences:
-        print('decoded n_samples before sequence:', decoded.n_samples)
-        sequences = nept.remove_teleports(decoded, speed_thresh=sequence_speed, min_length=sequence_len)
-        decoded_epochs = epochs_interest.intersect(sequences)
-        decoded_epochs = decoded_epochs.expand(0.002)
-
-        if decoded_epochs.n_epochs < min_epochs:
-            decoded = nept.Position(np.array([]), np.array([]))
-        else:
-            decoded = decoded[decoded_epochs]
-
-        print('decoded n_samples after sequence:', decoded.n_samples)
-    else:
-        decoded_epochs = epochs_interest
-
-    f_xy = scipy.interpolate.interp1d(position.time, position.data.T, kind="nearest")
-    decoded_xy = f_xy(decoded.time)
-    actual_position = nept.Position(np.hstack((decoded_xy[0][..., np.newaxis],
-                                               decoded_xy[1][..., np.newaxis])),
-                                    decoded.time)
-
-    if decoded.n_samples > 0:
-        errors = actual_position.distance(decoded)
-    else:
-        errors = np.array([])
-
-    percent_decoded = (decoded.n_samples/counts.n_samples)*100
-
-    if (decoded.n_samples/counts.n_samples) < min_proportion_decoded:
-        print("Decoded bins make up %d%% of possible bins ..."
-              "removing due to too few bins" % percent_decoded)
-
-        decoded = nept.Position([np.array([]), np.array([])], np.array([]))
-        decoded_epochs = nept.Epoch([np.array([]), np.array([])])
-        errors = np.array([])
-        actual_position = nept.Position([np.array([]), np.array([])], np.array([]))
-
-    return decoded, decoded_epochs, errors, actual_position, likelihood, percent_decoded
+        plt.show()
 
 
-def get_decoded_zones(info, decoded, position, experiment_time):
-    """Assigns decoded position to zone and computes error
+def plot_over_space(info, values, positions):
+    xcenters = info.xedges[:-1] + (info.xedges[1:] - info.xedges[:-1]) / 2
+    ycenters = info.yedges[:-1] + (info.yedges[1:] - info.yedges[:-1]) / 2
 
-    Parameters
-    ----------
-    info: module
-    decoded: nept.Position
-    position: nept.Position
-    experiment_time: str
+    count_position = np.zeros((len(info.yedges), len(info.xedges)))
+    n_position = np.ones((len(info.yedges), len(info.xedges)))
 
-    Returns
-    -------
-    decoded_zones: dict
-        With u, shortcut, novel as keys.
-    errors: dict
-        With u, shortcut, novel as keys.
-    actual_position: dict
-        With u, shortcut, novel as keys.
-
-    """
-    zones = find_zones(info, remove_feeder=True, expand_by=8)
-    decoded_zones = point_in_zones(decoded, zones)
-
-    keys = ['u', 'shortcut', 'novel']
-
-    errors = dict()
-    actual_position = dict()
-    if experiment_time in ['phase1', 'phase2', 'phase3', 'tracks']:
-        for trajectory in keys:
-            actual_x = np.interp(decoded_zones[trajectory].time, position.time, position.x)
-            actual_y = np.interp(decoded_zones[trajectory].time, position.time, position.y)
-            actual_position[trajectory] = nept.Position(np.hstack((actual_x[..., np.newaxis],
-                                                                   actual_y[..., np.newaxis])),
-                                                        decoded_zones[trajectory].time)
-            if actual_position[trajectory].n_samples > 0:
-                errors[trajectory] = actual_position[trajectory].distance(decoded_zones[trajectory])
+    for trial_values, trial_positions in zip(values, positions):
+        for these_values, x, y in zip(trial_values, trial_positions.x, trial_positions.y):
+            x_idx = nept.find_nearest_idx(xcenters, x)
+            y_idx = nept.find_nearest_idx(ycenters, y)
+            if np.isscalar(these_values):
+                count_position[y_idx][x_idx] += these_values
             else:
-                errors[trajectory] = []
+                count_position[y_idx][x_idx] += these_values[y_idx][x_idx]
+            n_position[y_idx][x_idx] += 1
 
-    else:
-        for trajectory in decoded_zones:
-            errors[trajectory] = []
-            actual_position[trajectory] = []
-
-    return decoded_zones, errors, actual_position
-
-
-def zone_sort(info, decoded, shuffle_id, experiment_time):
-    """Evaluates decoded analysis
-
-    Parameters
-    ----------
-    info: module
-    decoded: dict
-    shuffle_id: boolean
-    experiment_time: str
-
-    Returns
-    -------
-    decoded_output: dict
-
-    """
-    decoded_zones, zone_errors, actual_position = get_decoded_zones(info, decoded["decoded"], decoded["position"],
-                                                                    experiment_time)
-
-    output = dict()
-    output['zones'] = decoded_zones
-    output['errors'] = decoded["errors"]
-    output['zone_errors'] = zone_errors
-    output['times'] = decoded["decoded"].n_samples
-    output['actual'] = actual_position
-    output['decoded'] = decoded["decoded"]
-    output['epochs'] = decoded["decoded_epochs"]
-
-    if shuffle_id:
-        filename = info.session_id + '_decode-shuffled-' + experiment_time + '.pkl'
-    else:
-        filename = info.session_id + '_decode-' + experiment_time + '.pkl'
-
-    pickled_path = os.path.join(pickle_filepath, filename)
-
-    with open(pickled_path, 'wb') as fileobj:
-        pickle.dump(output, fileobj)
-
-    return output
+    return count_position / n_position
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
-    infos = [info.r063d2]
+    import info.r063d2 as r063d2
+    import info.r063d3 as r063d3
+    # infos = [r063d2, r063d3]
 
-    if 1:
-        track_times = ['phase1', 'phase2', 'phase3', 'tracks']
-        experiment_time = "phase3"
+    from run import spike_sorted_infos
+    infos = spike_sorted_infos
 
-        for session in infos:
-            neurons_filename = session.session_id + '_neurons.pkl'
-            pickled_neurons = os.path.join(pickle_filepath, neurons_filename)
-            with open(pickled_neurons, 'rb') as fileobj:
-                neurons = pickle.load(fileobj)
+    for info in infos:
+        print(info.session_id)
+        events, position, spikes, _, _ = get_data(info)
 
-            for shuffled in [True, False]:
-                t_start = session.task_times[experiment_time].start
-                t_stop = session.task_times[experiment_time].stop
+        decoded_filename = info.session_id + '_decoded_binsize' + str(meta.binsize) + 'cm.pkl'
+        pickled_path = os.path.join(pickle_filepath, decoded_filename)
+        decoded, actual, likelihoods, errors, n_active, n_timebins = get_decoded(info,
+                                                     position,
+                                                     spikes,
+                                                     shuffled_id=False)
+        output = dict()
+        output["decoded"] = decoded
+        output["actual"] = actual
+        output["likelihoods"] = likelihoods
+        output["errors"] = errors
+        output["n_active"] = n_active
+        output["n_timebins"] = n_timebins
+        with open(pickled_path, 'wb') as fileobj:
+            pickle.dump(output, fileobj)
 
-                args = dict(min_swr=3,
-                            min_neurons=2,
-                            min_spikes=1,
-                            neurons=neurons,
-                            info=session,
-                            normalized=False,
-                            sequence_speed=5.,
-                            sequence_len=3,
-                            min_epochs=3,
-                            window=0.025,
-                            dt=0.025,
-                            gaussian_std=0.0075,
-                            experiment_time=experiment_time,
-                            speed_limit=10.,
-                            t_smooth=0.8)
-                if experiment_time in track_times:
-                    args["run_time"] = True
-                else:
-                    args["run_time"] = False
-                if shuffled:
-                    args["shuffle_id"] = True
-                else:
-                    args["shuffle_id"] = False
+        shuffled_filename = info.session_id + '_decoded-shuffled_binsize' + str(meta.binsize) + 'cm.pkl'
+        pickled_path = os.path.join(pickle_filepath, shuffled_filename)
+        decoded, actual, likelihoods, errors, n_active, n_timebins = get_decoded(info,
+                                                     position,
+                                                     spikes,
+                                                     shuffled_id=True)
+        output = dict()
+        output["decoded"] = decoded
+        output["actual"] = actual
+        output["likelihoods"] = likelihoods
+        output["errors"] = errors
+        output["n_active"] = n_active
+        output["n_timebins"] = n_timebins
+        with open(pickled_path, 'wb') as fileobj:
+            pickle.dump(output, fileobj)
 
-                print('decoding: %s %s; shuffled: %s' % (session.session_id, experiment_time, shuffled))
 
-                decode = {}
-                decode['decoded'], decode['decoded_epochs'], decode['errors'], decode['position'] = get_decoded(**args)
-                zone_sort(session, decode, shuffled, experiment_time)
+
+        # n_sessions = 0
+        # session_ids = []
+        # xedges = []
+        # yedges = []
+        #
+        # all_decoded = []
+        # all_actual = []
+        # all_likelihoods = []
+        # all_n_active = []
+        #
+        # all_errors = []
+        # all_errors_id_shuffled = []
+        # all_errors_random_shuffled = []
+        #
+        # proportion_decoded = []
+        #
+        # for info in infos:
+        #     print(info.session_id)
+        #     session_ids.append(info.session_id)
+        #     n_sessions += 1
+        #     events, position, spikes, _, _ = get_data(info)
+        #
+        #     xedge, yedge = nept.get_xyedges(position, binsize=binsize)
+        #     xedges.append(xedge)
+        #     yedges.append(yedge)
+        #
+        #     xx, yy = np.meshgrid(xedge, yedge)
+        #
+        #     decoded, actual, likelihoods, errors, n_active, session_n_running = get_decoded(info,
+        #                                              position,
+        #                                              spikes,
+        #                                              xedge,
+        #                                              yedge,
+        #                                              shuffled_id=False)
+        #
+        #     _, _, _, errors_id_shuffled, _, _ = get_decoded(info,
+        #                                          position,
+        #                                          spikes,
+        #                                          xedge,
+        #                                          yedge,
+        #                                          shuffled_id=True)
+        #
+        #     likelihood_byactual = plot_over_space(info, likelihoods, actual)
+        #     pp = plt.pcolormesh(xx, yy, likelihood_byactual, vmin=0., cmap='bone_r')
+        #     plt.colorbar(pp)
+        #     title = info.session_id+" posterior"
+        #     plt.title(title)
+        #     plt.axis('off')
+        #     plt.savefig(os.path.join(output_filepath, info.session_id+"_posterior-byactual.png"))
+        #     plt.close()
+        #
+        #     errors_byactual = plot_over_space(info, errors, actual)
+        #     pp = plt.pcolormesh(xx, yy, errors_byactual, vmin=0., cmap='bone_r')
+        #     plt.colorbar(pp)
+        #     title = info.session_id+" decoding error (cm)"
+        #     plt.title(title)
+        #     plt.axis('off')
+        #     plt.savefig(os.path.join(output_filepath, info.session_id+"_errors-byactual.png"))
+        #     plt.close()
+        #
+        #     n_decoded = 0
+        #     for trial in decoded:
+        #         n_decoded += trial.n_samples
+        #     proportion_decoded.append(n_decoded/session_n_running)
+        #
+        #     all_decoded.append(decoded)
+        #     all_actual.append(actual)
+        #     all_likelihoods.append(likelihoods)
+        #     all_n_active.append(n_active)
+        #
+        #     all_errors.append(errors)
+        #     all_errors_id_shuffled.append(errors_id_shuffled)
+        #
+        #     filename = os.path.join(output_filepath, info.session_id+"_errors-binsize"+str(binsize)+".png")
+        #     plot_errors([errors], [errors_id_shuffled], n_sessions=1, filename=filename)
+        #
+        # combined_errors = np.concatenate([np.concatenate(errors, axis=0) for errors in all_errors], axis=0)
+        #
+        # filename = os.path.join(output_filepath, "combined_errors-binsize"+str(binsize)+".png")
+        # plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename)
+        #
+        # y_pos = np.arange(n_sessions)
+        # plt.bar(y_pos, proportion_decoded, align='center', alpha=0.7)
+        # plt.xticks(y_pos, session_ids, rotation=90, fontsize=10)
+        # plt.ylabel('Proportion')
+        # plt.title("Samples decoded with %d cm bins" % binsize)
+        # plt.tight_layout()
+        # plt.savefig(os.path.join(output_filepath, "proportion-decoded_"+str(binsize)+"cm.png"))
+        # plt.close()

@@ -256,8 +256,8 @@ if __name__ == "__main__":
 
     for info in infos:
         n_swrs, durations = plot_swr_stats(info, resting_only=True,
-                                          plot_example_swr_rasters=True,
-                                          plot_swr_spike_counts=True)
+                                           plot_example_swr_rasters=True,
+                                           plot_swr_spike_counts=True)
 
         all_swrs += n_swrs
         all_durations += durations
