@@ -3,6 +3,8 @@ from shapely.geometry import Point
 from scipy import ndimage
 import nept
 
+from utils_maze import get_bin_centers
+
 
 def get_unique_fields(fields, fields_compare1, fields_compare2):
     """ Finds neurons with and indices of unique fields.
@@ -89,8 +91,7 @@ def categorize_fields(tuning_curves, zone, xedges, yedges, field_thresh):
 
     field_masks = get_field_mask(tuning_curves, field_thresh)
 
-    xcenters = (xedges[1:] + xedges[:-1]) / 2.
-    ycenters = (yedges[1:] + yedges[:-1]) / 2.
+    xcenters, ycenters = get_bin_centers(info)
 
     xy_centers = nept.cartesian(xcenters, ycenters)
 

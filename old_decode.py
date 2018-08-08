@@ -7,7 +7,7 @@ from shapely.geometry import Point
 import nept
 
 from loading_data import get_data
-from utils_maze import find_zones
+from utils_maze import find_zones, get_bin_centers
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -153,8 +153,7 @@ def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neuron
 
     likelihood = nept.bayesian_prob(counts, decoding_tc, window, min_neurons=min_neurons, min_spikes=min_spikes)
 
-    xcenters = (xedges[1:] + xedges[:-1]) / 2.
-    ycenters = (yedges[1:] + yedges[:-1]) / 2.
+    xcenters, ycenters = get_bin_centers(info)
     xy_centers = nept.cartesian(xcenters, ycenters)
 
     decoded = nept.decode_location(likelihood, xy_centers, counts.time)

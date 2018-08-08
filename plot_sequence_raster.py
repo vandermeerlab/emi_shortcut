@@ -8,7 +8,7 @@ import nept
 import scalebar
 
 from loading_data import get_data
-from utils_maze import find_zones
+from utils_maze import find_zones, get_bin_centers
 from utils_fields import categorize_fields
 from analyze_tuning_curves import get_odd_firing_idx
 
@@ -90,8 +90,7 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
     with open(pickled_neurons, 'rb') as fileobj:
         neurons = pickle.load(fileobj)
 
-    xcenters = (xedges[1:] + xedges[:-1]) / 2.
-    ycenters = (yedges[1:] + yedges[:-1]) / 2.
+    xcenters, ycenters = get_bin_centers(info)
     xy_centers = nept.cartesian(xcenters, ycenters)
 
     zones = find_zones(info, remove_feeder=False, expand_by=4)

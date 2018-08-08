@@ -954,8 +954,7 @@ def plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename=None):
 
 
 def plot_over_space(info, values, positions, title, filepath=None):
-    xcenters = info.xedges[:-1] + (info.xedges[1:] - info.xedges[:-1]) / 2.
-    ycenters = info.yedges[:-1] + (info.yedges[1:] - info.yedges[:-1]) / 2.
+    xcenters, ycenters = get_bin_centers(info)
 
     count_position = np.zeros((len(info.yedges), len(info.xedges)))
     n_position = np.ones((len(info.yedges), len(info.xedges)))
