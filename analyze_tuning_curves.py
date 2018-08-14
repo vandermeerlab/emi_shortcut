@@ -321,8 +321,8 @@ def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, spee
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info
-    infos = spike_sorted_infos
+    from run import analysis_infos, info
+    infos = analysis_infos
     # infos = [info.r066d1]
 
     if 1:

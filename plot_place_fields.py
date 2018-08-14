@@ -13,8 +13,8 @@ pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
 output_filepath = os.path.join(thisdir, 'plots', 'fields')
 
 
-from run import spike_sorted_infos
-infos = spike_sorted_infos
+from run import analysis_infos
+infos = analysis_infos
 
 for info in infos:
     print('place_fields:', info.session_id)

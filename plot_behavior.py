@@ -111,10 +111,10 @@ if __name__ == "__main__":
                      r063_infos, r066_infos, r067_infos, r068_infos,
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos,
                      spike_sorted_infos,
-                     some_infos)
+                     analysis_infos)
 
     if 1:
-        infos = spike_sorted_infos
+        infos = analysis_infos
 
         proportion_filename = 'all-behavior_proportions.png'
         duration_filename = 'all-behavior_durations.png'

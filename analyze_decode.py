@@ -182,8 +182,8 @@ if __name__ == "__main__":
     import info.r063d3 as r063d3
     # infos = [r063d2, r063d3]
 
-    from run import spike_sorted_infos
-    infos = spike_sorted_infos
+    from run import analysis_infos
+    infos = analysis_infos
 
     for info in infos:
         print(info.session_id)

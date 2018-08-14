@@ -6,7 +6,6 @@ import os
 import nept
 
 from loading_data import get_data
-from run import info, spike_sorted_infos
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -93,9 +92,9 @@ def plot_tc_corr(corr, stable_points, novel_points, filename=None):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
+    from run import analysis_infos
     # infos = [info.r068d7, info.r068d8]
-    infos = spike_sorted_infos
+    infos = analysis_infos
 
     corr_stable12 = []
     corr_stable13 = []

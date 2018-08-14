@@ -197,9 +197,9 @@ def get_combined(infos, experiment_times):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, days123_infos, days456_infos, info
+    from run import analysis_infos, days123_infos, days456_infos, info
 
-    infos = spike_sorted_infos
+    infos = analysis_infos
     session = 'combined'
 
     # infos = [info.r066d4]

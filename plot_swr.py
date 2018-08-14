@@ -4,8 +4,8 @@ import nept
 from loading_data import get_data
 from utils_plotting import plot_swrs
 
-from run import spike_sorted_infos
-infos = spike_sorted_infos
+from run import analysis_infos
+infos = analysis_infos
 
 
 thisdir = os.path.dirname(os.path.realpath(__file__))

@@ -215,8 +215,8 @@ def get_outputs_combined_weighted(infos):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, days123_infos, days456_infos
-    infos = spike_sorted_infos
+    from run import analysis_infos, days123_infos, days456_infos
+    infos = analysis_infos
 
     all_tracks_tc = True
     plot_prepost(infos, exp_times=['prerecord', 'postrecord'], all_tracks_tc=all_tracks_tc)

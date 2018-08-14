@@ -149,8 +149,8 @@ def analyze(info, output_filepath=output_filepath, savefig=True):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
+    from run import analysis_infos, info
+    # infos = analysis_infos
     infos = [info.r066d3]
 
     for session in infos:

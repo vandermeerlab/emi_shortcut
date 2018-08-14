@@ -294,8 +294,8 @@ def zone_sort(info, decoded, shuffle_id, experiment_time):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos, info
-    # infos = spike_sorted_infos
+    from run import analysis_infos, info
+    # infos = analysis_infos
     infos = [info.r063d2]
 
     if 1:

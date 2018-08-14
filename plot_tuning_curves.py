@@ -38,8 +38,8 @@ def plot(info, tuning_curve, num=10):
 
 
 if __name__ == "__main__":
-    from run import spike_sorted_infos
-    for info in spike_sorted_infos:
+    from run import analysis_infos
+    for info in analysis_infos:
         tuning_curve_filename = info.session_id + '_tuning-curve.pkl'
         pickled_tuning_curve = os.path.join(pickle_filepath, tuning_curve_filename)
 
