@@ -172,14 +172,6 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
     print(info.session_id)
     events, position, spikes, lfp, _ = get_data(info)
 
-    # Remove interneurons
-    max_mean_firing = 5
-    interneurons = np.zeros(len(spikes), dtype=bool)
-    for i, spike in enumerate(spikes):
-        if len(spike.time) / info.session_length >= max_mean_firing:
-            interneurons[i] = True
-    spikes = spikes[~interneurons]
-
     # Find SWRs for the whole session
     z_thresh = 2.0
     power_thresh = 3.0

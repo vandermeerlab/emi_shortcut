@@ -387,3 +387,115 @@ def get_bin_centers(info):
     ycenters = info.yedges[:-1] + (info.yedges[1:] - info.yedges[:-1]) / 2
 
     return xcenters, ycenters
+
+
+def find_subset_zones(info, remove_feeder, expand_by):
+    """Finds zones from ideal trajectories.
+
+    Parameters
+    ----------
+    info : shortcut module
+    remove_feeder: boolean
+    expand_by : int or float
+        Amount to expand the line.
+
+    Returns
+    -------
+    zone : dict
+        With shapely.Polygon as values.
+        Keys are u, shortcut, novel.
+
+    """
+    u_line = LineString(info.u_trajectory)
+    shortcut_line = LineString(info.shortcut_trajectory)
+    novel_line = LineString(info.novel_trajectory)
+    u_subset_line = LineString(info.u_segment)
+
+    feeder1 = Point(info.path_pts['feeder1'][0], info.path_pts['feeder1'][1]).buffer(expand_by*1.3)
+    feeder2 = Point(info.path_pts['feeder2'][0], info.path_pts['feeder2'][1]).buffer(expand_by*1.3)
+
+    u_zone = expand_line(Point(info.u_trajectory[0]),
+                         Point(info.u_trajectory[-1]),
+                         u_line, expand_by)
+    shortcut_zone = expand_line(Point(info.shortcut_trajectory[0]),
+                                Point(info.shortcut_trajectory[-1]),
+                                shortcut_line, expand_by)
+    novel_zone = expand_line(Point(info.novel_trajectory[0]),
+                             Point(info.novel_trajectory[-1]),
+                             novel_line, expand_by)
+    u_subset_zone = expand_line(Point(info.u_segment[0]),
+                                Point(info.u_segment[-1]),
+                                u_subset_line, expand_by)
+
+    zone = dict()
+    zone['u'] = u_subset_zone
+    zone['shortcut'] = shortcut_zone.difference(u_zone)
+    zone['shortcut'] = zone['shortcut'].difference(novel_zone)
+    zone['novel'] = novel_zone.difference(u_zone)
+
+    if remove_feeder:
+        for feeder in [feeder1, feeder2]:
+            zone['u'] = zone['u'].difference(feeder)
+            zone['shortcut'] = zone['shortcut'].difference(feeder)
+            zone['novel'] = zone['novel'].difference(feeder)
+
+    return zone
+
+
+def get_subset_zones(info, position):
+
+    binned_maze_shape = (len(info.yedges)-1, len(info.xedges)-1)
+
+    zones = find_subset_zones(info, remove_feeder=True, expand_by=15)
+
+    xcenters, ycenters = get_bin_centers(info)
+
+    u_zone = np.zeros(binned_maze_shape).astype(bool)
+    shortcut_zone = np.zeros(binned_maze_shape).astype(bool)
+    novel_zone = np.zeros(binned_maze_shape).astype(bool)
+
+    for i, x in enumerate(xcenters):
+        for j, y in enumerate(ycenters):
+            if zones["u"].contains(Point(x,y)):
+                u_zone[j][i] = True
+            elif zones["shortcut"].contains(Point(x,y)):
+                shortcut_zone[j][i] = True
+            elif zones["novel"].contains(Point(x,y)):
+                novel_zone[j][i] = True
+
+    sliced_position = position.time_slice(info.task_times["phase3"].start, info.task_times["phase3"].stop)
+    occupancy = nept.get_occupancy(sliced_position, info.yedges, info.xedges)
+
+    phase1_position = position.time_slice(info.task_times["phase1"].start, info.task_times["phase1"].stop)
+    phase1_occupancy = nept.get_occupancy(phase1_position, info.yedges, info.xedges)
+    phase2_position = position.time_slice(info.task_times["phase2"].start, info.task_times["phase2"].stop)
+    phase2_occupancy = nept.get_occupancy(phase2_position, info.yedges, info.xedges)
+    u_pos = np.zeros(binned_maze_shape).astype(bool)
+    u_pos[occupancy > 0.] = True
+    u_pos[phase1_occupancy > 0.] = True
+    u_pos[phase2_occupancy > 0.] = True
+    u_area = np.zeros(binned_maze_shape).astype(bool)
+    u_area[u_pos & u_zone] = True
+
+    shortcut_pos = np.zeros(binned_maze_shape).astype(bool)
+    shortcut_pos[(occupancy > 0.) & (~u_area)] = True
+    shortcut_area = np.zeros(binned_maze_shape).astype(bool)
+    shortcut_area[shortcut_pos & shortcut_zone] = True
+
+    novel_pos = np.zeros(binned_maze_shape).astype(bool)
+    novel_pos[(occupancy > 0.) & (~u_area)] = True
+    novel_area = np.zeros(binned_maze_shape).astype(bool)
+    novel_area[novel_pos & novel_zone] = True
+
+    return u_area, shortcut_area, novel_area
+
+
+def get_xy_idx(info, position):
+    xcenters, ycenters = get_bin_centers(info)
+
+    x_idx = []
+    y_idx = []
+    for x, y in zip(position.x, position.y):
+        x_idx.append(nept.find_nearest_idx(xcenters, x))
+        y_idx.append(nept.find_nearest_idx(ycenters, y))
+    return x_idx, y_idx
