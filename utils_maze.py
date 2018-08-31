@@ -501,7 +501,7 @@ def get_xy_idx(info, position):
     return x_idx, y_idx
 
 
-def trials_by_trajectory(info, sliced_position, zone, min_epoch=1., min_distance=20.,
+def trials_by_trajectory(info, sliced_position, zone, min_epoch=2., min_distance=10.,
                          merge_gap=1.5, min_coverage=True):
     if min_coverage:
         min_coverage = np.sum(zone) / 4
@@ -551,14 +551,24 @@ def trials_by_trajectory(info, sliced_position, zone, min_epoch=1., min_distance
     return nept.Epoch([trial_starts, trial_stops])
 
 
-def find_matched_trials(fewest_epochs, trials_to_match):
+def find_matched_trials(trial_epochs, fewest, to_match):
+    # a novel trial crosses the trajectory twice, adding more u or shortcut trials if novel has the fewest
+    if fewest == "novel":
+        fewest_centers = np.sort(np.concatenate([trial_epochs[fewest].centers, trial_epochs[fewest].centers]))
+    else:
+        fewest_centers = trial_epochs[fewest].centers
+
+    # and adding half the number of novel trials if u or shortcut has the fewest
+    if to_match == "novel":
+        fewest_centers = fewest_centers[::2]
+
     starts = []
     stops = []
-    centers = trials_to_match.centers
-    for trial_center in fewest_epochs.centers:
+    centers = trial_epochs[to_match].centers
+    for trial_center in fewest_centers:
         idx = np.nanargmin(np.abs(centers - trial_center))
-        starts.append(trials_to_match[idx].start)
-        stops.append(trials_to_match[idx].stop)
+        starts.append(trial_epochs[to_match][idx].start)
+        stops.append(trial_epochs[to_match][idx].stop)
         centers[idx] = np.nan
     return nept.Epoch([starts, stops])
 
@@ -566,15 +576,16 @@ def find_matched_trials(fewest_epochs, trials_to_match):
 def get_matched_trials(info, sliced_position):
     u_zone, shortcut_zone, novel_zone = get_subset_zones(info, sliced_position)
 
-    u_epochs = trials_by_trajectory(info, sliced_position, u_zone)
-    shortcut_epochs = trials_by_trajectory(info, sliced_position, shortcut_zone)
-    novel_epochs = trials_by_trajectory(info, sliced_position, novel_zone, min_distance=0.)
-    trial_epochs = [u_epochs, shortcut_epochs, novel_epochs]
+    trial_epochs = dict()
+    trial_epochs["u"] = trials_by_trajectory(info, sliced_position, u_zone)
+    trial_epochs["shortcut"] = trials_by_trajectory(info, sliced_position, shortcut_zone)
+    trial_epochs["novel"] = trials_by_trajectory(info, sliced_position, novel_zone, min_distance=0.)
 
-    fewest_trials = trial_epochs[np.argmin([epoch.n_epochs for epoch in trial_epochs])]
+    n_fewest = np.min([trial_epochs["u"].n_epochs, trial_epochs["shortcut"].n_epochs, trial_epochs["novel"].n_epochs*2])
+    segment_with_fewest = [key for key, value in trial_epochs.items() if (value.n_epochs == n_fewest) or (value.n_epochs*2 == n_fewest)][0]
 
     matched_trials = nept.Epoch([], [])
-    for trial_epoch in trial_epochs:
-        matched_trials = matched_trials.join(find_matched_trials(fewest_trials, trial_epoch))
+    for maze_segment in trial_epochs.keys():
+        matched_trials = matched_trials.join(find_matched_trials(trial_epochs, segment_with_fewest, maze_segment))
 
     return matched_trials
