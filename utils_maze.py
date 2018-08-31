@@ -499,3 +499,82 @@ def get_xy_idx(info, position):
         x_idx.append(nept.find_nearest_idx(xcenters, x))
         y_idx.append(nept.find_nearest_idx(ycenters, y))
     return x_idx, y_idx
+
+
+def trials_by_trajectory(info, sliced_position, zone, min_epoch=1., min_distance=20.,
+                         merge_gap=1.5, min_coverage=True):
+    if min_coverage:
+        min_coverage = np.sum(zone) / 4
+    else:
+        min_coverage = 1
+
+    x_idxs, y_idxs = get_xy_idx(info, sliced_position)
+
+    in_zone = zone[y_idxs, x_idxs]
+
+    jumps = np.diff(in_zone.astype(int))
+    jumps = np.insert(jumps, 0, 0)
+
+    starts = sliced_position.time[jumps == 1]
+    np.insert(starts, 0, sliced_position.time[0])
+    stops = sliced_position.time[jumps == -1]
+    np.insert(stops, 0, sliced_position.time[-1])
+
+    if len(starts) < len(stops):
+        stops = stops[1:]
+    elif len(starts) > len(stops):
+        starts = starts[:-1]
+
+    zone_epochs = nept.Epoch([starts, stops]).merge(gap=merge_gap)
+
+    dur_idx = zone_epochs.durations >= min_epoch
+
+    start_idxs = [nept.find_nearest_idx(sliced_position.time, start) for start in zone_epochs.starts]
+    stop_idxs = [nept.find_nearest_idx(sliced_position.time, stop) for stop in zone_epochs.stops]
+
+    dist_idx = np.zeros(zone_epochs.n_epochs).astype(bool)
+    for i, (start_idx, stop_idx) in enumerate(zip(start_idxs, stop_idxs)):
+        dist_idx[i] = sliced_position[start_idx].distance(sliced_position[stop_idx])[0] > min_distance
+
+    trial_epochs = nept.Epoch([zone_epochs.starts[dur_idx & dist_idx], zone_epochs.stops[dur_idx & dist_idx]])
+
+    trial_starts = []
+    trial_stops = []
+    for start, stop in zip(trial_epochs.starts, trial_epochs.stops):
+        pp = sliced_position.time_slice(start, stop)
+        x_idx, y_idx = get_xy_idx(info, pp)
+
+        if (len(np.unique([(x, y) for (x, y) in zip(x_idx, y_idx)])) > min_coverage):
+            trial_starts.append(start)
+            trial_stops.append(stop)
+
+    return nept.Epoch([trial_starts, trial_stops])
+
+
+def find_matched_trials(fewest_epochs, trials_to_match):
+    starts = []
+    stops = []
+    centers = trials_to_match.centers
+    for trial_center in fewest_epochs.centers:
+        idx = np.nanargmin(np.abs(centers - trial_center))
+        starts.append(trials_to_match[idx].start)
+        stops.append(trials_to_match[idx].stop)
+        centers[idx] = np.nan
+    return nept.Epoch([starts, stops])
+
+
+def get_matched_trials(info, sliced_position):
+    u_zone, shortcut_zone, novel_zone = get_subset_zones(info, sliced_position)
+
+    u_epochs = trials_by_trajectory(info, sliced_position, u_zone)
+    shortcut_epochs = trials_by_trajectory(info, sliced_position, shortcut_zone)
+    novel_epochs = trials_by_trajectory(info, sliced_position, novel_zone, min_distance=0.)
+    trial_epochs = [u_epochs, shortcut_epochs, novel_epochs]
+
+    fewest_trials = trial_epochs[np.argmin([epoch.n_epochs for epoch in trial_epochs])]
+
+    matched_trials = nept.Epoch([], [])
+    for trial_epoch in trial_epochs:
+        matched_trials = matched_trials.join(find_matched_trials(fewest_trials, trial_epoch))
+
+    return matched_trials

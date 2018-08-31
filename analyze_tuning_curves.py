@@ -207,8 +207,8 @@ def get_outputs_all(infos):
 
 
 def get_only_tuning_curves(info, position, spikes, epoch_of_interest):
-    sliced_position = position.time_slice(epoch_of_interest.start, epoch_of_interest.stop)
-    sliced_spikes = [spiketrain.time_slice(epoch_of_interest.start, epoch_of_interest.stop) for spiketrain in spikes]
+    sliced_position = position.time_slice(epoch_of_interest.starts, epoch_of_interest.stops)
+    sliced_spikes = [spiketrain.time_slice(epoch_of_interest.starts, epoch_of_interest.stops) for spiketrain in spikes]
 
     # Limit position and spikes to only running times
     run_epoch = nept.run_threshold(sliced_position, thresh=10., t_smooth=0.8)

@@ -10,7 +10,7 @@ import nept
 import info.meta as meta
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
-from utils_maze import get_trials, get_bin_centers
+from utils_maze import get_trials, get_bin_centers, get_matched_trials
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
@@ -24,7 +24,10 @@ if not os.path.exists(output_filepath):
 def get_decoded(info, position, spikes, shuffled_id):
 
     phase = info.task_times["phase3"]
-    trials = get_trials(events, phase)
+    sliced_position = position.time_slice(phase.start, phase.stop)
+
+    # trials = get_trials(events, phase)
+    trials = get_matched_trials(info, sliced_position)
 
     error_byactual_position = np.zeros((len(info.yedges), len(info.xedges)))
     n_byactual_position = np.ones((len(info.yedges), len(info.xedges)))
