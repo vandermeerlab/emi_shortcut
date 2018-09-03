@@ -953,7 +953,7 @@ def plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename=None):
         plt.show()
 
 
-def plot_over_space(info, values, positions, title, filepath=None):
+def plot_over_space(info, position, values, positions, title, filepath=None):
     xcenters, ycenters = get_bin_centers(info)
 
     count_position = np.zeros((len(info.yedges), len(info.xedges)))
@@ -971,10 +971,15 @@ def plot_over_space(info, values, positions, title, filepath=None):
     over_space = count_position / n_position
 
     xx, yy = np.meshgrid(info.xedges, info.yedges)
+    
+    plt.plot(position.x, position.y, "y.", ms=1, alpha=0.2)
     pp = plt.pcolormesh(xx, yy, over_space, vmin=0., cmap='bone_r')
+
     plt.colorbar(pp)
     plt.title(title)
     plt.axis('off')
+    plt.tight_layout()
+
     if filepath is not None:
         plt.savefig(filepath)
         plt.close()
