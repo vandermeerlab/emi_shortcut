@@ -971,7 +971,7 @@ def plot_over_space(info, position, values, positions, title, filepath=None):
     over_space = count_position / n_position
 
     xx, yy = np.meshgrid(info.xedges, info.yedges)
-    
+
     plt.plot(position.x, position.y, "y.", ms=1, alpha=0.2)
     pp = plt.pcolormesh(xx, yy, over_space, vmin=0., cmap='bone_r')
 
