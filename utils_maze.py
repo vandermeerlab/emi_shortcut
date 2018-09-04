@@ -149,65 +149,6 @@ def spikes_by_position(spikes, zone, position):
     return path_spikes
 
 
-def get_zones(info, position, expand_by=6):
-    """Finds the spikes that occur while the animal is in certain positions.
-
-    Parameters
-    ----------
-    info : module
-        Module with session-specific information
-    position : nept.Position
-        Must be a 2D position.
-
-    Returns
-    -------
-    spike_pos : dict
-        With u, shortcut, novel, other keys that are each dicts with x, y, time keys
-
-    """
-    # Here I define the ideal trajectories in cm that I project onto
-    # to make the 1D linear position.
-    u_line = LineString(info.u_trajectory)
-    shortcut_line = LineString(info.shortcut_trajectory)
-    novel_line = LineString(info.novel_trajectory)
-
-    u_start = Point(info.u_trajectory[0])
-    u_stop = Point(info.u_trajectory[-1])
-    shortcut_start = Point(info.shortcut_trajectory[0])
-    shortcut_stop = Point(info.shortcut_trajectory[-1])
-    novel_start = Point(info.novel_trajectory[0])
-    novel_stop = Point(info.novel_trajectory[-1])
-
-    zones = dict()
-    zones['u'] = nept.expand_line(u_start, u_stop, u_line, expand_by)
-    zones['shortcut'] = nept.expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
-    zones['novel'] = nept.expand_line(novel_start, novel_stop, novel_line, expand_by)
-    zones['ushort'] = zones['u'].intersection(zones['shortcut'])
-    zones['unovel'] = zones['u'].intersection(zones['novel'])
-
-    u_idx = []
-    shortcut_idx = []
-    novel_idx = []
-    other_idx = []
-    for pos_idx in list(range(len(position.time))):
-        point = Point([position.x[pos_idx], position.y[pos_idx]])
-        if zones['u'].contains(point) or zones['ushort'].contains(point) or zones['unovel'].contains(point):
-            u_idx.append(pos_idx)
-        elif zones['shortcut'].contains(point):
-            shortcut_idx.append(pos_idx)
-        elif zones['novel'].contains(point):
-            novel_idx.append(pos_idx)
-        else:
-            other_idx.append(pos_idx)
-
-    path_pos = dict()
-    path_pos['u'] = position[u_idx]
-    path_pos['shortcut'] = position[shortcut_idx]
-    path_pos['novel'] = position[novel_idx]
-    path_pos['other'] = position[other_idx]
-
-    return path_pos
-
 
 def expand_line(start_pt, stop_pt, line, expand_by):
     """Expands shapely line into a zone.
@@ -226,65 +167,6 @@ def expand_line(start_pt, stop_pt, line, expand_by):
     """
     line_expanded = line.buffer(expand_by)
     zone = start_pt.union(line_expanded).union(stop_pt)
-
-    return zone
-
-
-def find_zones(info, remove_feeder, expand_by=6):
-    """Finds zones from ideal trajectories.
-
-    Parameters
-    ----------
-    info : shortcut module
-    remove_feeder: boolean
-    expand_by : int or float
-        Amount to expand the line.
-
-    Returns
-    -------
-    zone : dict
-        With shapely.Polygon as values.
-        Keys are u, shortcut, novel, ushort, unovel, uped, shortped,
-        novelped, pedestal.
-
-    """
-    u_line = LineString(info.u_trajectory)
-    shortcut_line = LineString(info.shortcut_trajectory)
-    novel_line = LineString(info.novel_trajectory)
-
-    u_start = Point(info.u_trajectory[0])
-    u_stop = Point(info.u_trajectory[-1])
-    shortcut_start = Point(info.shortcut_trajectory[0])
-    shortcut_stop = Point(info.shortcut_trajectory[-1])
-    novel_start = Point(info.novel_trajectory[0])
-    novel_stop = Point(info.novel_trajectory[-1])
-    pedestal_center = Point(info.path_pts['pedestal'][0], info.path_pts['pedestal'][1])
-    pedestal = pedestal_center.buffer(expand_by*2.2)
-    feeder1_center = Point(info.path_pts['feeder1'][0], info.path_pts['feeder1'][1])
-    feeder1 = feeder1_center.buffer(expand_by * 1.2)
-    feeder2_center = Point(info.path_pts['feeder2'][0], info.path_pts['feeder2'][1])
-    feeder2 = feeder2_center.buffer(expand_by * 1.2)
-
-    zone_u = expand_line(u_start, u_stop, u_line, expand_by)
-    zone_shortcut = expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
-    zone_novel = expand_line(novel_start, novel_stop, novel_line, expand_by)
-
-    zone = dict()
-    zone['u'] = zone_u
-    zone['u'] = zone['u'].difference(pedestal)
-    zone['shortcut'] = zone_shortcut.difference(zone_u)
-    zone['shortcut'] = zone['shortcut'].difference(zone_novel)
-    zone['shortcut'] = zone['shortcut'].difference(pedestal)
-    zone['novel'] = zone_novel.difference(zone_u)
-    zone['novel'] = zone['novel'].difference(pedestal)
-    zone['pedestal'] = pedestal
-
-    if remove_feeder:
-        for feeder in [feeder1, feeder2]:
-            zone['u'] = zone['u'].difference(feeder)
-            zone['shortcut'] = zone['shortcut'].difference(feeder)
-            zone['novel'] = zone['novel'].difference(feeder)
-            zone['pedestal'] = zone['pedestal'].difference(feeder)
 
     return zone
 
@@ -389,7 +271,7 @@ def get_bin_centers(info):
     return xcenters, ycenters
 
 
-def find_subset_zones(info, remove_feeder, expand_by):
+def find_zones(info, remove_feeder, expand_by, subset=False):
     """Finds zones from ideal trajectories.
 
     Parameters
@@ -398,6 +280,7 @@ def find_subset_zones(info, remove_feeder, expand_by):
     remove_feeder: boolean
     expand_by : int or float
         Amount to expand the line.
+    subset: boolean
 
     Returns
     -------
@@ -428,7 +311,10 @@ def find_subset_zones(info, remove_feeder, expand_by):
                                 u_subset_line, expand_by)
 
     zone = dict()
-    zone['u'] = u_subset_zone
+    if subset:
+        zone['u'] = u_subset_zone
+    else:
+        zone['u'] = u_zone
     zone['shortcut'] = shortcut_zone.difference(u_zone)
     zone['shortcut'] = zone['shortcut'].difference(novel_zone)
     zone['novel'] = novel_zone.difference(u_zone)
@@ -442,11 +328,11 @@ def find_subset_zones(info, remove_feeder, expand_by):
     return zone
 
 
-def get_subset_zones(info, position):
+def get_zones(info, position, subset=False):
 
     binned_maze_shape = (len(info.yedges)-1, len(info.xedges)-1)
 
-    zones = find_subset_zones(info, remove_feeder=True, expand_by=15)
+    zones = find_zones(info, remove_feeder=True, expand_by=15, subset=subset)
 
     xcenters, ycenters = get_bin_centers(info)
 
@@ -573,16 +459,19 @@ def find_matched_trials(trial_epochs, fewest, to_match):
     return nept.Epoch([starts, stops])
 
 
-def get_matched_trials(info, sliced_position):
-    u_zone, shortcut_zone, novel_zone = get_subset_zones(info, sliced_position)
+def get_matched_trials(info, sliced_position, subset=False):
+    u_zone, shortcut_zone, novel_zone = get_zones(info, sliced_position, subset=subset)
 
     trial_epochs = dict()
     trial_epochs["u"] = trials_by_trajectory(info, sliced_position, u_zone)
     trial_epochs["shortcut"] = trials_by_trajectory(info, sliced_position, shortcut_zone)
     trial_epochs["novel"] = trials_by_trajectory(info, sliced_position, novel_zone, min_distance=0.)
 
-    n_fewest = np.min([trial_epochs["u"].n_epochs, trial_epochs["shortcut"].n_epochs, trial_epochs["novel"].n_epochs*2])
-    segment_with_fewest = [key for key, value in trial_epochs.items() if (value.n_epochs == n_fewest) or (value.n_epochs*2 == n_fewest)][0]
+    n_fewest = np.min([trial_epochs["u"].n_epochs,
+                       trial_epochs["shortcut"].n_epochs,
+                       trial_epochs["novel"].n_epochs*2])
+    segment_with_fewest = [key for key, value in trial_epochs.items() if
+                           (value.n_epochs == n_fewest) or (value.n_epochs*2 == n_fewest)][0]
 
     matched_trials = nept.Epoch([], [])
     for maze_segment in trial_epochs.keys():

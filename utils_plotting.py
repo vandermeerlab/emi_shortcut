@@ -953,7 +953,7 @@ def plot_errors(all_errors, all_errors_id_shuffled, n_sessions, filename=None):
         plt.show()
 
 
-def plot_over_space(info, position, values, positions, title, filepath=None):
+def plot_over_space(info, position, values, positions, title, vmax=None, filepath=None):
     xcenters, ycenters = get_bin_centers(info)
 
     count_position = np.zeros((len(info.yedges), len(info.xedges)))
@@ -973,7 +973,10 @@ def plot_over_space(info, position, values, positions, title, filepath=None):
     xx, yy = np.meshgrid(info.xedges, info.yedges)
 
     plt.plot(position.x, position.y, "y.", ms=1, alpha=0.2)
-    pp = plt.pcolormesh(xx, yy, over_space, vmin=0., cmap='bone_r')
+    if vmax is not None:
+        pp = plt.pcolormesh(xx, yy, over_space, vmin=0., vmax=vmax, cmap='bone_r')
+    else:
+        pp = plt.pcolormesh(xx, yy, over_space, vmin=0., vmax=vmax, cmap='bone_r')
 
     plt.colorbar(pp)
     plt.title(title)
