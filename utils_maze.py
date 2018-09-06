@@ -387,8 +387,8 @@ def get_xy_idx(info, position):
     return x_idx, y_idx
 
 
-def trials_by_trajectory(info, sliced_position, zone, min_epoch=2., min_distance=10.,
-                         merge_gap=1.5, min_coverage=True):
+def trials_by_trajectory(info, sliced_position, zone, min_epoch=1.5, min_distance=5.,
+                         merge_gap=1.5, min_coverage=False):
     if min_coverage:
         min_coverage = np.sum(zone) / 4
     else:
@@ -440,7 +440,7 @@ def trials_by_trajectory(info, sliced_position, zone, min_epoch=2., min_distance
 def find_matched_trials(trial_epochs, fewest, to_match):
     # a novel trial crosses the trajectory twice, adding more u or shortcut trials if novel has the fewest
     if fewest == "novel":
-        fewest_centers = np.sort(np.concatenate([trial_epochs[fewest].centers, trial_epochs[fewest].centers]))
+        fewest_centers = np.concatenate([trial_epochs[fewest].centers, trial_epochs[fewest].centers])
     else:
         fewest_centers = trial_epochs[fewest].centers
 
@@ -450,7 +450,7 @@ def find_matched_trials(trial_epochs, fewest, to_match):
 
     starts = []
     stops = []
-    centers = trial_epochs[to_match].centers
+    centers = np.array(trial_epochs[to_match].centers)
     for trial_center in fewest_centers:
         idx = np.nanargmin(np.abs(centers - trial_center))
         starts.append(trial_epochs[to_match][idx].start)
@@ -478,3 +478,18 @@ def get_matched_trials(info, sliced_position, subset=False):
         matched_trials = matched_trials.join(find_matched_trials(trial_epochs, segment_with_fewest, maze_segment))
 
     return matched_trials
+
+
+def get_all_trials(info, sliced_position, subset=False):
+    u_zone, shortcut_zone, novel_zone = get_zones(info, sliced_position, subset=subset)
+
+    u_epochs = trials_by_trajectory(info, sliced_position, u_zone)
+    shortcut_epochs = trials_by_trajectory(info, sliced_position, shortcut_zone)
+    novel_epochs = trials_by_trajectory(info, sliced_position, novel_zone, min_distance=0.)
+    trial_epochs = [u_epochs, shortcut_epochs, novel_epochs]
+
+    combined_trials = nept.Epoch([], [])
+    for trial_epoch in trial_epochs:
+        combined_trials = combined_trials.join(trial_epoch)
+
+    return combined_trials
