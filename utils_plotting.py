@@ -18,7 +18,7 @@ sns.set_style('ticks')
 sns.set_context('poster')
 
 
-def raster_plot(spikes, savepath, savefig=False):
+def raster_plot(spikes, savepath=None):
     """Plots raster plot of spikes from multiple neurons.
 
     Parameters
@@ -43,7 +43,7 @@ def raster_plot(spikes, savepath, savefig=False):
     sns.despine()
     plt.ylim(0, location+1)
 
-    if savefig:
+    if savepath is not None:
         plt.savefig(savepath, bbox_inches='tight', transparent=True)
         plt.close()
     else:
@@ -976,7 +976,7 @@ def plot_over_space(info, position, values, positions, title, vmax=None, filepat
     if vmax is not None:
         pp = plt.pcolormesh(xx, yy, over_space, vmin=0., vmax=vmax, cmap='bone_r')
     else:
-        pp = plt.pcolormesh(xx, yy, over_space, vmin=0., vmax=vmax, cmap='bone_r')
+        pp = plt.pcolormesh(xx, yy, over_space, vmin=0., cmap='bone_r')
 
     plt.colorbar(pp)
     plt.title(title)
