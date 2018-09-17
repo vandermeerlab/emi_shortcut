@@ -327,7 +327,7 @@ def compute_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, sh
 import info.r063d2 as r063d2
 import info.r063d3 as r063d3
 # infos = [r063d2, r063d3]
-from run import analysis_infos, r063_infos, r066_infos, r067_infos, r068_infos
+from run import analysis_infos, r063_infos, r066_infos, r067_infos, r068_infos, days1234_infos, days5678_infos, day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day8_infos, day7_infos
 # infos = analysis_infos
 infos = r068_infos
 
