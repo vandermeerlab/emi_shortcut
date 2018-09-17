@@ -25,7 +25,9 @@ analysis_infos = [
     info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6, info.r063d7, info.r063d8,
     info.r066d1, info.r066d2, info.r066d3, info.r066d4, info.r066d5, info.r066d6, info.r066d7, info.r066d8,
     info.r067d1, info.r067d2, info.r067d3, info.r067d8,
-    info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6, info.r068d7, info.r068d8]
+    info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6, info.r068d7]
+# TODO info.r068d8 results in error about : passedshuffthresh[task_time][trajectory] = np.array(session_likelihoods_true[task_time][trajectory])[np.sort(np.unique(keep_idx[task_time]))]
+# IndexError: arrays used as indices must be of integer (or boolean) type
 
 behavior_infos = [
     info.r063d2, info.r063d3, info.r063d4, info.r063d5, info.r063d6, info.r063d7, info.r063d8,
@@ -43,7 +45,7 @@ r067_infos = [
     info.r067d1, info.r067d2, info.r067d3, info.r067d8]
 
 r068_infos = [
-    info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6, info.r068d7, info.r068d8]
+    info.r068d1, info.r068d2, info.r068d3, info.r068d4, info.r068d5, info.r068d6, info.r068d7]
 
 day1_infos = [info.r066d1, info.r067d1, info.r068d1]
 
@@ -69,7 +71,7 @@ days1234_infos = [info.r066d1, info.r067d1, info.r068d1,
 days5678_infos = [info.r063d5, info.r066d5, info.r067d5, info.r068d5,
                   info.r063d6, info.r066d6, info.r067d6, info.r068d6,
                   info.r063d7, info.r066d7, info.r067d7, info.r068d7,
-                  info.r063d8, info.r066d8, info.r067d8, info.r068d8]
+                  info.r063d8, info.r066d8, info.r067d8]
 
 days123_infos = [info.r066d1, info.r067d1, info.r068d1,
                  info.r063d2, info.r066d2, info.r067d2, info.r068d2,

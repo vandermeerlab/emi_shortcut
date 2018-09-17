@@ -129,6 +129,7 @@ def plot_summary_individual(info, likelihood_true, likelihood_shuff, position, l
     ax3.contour(xxx, yyy, zones["u"], levels=0, colors=colours["u"])
     ax3.contour(xxx, yyy, zones["shortcut"], levels=0, colors=colours["shortcut"])
     ax3.contour(xxx, yyy, zones["novel"], levels=0, colors=colours["novel"])
+
     plt.colorbar(pp)
     ax3.axis('off')
 
@@ -329,13 +330,14 @@ import info.r063d3 as r063d3
 # infos = [r063d2, r063d3]
 from run import analysis_infos, r063_infos, r066_infos, r067_infos, r068_infos, days1234_infos, days5678_infos, day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day8_infos, day7_infos
 # infos = analysis_infos
-infos = r068_infos
+# group = "All"
 
+infos = r068_infos
 group = "R068"
 
 # set the random seed so results are consistent between runs
 np.random.seed(0)
-n_shuffles = 30
+n_shuffles = 20
 percentile_thresh = 80
 
 colours = dict()
@@ -504,6 +506,7 @@ for info in infos:
         for idx in range(phase_swrs[task_time].n_epochs):
             filename = info.session_id + "_" + task_time + "_summary-swr" + str(idx) + ".png"
             filepath = os.path.join(output_filepath, "swr", filename)
+
             plot_summary_individual(info, raw_likelihoods_true[task_time][idx],
                                     raw_likelihoods_shuffs[task_time][idx],
                                     position, lfp, spikes,
