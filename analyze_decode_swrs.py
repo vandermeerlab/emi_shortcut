@@ -7,6 +7,7 @@ import scipy
 import os
 import scalebar
 import nept
+import random
 
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
@@ -18,6 +19,10 @@ pickle_filepath = os.path.join(thisdir, "cache", "pickled")
 output_filepath = os.path.join(thisdir, "plots", "trials", "decoding", "shuffled")
 if not os.path.exists(output_filepath):
     os.makedirs(output_filepath)
+
+# Set random seeds
+random.seed(0)
+np.random.seed(0)
 
 
 def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True):
@@ -329,16 +334,14 @@ import info.r063d2 as r063d2
 import info.r063d3 as r063d3
 # infos = [r063d2, r063d3]
 from run import analysis_infos, r063_infos, r066_infos, r067_infos, r068_infos, days1234_infos, days5678_infos, day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day8_infos, day7_infos
-# infos = analysis_infos
-# group = "All"
+infos = analysis_infos
+group = "All"
 
-infos = r068_infos
-group = "R068"
+# infos = r068_infos
+# group = "R068"
 
-# set the random seed so results are consistent between runs
-np.random.seed(0)
-n_shuffles = 20
-percentile_thresh = 80
+n_shuffles = 10
+percentile_thresh = 99
 
 colours = dict()
 colours["u"] = "#2b8cbe"
@@ -363,6 +366,7 @@ all_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segme
 all_likelihoods_proportion = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
 all_likelihoods_true_passthresh = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
 all_likelihoods_true_passthresh_n_swr = {task_time: 0 for task_time in task_times}
+all_compareshuffle = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
 
 n_all_swrs = {task_time: 0 for task_time in task_times}
 
@@ -436,11 +440,12 @@ for info in infos:
         for trajectory in maze_segments:
             for idx, event in enumerate(range(len(session_likelihoods_true[task_time][trajectory]))):
                 percentile = scipy.stats.percentileofscore \
-                    (np.sort(np.array(combined_likelihoods_shuff[task_time][trajectory])[: ,event]),
+                    (np.sort(np.array(combined_likelihoods_shuff[task_time][trajectory])[:, event]),
                                                            session_likelihoods_true[task_time][trajectory][event])
                 percentiles[task_time][trajectory].append(percentile)
                 if percentile >= percentile_thresh:
                     compareshuffle[task_time][trajectory] += 1
+                    all_compareshuffle[task_time][trajectory] += 1
                     keep_idx[task_time].append(idx)
 
     morelikelythanshuffle_proportion = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
@@ -539,5 +544,5 @@ plot_stacked_summary(all_likelihoods_true_passthresh, n_all_swrs, task_times,
                      maze_segments, n_sessions=len(infos), colours=colours, filename=filename)
 
 filename = group + "-proportion of SWRs above the  " +str(percentile_thresh ) +" percentile (shuffle" + str(n_shuffles) + ")"
-plot_combined(all_likelihoods_proportion, n_swrs, task_times, maze_segments,
+plot_combined(all_likelihoods_proportion, n_all_swrs, task_times, maze_segments,
               n_sessions=len(infos), colours=colours, filename=filename)
