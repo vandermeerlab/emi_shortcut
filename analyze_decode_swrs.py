@@ -4,6 +4,7 @@ from matplotlib.patches import Patch
 import warnings
 import numpy as np
 import scipy
+import pickle
 import os
 import scalebar
 import nept
@@ -11,8 +12,7 @@ import random
 
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
-from utils_plotting import plot_over_space
-from utils_maze import get_zones, get_bin_centers, get_matched_trials
+from utils_maze import get_zones, get_bin_centers
 
 thisdir = os.getcwd()
 pickle_filepath = os.path.join(thisdir, "cache", "pickled")
@@ -77,12 +77,10 @@ def plot_summary_individual(info, likelihood_true, likelihood_shuff, position, l
 
     means = [np.nansum(likelihood_true[zones[trajectory]]) for trajectory in maze_segments]
 
-    means_shuff = [np.nanmean(np.nansum(likelihood_shuff[:, zones[trajectory]], axis=1))
-                   for trajectory in maze_segments]
-    sems_shuff = [scipy.stats.sem(np.nansum(likelihood_shuff[:, zones[trajectory]], axis=1), nan_policy="omit")
-                  for trajectory in maze_segments]
+    means_shuff = [np.nanmean(np.nansum(likelihood_shuff[:, zones[trajectory]], axis=1)) for trajectory in maze_segments]
+    sems_shuff = [scipy.stats.sem(np.nansum(likelihood_shuff[:, zones[trajectory]], axis=1), nan_policy="omit") for trajectory in maze_segments]
 
-    sliced_spikes = [spiketrain.time_slice(start - buffer, stop + buffer) for spiketrain in spikes]
+    sliced_spikes = [spiketrain.time_slice(start-buffer, stop+buffer) for spiketrain in spikes]
 
     rows = len(sliced_spikes)
     add_rows = int(rows / 8)
@@ -134,7 +132,6 @@ def plot_summary_individual(info, likelihood_true, likelihood_shuff, position, l
     ax3.contour(xxx, yyy, zones["u"], levels=0, colors=colours["u"])
     ax3.contour(xxx, yyy, zones["shortcut"], levels=0, colors=colours["shortcut"])
     ax3.contour(xxx, yyy, zones["novel"], levels=0, colors=colours["novel"])
-
     plt.colorbar(pp)
     ax3.axis('off')
 
@@ -167,6 +164,7 @@ def plot_summary_individual(info, likelihood_true, likelihood_shuff, position, l
 
 
 def plot_likelihood_overspace(info, position, likelihoods, zones, colours, filepath=None):
+
     xx, yy = np.meshgrid(info.xedges, info.yedges)
     xcenters, ycenters = get_bin_centers(info)
     xxx, yyy = np.meshgrid(xcenters, ycenters)
@@ -181,7 +179,7 @@ def plot_likelihood_overspace(info, position, likelihoods, zones, colours, filep
     plt.colorbar(pp)
     plt.axis('off')
     if filepath is not None:
-        plt.savefig(os.path.join(output_filepath, filename + ".png"))
+        plt.savefig(filepath)
         plt.close()
     else:
         plt.show()
@@ -189,7 +187,7 @@ def plot_likelihood_overspace(info, position, likelihoods, zones, colours, filep
 
 def get_likelihood(spikes, tuning_curves, tc_shape, start, stop):
     sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
-    t_window = stop-start # 0.1 for running, 0.025 for swr
+    t_window = stop-start  # 0.1 for running, 0.025 for swr
     counts = bin_spikes(sliced_spikes, np.array([start, stop]), dt=t_window, window=t_window,
                         gaussian_std=0.0075, normalized=False)
     likelihood = nept.bayesian_prob(counts, tuning_curves, binsize=t_window, min_neurons=3, min_spikes=1)
@@ -198,19 +196,18 @@ def get_likelihood(spikes, tuning_curves, tc_shape, start, stop):
 
 
 def plot_combined(summary_likelihoods, n_all_swrs, task_times, maze_segments, n_sessions, colours, filename=None):
+
     trajectory_means = {key: [] for key in maze_segments}
     trajectory_sems = {key: [] for key in maze_segments}
-    max_val = 0
 
     for trajectory in maze_segments:
-        for task_time in task_times:
-            if len(summary_likelihoods[task_time][trajectory]) > 0:
-                max_val = max(np.max(summary_likelihoods[task_time][trajectory]), max_val)
+        trajectory_means[trajectory] = [np.nanmean(summary_likelihoods[task_time][trajectory])
+                                        if len(summary_likelihoods[task_time][trajectory]) > 0 else 0.0
+                                        for task_time in task_times]
 
-        trajectory_means[trajectory] = [np.nanmean(summary_likelihoods[task_time][trajectory]) for task_time in
-                                        task_times]
-        trajectory_sems[trajectory] = [scipy.stats.sem(summary_likelihoods[task_time][trajectory]) for task_time in
-                                       task_times]
+        trajectory_sems[trajectory] = [scipy.stats.sem(summary_likelihoods[task_time][trajectory], nan_policy="omit")
+                                       if len(summary_likelihoods[task_time][trajectory]) > 1 else 0.0
+                                       for task_time in task_times]
 
     fig = plt.figure(figsize=(12, 6))
     gs1 = gridspec.GridSpec(1, 4)
@@ -227,10 +224,10 @@ def plot_combined(summary_likelihoods, n_all_swrs, task_times, maze_segments, n_
     ax4.bar(n, trajectory_means["other"], yerr=trajectory_sems["other"], color=colours["other"])
 
     for ax in [ax1, ax2, ax3, ax4]:
-        ax.set_ylim([0, max_val])
+        ax.set_ylim([0, 1.])
 
         ax.set_xticks(np.arange(len(task_times)))
-        ax.set_xticklabels(task_times, rotation=90)
+        ax.set_xticklabels(task_times, rotation = 90)
 
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -243,11 +240,11 @@ def plot_combined(summary_likelihoods, n_all_swrs, task_times, maze_segments, n_
     for ax in [ax2, ax3, ax4]:
         ax.set_yticklabels([])
 
-    plt.text(1., max_val, "n sessions: " + str(n_sessions), horizontalalignment='left',
+    plt.text(1., 1., "n sessions: "+ str(n_sessions), horizontalalignment='left',
              verticalalignment='top', fontsize=14)
 
     fig.suptitle(filename, fontsize=18)
-    #     ax1.set_ylabel("Proportion")
+#     ax1.set_ylabel("Proportion")
 
     legend_elements = [Patch(facecolor=colours["u"], edgecolor='k', label="u"),
                        Patch(facecolor=colours["shortcut"], edgecolor='k', label="shortcut"),
@@ -258,34 +255,33 @@ def plot_combined(summary_likelihoods, n_all_swrs, task_times, maze_segments, n_
     gs1.tight_layout(fig)
 
     if filename is not None:
-        plt.savefig(os.path.join(output_filepath, filename + ".png"))
+        plt.savefig(os.path.join(output_filepath, filename+".png"))
         plt.close()
     else:
         plt.show()
 
 
-def plot_stacked_summary(summary_likelihoods, n_all_swrs, task_times, maze_segments, n_sessions, colours,
-                         filename=None):
+def plot_stacked_summary(summary_likelihoods, n_all_swrs, task_times,
+                         maze_segments, n_sessions, colours, filename=None):
+
     trajectory_means = {key: [] for key in maze_segments}
     trajectory_sems = {key: [] for key in maze_segments}
 
     for trajectory in maze_segments:
-        trajectory_means[trajectory] = [np.nanmean(summary_likelihoods[task_time][trajectory]) for task_time in
-                                        task_times]
-        trajectory_sems[trajectory] = [scipy.stats.sem(summary_likelihoods[task_time][trajectory]) for task_time in
-                                       task_times]
+        trajectory_means[trajectory] = [np.nanmean(summary_likelihoods[task_time][trajectory])
+                                        for task_time in task_times]
+        trajectory_sems[trajectory] = [scipy.stats.sem(summary_likelihoods[task_time][trajectory])
+                                       for task_time in task_times]
 
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(7,5))
     n = np.arange(len(task_times))
     pu = plt.bar(n, trajectory_means["u"], yerr=trajectory_sems["u"], color=colours["u"])
     ps = plt.bar(n, trajectory_means["shortcut"], yerr=trajectory_sems["shortcut"],
                  bottom=trajectory_means["u"], color=colours["shortcut"])
     pn = plt.bar(n, trajectory_means["novel"], yerr=trajectory_sems["novel"],
-                 bottom=np.array(trajectory_means["u"]) + np.array(trajectory_means["shortcut"]),
-                 color=colours["novel"])
+                 bottom=np.array(trajectory_means["u"])+np.array(trajectory_means["shortcut"]), color=colours["novel"])
     po = plt.bar(n, trajectory_means["other"], yerr=trajectory_sems["other"],
-                 bottom=np.array(trajectory_means["u"]) + np.array(trajectory_means["shortcut"]) + np.array(
-                     trajectory_means["novel"]),
+                 bottom=np.array(trajectory_means["u"])+np.array(trajectory_means["shortcut"])+np.array(trajectory_means["novel"]),
                  color=colours["other"])
     plt.xticks(n, task_times)
     plt.title(filename)
@@ -293,7 +289,7 @@ def plot_stacked_summary(summary_likelihoods, n_all_swrs, task_times, maze_segme
     for i, task_time in enumerate(task_times):
         ax.text(i, 0.01, str(n_all_swrs[task_time]), ha="center", fontsize=14)
 
-    plt.text(2.8, -0.15, "n sessions: " + str(n_sessions), fontsize=14)
+    plt.text(2.8, -0.15, "n sessions: "+ str(n_sessions), fontsize=14)
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -302,13 +298,14 @@ def plot_stacked_summary(summary_likelihoods, n_all_swrs, task_times, maze_segme
 
     plt.tight_layout()
     if filename is not None:
-        plt.savefig(os.path.join(output_filepath, filename + ".png"))
+        plt.savefig(os.path.join(output_filepath, filename+".png"))
         plt.close()
     else:
         plt.show()
 
 
-def compute_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, shuffled_id=False):
+def get_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, zones, task_times, maze_segments, shuffled_id=False):
+
     if shuffled_id:
         tuning_curves = np.random.permutation(tuning_curves_fromdata)
     else:
@@ -330,219 +327,340 @@ def compute_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, sh
     return likelihoods_sum, raw_likelihoods
 
 
-import info.r063d2 as r063d2
-import info.r063d3 as r063d3
-# infos = [r063d2, r063d3]
-from run import analysis_infos, r063_infos, r066_infos, r067_infos, r068_infos, days1234_infos, days5678_infos, day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day8_infos, day7_infos
-infos = analysis_infos
-group = "All"
+def pickle_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, zones, task_times, maze_segments,
+                       shuffled_id, raw_path, sum_path):
 
-# infos = r068_infos
-# group = "R068"
+    likelihoods_sum, raw_likelihoods = get_likelihoods(tuning_curves_fromdata,
+                                                       tc_shape,
+                                                       spikes,
+                                                       phase_swrs,
+                                                       zones,
+                                                       task_times,
+                                                       maze_segments,
+                                                       shuffled_id)
+    with open(sum_path, 'wb') as fileobj:
+        pickle.dump(likelihoods_sum, fileobj)
 
-n_shuffles = 10
-percentile_thresh = 99
+    with open(raw_path, 'wb') as fileobj:
+        pickle.dump(raw_likelihoods, fileobj)
 
-colours = dict()
-colours["u"] = "#2b8cbe"
-colours["shortcut"] = "#31a354"
-colours["novel"] = "#d95f0e"
-colours["other"] = "#bdbdbd"
+    return likelihoods_sum, raw_likelihoods
 
-# swr params
-z_thresh = 2.0
-power_thresh = 3.0
-merge_thresh = 0.02
-min_length = 0.05
-swr_thresh = (140.0, 250.0)
 
-task_times = ["prerecord", "pauseA", "pauseB", "postrecord"]
-maze_segments = ["u", "shortcut", "novel", "other"]
-
-n_sessions = len(infos)
-# likelihoods_sum = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-all_likelihoods_true = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-all_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-all_likelihoods_proportion = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-all_likelihoods_true_passthresh = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-all_likelihoods_true_passthresh_n_swr = {task_time: 0 for task_time in task_times}
-all_compareshuffle = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
-
-n_all_swrs = {task_time: 0 for task_time in task_times}
-
-for info in infos:
-    print(info.session_id)
-    events, position, spikes, lfp, _ = get_data(info)
-
+def save_likelihoods(info, position, spikes, phase_swrs, zones, task_times, maze_segments, n_shuffles):
     tuning_curves_fromdata = get_only_tuning_curves(info,
-                                                    position,
-                                                    spikes,
-                                                    info.task_times["phase3"])
+                                           position,
+                                           spikes,
+                                           info.task_times["phase3"])
 
     tc_shape = tuning_curves_fromdata.shape
 
-    # Define zones
-    zones = dict()
-    zones["u"], zones["shortcut"], zones["novel"] = get_zones(info, position, subset=True)
-    combined_zones = zones["u"] + zones["shortcut"] + zones["novel"]
-    zones["other"] = ~combined_zones
+    raw_path_true = os.path.join(pickle_filepath, info.session_id+"_raw-likelihoods_true.pkl")
+    sum_path_true = os.path.join(pickle_filepath, info.session_id+"_sum-likelihoods_true.pkl")
 
-    # Find SWRs for the whole session
-
-    swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=swr_thresh, z_thresh=z_thresh,
-                                   power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
-    swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=4)
-
-    rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
-
-    # Restrict SWRs to those during epochs of interest during rest
-    phase_swrs = dict()
-    n_swrs = {task_time: 0 for task_time in task_times}
-
-    for task_time in task_times:
-        epochs_of_interest = info.task_times[task_time].intersect(rest_epochs)
-
-        phase_swrs[task_time] = epochs_of_interest.overlaps(swrs)
-        phase_swrs[task_time] = phase_swrs[task_time][phase_swrs[task_time].durations >= 0.05]
-
-        n_swrs[task_time] += phase_swrs[task_time].n_epochs
-        n_all_swrs[task_time] += phase_swrs[task_time].n_epochs
-
-    session_likelihoods_true, raw_likelihoods_true = compute_likelihoods(tuning_curves_fromdata,
-                                                                         tc_shape,
-                                                                         spikes,
-                                                                         phase_swrs,
-                                                                         shuffled_id=False)
+    session_likelihoods_true, raw_likelihoods_true = pickle_likelihoods(tuning_curves_fromdata,
+                                                                        tc_shape,
+                                                                        spikes,
+                                                                        phase_swrs,
+                                                                        zones,
+                                                                        task_times,
+                                                                        maze_segments,
+                                                                        shuffled_id=False,
+                                                                        raw_path=raw_path_true,
+                                                                        sum_path=sum_path_true)
 
     combined_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
     raw_likelihoods_shuffs = {task_time: [] for task_time in task_times}
 
     for i_shuffle in range(n_shuffles):
-        session_likelihoods_shuff, raw_likelihoods_shuff = compute_likelihoods(tuning_curves_fromdata,
-                                                                               tc_shape,
-                                                                               spikes,
-                                                                               phase_swrs,
-                                                                               shuffled_id=True)
+        raw_path_shuff = os.path.join(pickle_filepath,
+                                      info.session_id+"_raw-likelihoods_shuffled-%03d.pkl" % i_shuffle)
+        sum_path_shuff = os.path.join(pickle_filepath,
+                                      info.session_id+"_sum-likelihoods_shuffled-%03d.pkl" % i_shuffle)
+
+
+        session_likelihoods_shuff, raw_likelihoods_shuff = pickle_likelihoods(tuning_curves_fromdata,
+                                                                              tc_shape,
+                                                                              spikes,
+                                                                              phase_swrs,
+                                                                              zones,
+                                                                              task_times,
+                                                                              maze_segments,
+                                                                              shuffled_id=True,
+                                                                              raw_path=raw_path_shuff,
+                                                                              sum_path=sum_path_shuff)
+
         for task_time in task_times:
             raw_likelihoods_shuffs[task_time].append(raw_likelihoods_shuff[task_time])
             for trajectory in maze_segments:
-                combined_likelihoods_shuff[task_time][trajectory].append \
-                    (np.array(session_likelihoods_shuff[task_time][trajectory]))
+                combined_likelihoods_shuff[task_time][trajectory].append(np.array(session_likelihoods_shuff[task_time][trajectory]))
+    return session_likelihoods_true, raw_likelihoods_true, combined_likelihoods_shuff, raw_likelihoods_shuffs
 
-    compareshuffle = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
-    percentiles = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    passedshuffthresh = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
+if __name__ == "__main__":
+    import info.r063d2 as r063d2
+    import info.r063d3 as r063d3
+    infos = [r063d2, r063d3]
+    group = "test"
+    from run import (analysis_infos,
+                     r063_infos, r066_infos, r067_infos, r068_infos,
+                     days1234_infos, days5678_infos,
+                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
+    # infos = analysis_infos
+    # group = "All"
 
-    keep_idx = {task_time: [] for task_time in task_times}
+    # infos = r068_infos
+    # group = "R068"
 
+    update_cache = True
+
+    n_shuffles = 2
+    percentile_thresh = 99
+
+    colours = dict()
+    colours["u"] = "#2b8cbe"
+    colours["shortcut"] = "#31a354"
+    colours["novel"] = "#d95f0e"
+    colours["other"] = "#bdbdbd"
+
+    # swr params
+    z_thresh = 2.0
+    power_thresh = 3.0
+    merge_thresh = 0.02
+    min_length = 0.05
+    swr_thresh = (140.0, 250.0)
+
+    task_times = ["prerecord", "pauseA", "pauseB", "postrecord"]
+    maze_segments = ["u", "shortcut", "novel", "other"]
+
+    n_sessions = len(infos)
+    all_likelihoods_true = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+    all_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+    all_likelihoods_proportion = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+    all_likelihoods_true_passthresh = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+    all_likelihoods_true_passthresh_n_swr = {task_time: 0 for task_time in task_times}
+    all_compareshuffle = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
+
+    n_all_swrs = {task_time: 0 for task_time in task_times}
+
+    for info in infos:
+        print(info.session_id)
+
+        events, position, spikes, lfp, _ = get_data(info)
+
+        # Define zones
+        zones = dict()
+        zones["u"], zones["shortcut"], zones["novel"] = get_zones(info, position, subset=True)
+        combined_zones = zones["u"] + zones["shortcut"] + zones["novel"]
+        zones["other"] = ~combined_zones
+
+        # Find SWRs for the whole session
+        swrs_path = os.path.join(pickle_filepath, info.session_id+"_swrs.pkl")
+
+        # Remove previous pickle if update_cache
+        if update_cache:
+            if os.path.exists(swrs_path):
+                os.remove(swrs_path)
+
+        # Load pickle if it exists, otherwise compute and pickle
+        if os.path.exists(swrs_path):
+            print("Loading pickled true likelihoods...")
+            with open(swrs_path, 'rb') as fileobj:
+                swrs = pickle.load(fileobj)
+        else:
+            swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=swr_thresh, z_thresh=z_thresh,
+                                           power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+            swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=4)
+
+        rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
+
+        # Restrict SWRs to those during epochs of interest during rest
+        phase_swrs = dict()
+        n_swrs = {task_time: 0 for task_time in task_times}
+
+        for task_time in task_times:
+            epochs_of_interest = info.task_times[task_time].intersect(rest_epochs)
+
+            phase_swrs[task_time] = epochs_of_interest.overlaps(swrs)
+            phase_swrs[task_time] = phase_swrs[task_time][phase_swrs[task_time].durations >= 0.05]
+
+            n_swrs[task_time] += phase_swrs[task_time].n_epochs
+            n_all_swrs[task_time] += phase_swrs[task_time].n_epochs
+
+        raw_path_true = os.path.join(pickle_filepath, info.session_id+"_raw-likelihoods_true.pkl")
+        sum_path_true = os.path.join(pickle_filepath, info.session_id+"_sum-likelihoods_true.pkl")
+
+        # Remove previous pickle if update_cache
+        if update_cache:
+            if os.path.exists(raw_path_true):
+                os.remove(raw_path_true)
+            if os.path.exists(sum_path_true):
+                os.remove(sum_path_true)
+
+        compute_likelihoods = False
+
+        # Load pickle if it exists, otherwise compute and pickle
+        if os.path.exists(raw_path_true) and os.path.exists(sum_path_true):
+            print("Loading pickled true likelihoods...")
+            with open(raw_path_true, 'rb') as fileobj:
+                raw_likelihoods_true = pickle.load(fileobj)
+            with open(sum_path_true, 'rb') as fileobj:
+                session_likelihoods_true = pickle.load(fileobj)
+
+        combined_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+        raw_likelihoods_shuffs = {task_time: [] for task_time in task_times}
+
+        for i_shuffle in range(n_shuffles):
+            raw_path_shuff = os.path.join(pickle_filepath,
+                                          info.session_id+"_raw-likelihoods_shuffled-%03d.pkl" % i_shuffle)
+            sum_path_shuff = os.path.join(pickle_filepath,
+                                          info.session_id+"_sum-likelihoods_shuffled-%03d.pkl" % i_shuffle)
+
+            # Remove previous pickle if update_cache
+            if update_cache:
+                if os.path.exists(raw_path_shuff):
+                    os.remove(raw_path_shuff)
+                if os.path.exists(sum_path_shuff):
+                    os.remove(sum_path_shuff)
+
+            # Load pickle if it exists, otherwise compute and pickle
+            if os.path.exists(raw_path_shuff) and os.path.exists(sum_path_shuff):
+                print("Loading pickled shuffled likelihoods...")
+                with open(raw_path_shuff, 'rb') as fileobj:
+                    raw_likelihoods_shuff = pickle.load(fileobj)
+                with open(sum_path_shuff, 'rb') as fileobj:
+                    session_likelihoods_shuff = pickle.load(fileobj)
+            else:
+                compute_likelihoods = True
+                break
+
+            for task_time in task_times:
+                raw_likelihoods_shuffs[task_time].append(raw_likelihoods_shuff[task_time])
+                for trajectory in maze_segments:
+                    combined_likelihoods_shuff[task_time][trajectory].append(np.array(session_likelihoods_shuff[task_time][trajectory]))
+        else:
+            compute_likelihoods = True
+
+        if compute_likelihoods:
+            session_likelihoods_true, raw_likelihoods_true, combined_likelihoods_shuff, raw_likelihoods_shuffs = save_likelihoods(info, position, spikes, phase_swrs, zones, task_times, maze_segments, n_shuffles)
+
+        compareshuffle = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
+        percentiles = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+        passedshuffthresh = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+
+        keep_idx = {task_time: [] for task_time in task_times}
+
+        for task_time in task_times:
+            raw_likelihoods_shuffs[task_time] = np.swapaxes(raw_likelihoods_shuffs[task_time], 0, 1)
+            for trajectory in maze_segments:
+                for idx, event in enumerate(range(len(session_likelihoods_true[task_time][trajectory]))):
+                    percentile = scipy.stats.percentileofscore(np.sort(np.array(combined_likelihoods_shuff[task_time][trajectory])[:,event]),
+                                                               session_likelihoods_true[task_time][trajectory][event])
+                    percentiles[task_time][trajectory].append(percentile)
+                    if percentile >= percentile_thresh:
+                        compareshuffle[task_time][trajectory] += 1
+                        all_compareshuffle[task_time][trajectory] += 1
+                        keep_idx[task_time].append(idx)
+
+        morelikelythanshuffle_proportion = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+        mean_combined_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+        passedshuffthresh_n_swr = {task_time: 0 for task_time in task_times}
+
+        for task_time in task_times:
+            passedshuffthresh_n_swr[task_time] += len(np.unique(keep_idx[task_time]))
+            all_likelihoods_true_passthresh_n_swr[task_time] += len(np.unique(keep_idx[task_time]))
+            for trajectory in maze_segments:
+                if len(np.sort(np.unique(keep_idx[task_time]))) > 0:
+                    passedshuffthresh[task_time][trajectory].append(np.array(session_likelihoods_true[task_time][trajectory])[np.sort(np.unique(keep_idx[task_time]))])
+
+                morelikelythanshuffle_proportion[task_time][trajectory].append(compareshuffle[task_time][trajectory] / len(session_likelihoods_true[task_time][trajectory]))
+                mean_combined_likelihoods_shuff[task_time][trajectory] = np.nanmean(combined_likelihoods_shuff[task_time][trajectory], axis=0)
+
+                all_likelihoods_true[task_time][trajectory].extend(session_likelihoods_true[task_time][trajectory])
+                all_likelihoods_true_passthresh[task_time][trajectory].append(passedshuffthresh[task_time][trajectory])
+                all_likelihoods_shuff[task_time][trajectory].extend(mean_combined_likelihoods_shuff[task_time][trajectory])
+                all_likelihoods_proportion[task_time][trajectory].extend(morelikelythanshuffle_proportion[task_time][trajectory])
+
+                # plot percentiles
+                fig, ax = plt.subplots()
+                n = np.arange(len(percentiles[task_time][trajectory]))
+                plt.bar(n, np.sort(percentiles[task_time][trajectory]), color=colours[trajectory])
+                ax.axhline(percentile_thresh, ls="--", lw=1.5, color="k")
+                title = info.session_id + " individual SWR percentile with shuffle" + str(n_shuffles) + " for " + task_time + " " + trajectory
+                plt.title(title, fontsize=11)
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_filepath, "percentiles", title))
+                plt.close()
+
+            filepath = os.path.join(output_filepath, info.session_id+"-average-likelihood-overspace_"+task_time+".png")
+            if len(session_likelihoods_true[task_time]) > 0:
+                plot_likelihood_overspace(info, position, raw_likelihoods_true[task_time],
+                                          zones, colours, filepath)
+
+        filename = info.session_id + " proportion of SWRs above "+str(percentile_thresh)+" percentile"
+        plot_combined(morelikelythanshuffle_proportion, passedshuffthresh_n_swr,
+                      task_times, maze_segments, n_sessions=1, colours=colours, filename=filename)
+
+        filename = info.session_id + " average posteriors during SWRs_sum-shuffled"+str(n_shuffles)
+        plot_combined(mean_combined_likelihoods_shuff, n_swrs, task_times, maze_segments,
+                      n_sessions=1, colours=colours, filename=filename)
+
+        filename = info.session_id + " average posteriors during SWRs_sum-true"
+        plot_combined(session_likelihoods_true, n_swrs, task_times, maze_segments,
+                      n_sessions=1, colours=colours, filename=filename)
+
+        filename = info.session_id + " average posteriors during SWRs_sum-true_passthresh"
+        plot_combined(passedshuffthresh, n_swrs, task_times, maze_segments,
+                      n_sessions=1, colours=colours, filename=filename)
+
+        for task_time in task_times:
+            for idx in range(phase_swrs[task_time].n_epochs):
+                filename = info.session_id + "_" + task_time + "_summary-swr" + str(idx) + ".png"
+                filepath = os.path.join(output_filepath, "swr", filename)
+                plot_summary_individual(info, raw_likelihoods_true[task_time][idx],
+                                        raw_likelihoods_shuffs[task_time][idx],
+                                        position, lfp, spikes,
+                                        phase_swrs[task_time].starts[idx],
+                                        phase_swrs[task_time].stops[idx],
+                                        zones, maze_segments, colours, filepath, savefig=True)
+
+    n_total = {task_time: 0 for task_time in task_times}
     for task_time in task_times:
-        raw_likelihoods_shuffs[task_time] = np.swapaxes(raw_likelihoods_shuffs[task_time], 0, 1)
         for trajectory in maze_segments:
-            for idx, event in enumerate(range(len(session_likelihoods_true[task_time][trajectory]))):
-                percentile = scipy.stats.percentileofscore \
-                    (np.sort(np.array(combined_likelihoods_shuff[task_time][trajectory])[:, event]),
-                                                           session_likelihoods_true[task_time][trajectory][event])
-                percentiles[task_time][trajectory].append(percentile)
-                if percentile >= percentile_thresh:
-                    compareshuffle[task_time][trajectory] += 1
-                    all_compareshuffle[task_time][trajectory] += 1
-                    keep_idx[task_time].append(idx)
+            n_total[task_time] += all_compareshuffle[task_time][trajectory]
 
-    morelikelythanshuffle_proportion = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    mean_combined_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    passedshuffthresh_n_swr = {task_time: 0 for task_time in task_times}
-
+    all_compareshuffles = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
     for task_time in task_times:
-        passedshuffthresh_n_swr[task_time] += len(np.unique(keep_idx[task_time]))
-        all_likelihoods_true_passthresh_n_swr[task_time] += len(np.unique(keep_idx[task_time]))
         for trajectory in maze_segments:
-            passedshuffthresh[task_time][trajectory] = np.array(session_likelihoods_true[task_time][trajectory])[np.sort(np.unique(keep_idx[task_time]))]
+            all_compareshuffles[task_time][trajectory].append(all_compareshuffle[task_time][trajectory] / n_total[task_time])
 
-            morelikelythanshuffle_proportion[task_time][trajectory].append \
-                (compareshuffle[task_time][trajectory] / len(session_likelihoods_true[task_time][trajectory]))
-            mean_combined_likelihoods_shuff[task_time][trajectory] = np.nanmean \
-                (combined_likelihoods_shuff[task_time][trajectory], axis=0)
+    filename = "Average posteriors during SWRs_sum-shuffled"+str(n_shuffles)
+    plot_combined(all_likelihoods_shuff, n_all_swrs, task_times, maze_segments,
+                  n_sessions=len(infos), colours=colours, filename=filename)
 
-            all_likelihoods_true[task_time][trajectory].extend(session_likelihoods_true[task_time][trajectory])
-            all_likelihoods_true_passthresh[task_time][trajectory].extend(passedshuffthresh[task_time][trajectory])
-            all_likelihoods_shuff[task_time][trajectory].extend(mean_combined_likelihoods_shuff[task_time][trajectory])
-            all_likelihoods_proportion[task_time][trajectory].extend \
-                (morelikelythanshuffle_proportion[task_time][trajectory])
+    filename = "Average posteriors during SWRs_sum-true"
+    plot_combined(all_likelihoods_true, n_all_swrs, task_times, maze_segments,
+                  n_sessions=len(infos), colours=colours, filename=filename)
 
-            # plot percentiles
-            fig, ax = plt.subplots()
-            n = np.arange(len(percentiles[task_time][trajectory]))
-            plt.bar(n, np.sort(percentiles[task_time][trajectory]), color=colours[trajectory])
-            ax.axhline(percentile_thresh, ls="--", lw=1.5, color="k")
-            title = info.session_id + " individual SWR percentile with shuffle" + str \
-                (n_shuffles) + " for " + task_time + " " + trajectory
-            plt.title(title, fontsize=11)
-            plt.tight_layout()
-            plt.savefig(os.path.join(output_filepath, "percentiles", title))
-            plt.close()
+    filename = "Average posteriors during SWRs_sum-true_passthresh"
+    plot_combined(all_likelihoods_true_passthresh, all_likelihoods_true_passthresh_n_swr,
+                  task_times, maze_segments, n_sessions=len(infos), colours=colours, filename=filename)
 
-        filename = info.session_id +"-average-likelihood-overspace_ " +task_time
-        if len(session_likelihoods_true[task_time]) > 0:
-            plot_likelihood_overspace(info, position, raw_likelihoods_true[task_time],
-                                      zones, colours, filename)
+    filename = "Average posteriors during SWRs_sum-true_passthresh-overallproportion"
+    plot_combined(all_compareshuffles, all_likelihoods_true_passthresh_n_swr,
+                  task_times, maze_segments, n_sessions=len(infos), colours=colours, filename=filename)
 
-        filename = info.session_id +"-average-likelihood-overspace_ " +task_time +"-shuffled"
-        if len(session_likelihoods_true[task_time]) > 0:
-            plot_likelihood_overspace(info, position, raw_likelihoods_shuff[task_time],
-                                      zones, colours, filename)
+    filename = "Average posteriors during SWRs_sum-stacked-shuffled"+str(n_shuffles)
+    plot_stacked_summary(all_likelihoods_shuff, n_all_swrs, task_times, maze_segments,
+                         n_sessions=len(infos), colours=colours, filename=filename)
 
-    filename = info.session_id + " proportion of SWRs above  " +str(percentile_thresh ) +" percentile"
-    plot_combined(morelikelythanshuffle_proportion, passedshuffthresh_n_swr,
-                  task_times, maze_segments, n_sessions=1, colours=colours, filename=filename)
+    filename = "Average posteriors during SWRs_sum-stacked-true"
+    plot_stacked_summary(all_likelihoods_true, n_all_swrs, task_times, maze_segments,
+                         n_sessions=len(infos), colours=colours, filename=filename)
 
-    filename = info.session_id + " average posteriors during SWRs_sum-shuffled " +str(n_shuffles)
-    plot_combined(mean_combined_likelihoods_shuff, n_swrs, task_times, maze_segments,
-                  n_sessions=1, colours=colours, filename=filename)
+    filename = "Average posteriors during SWRs_sum-stacked-true_passthresh"
+    plot_stacked_summary(all_likelihoods_true_passthresh, n_all_swrs, task_times,
+                         maze_segments, n_sessions=len(infos), colours=colours, filename=filename)
 
-    filename = info.session_id + " average posteriors during SWRs_sum-true"
-    plot_combined(session_likelihoods_true, n_swrs, task_times, maze_segments,
-                  n_sessions=1, colours=colours, filename=filename)
-
-    filename = info.session_id + " average posteriors during SWRs_sum-true_passthresh"
-    plot_combined(passedshuffthresh, n_swrs, task_times, maze_segments,
-                  n_sessions=1, colours=colours, filename=filename)
-
-    for task_time in task_times:
-        for idx in range(phase_swrs[task_time].n_epochs):
-            filename = info.session_id + "_" + task_time + "_summary-swr" + str(idx) + ".png"
-            filepath = os.path.join(output_filepath, "swr", filename)
-
-            plot_summary_individual(info, raw_likelihoods_true[task_time][idx],
-                                    raw_likelihoods_shuffs[task_time][idx],
-                                    position, lfp, spikes,
-                                    phase_swrs[task_time].starts[idx],
-                                    phase_swrs[task_time].stops[idx],
-                                    zones, maze_segments, colours, filepath, savefig=True)
-
-filename = group + "-average posteriors during SWRs_sum-shuffled " +str(n_shuffles)
-plot_combined(all_likelihoods_shuff, n_all_swrs, task_times, maze_segments,
-              n_sessions=len(infos), colours=colours, filename=filename)
-
-filename = group + "-average posteriors during SWRs_sum-true"
-plot_combined(all_likelihoods_true, n_all_swrs, task_times, maze_segments,
-              n_sessions=len(infos), colours=colours, filename=filename)
-
-filename = group + "-average posteriors during SWRs_sum-true_passthresh"
-plot_combined(all_likelihoods_true_passthresh, all_likelihoods_true_passthresh_n_swr,
-              task_times, maze_segments, n_sessions=len(infos), colours=colours, filename=filename)
-
-filename = group + "-average posteriors during SWRs_sum-stacked-shuffled " +str(n_shuffles)
-plot_stacked_summary(all_likelihoods_shuff, n_all_swrs, task_times, maze_segments,
-                     n_sessions=len(infos), colours=colours, filename=filename)
-
-filename = group + "-average posteriors during SWRs_sum-stacked-true"
-plot_stacked_summary(all_likelihoods_true, n_all_swrs, task_times, maze_segments,
-                     n_sessions=len(infos), colours=colours, filename=filename)
-
-filename = group + "-average posteriors during SWRs_sum-stacked-true_passthresh"
-plot_stacked_summary(all_likelihoods_true_passthresh, n_all_swrs, task_times,
-                     maze_segments, n_sessions=len(infos), colours=colours, filename=filename)
-
-filename = group + "-proportion of SWRs above the  " +str(percentile_thresh ) +" percentile (shuffle" + str(n_shuffles) + ")"
-plot_combined(all_likelihoods_proportion, n_all_swrs, task_times, maze_segments,
-              n_sessions=len(infos), colours=colours, filename=filename)
+    filename = "Proportion of SWRs above the "+str(percentile_thresh)+" percentile (shuffle" + str(n_shuffles) + ")"
+    plot_combined(all_likelihoods_proportion, n_all_swrs, task_times, maze_segments,
+                  n_sessions=len(infos), colours=colours, filename=filename)
