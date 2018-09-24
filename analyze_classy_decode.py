@@ -1,18 +1,19 @@
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from matplotlib.patches import Patch
-import warnings
 import numpy as np
+import warnings
+import random
 import scipy
 import pickle
 import os
-import scalebar
 import nept
-import random
 
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
-from utils_maze import get_zones, get_bin_centers
+from utils_maze import get_zones
+from analyze_decode_swrs import (plot_summary_individual,
+                                 plot_likelihood_overspace,
+                                 plot_combined,
+                                 plot_stacked_summary)
 
 thisdir = os.getcwd()
 pickle_filepath = os.path.join(thisdir, "cache", "pickled")
@@ -23,6 +24,66 @@ if not os.path.exists(output_filepath):
 # Set random seeds
 random.seed(0)
 np.random.seed(0)
+
+
+class Likelihoods:
+    """A collection of LikelihoodsAtTaskTime for each session
+
+        Parameters
+        ----------
+        task_times : dict of TaskTime
+
+    """
+
+    def __init__(self, task_times):
+        self.task_times = task_times
+
+
+class TaskTime:
+    """A set of decoded likelihoods for a given task time
+
+        Parameters
+        ----------
+        likelihoods : np.array
+            With shape (ntimebins, nxbins, nybins)
+
+        Attributes
+        ----------
+        likelihoods : np.array
+            With shape (ntimebins, nxbins, nybins)
+
+    """
+
+    def __init__(self, likelihoods):
+        self.likelihoods = likelihoods
+
+    def sum(self, zone):
+        return np.nansum(self.likelihoods[zone])
+
+    def mean(self, zone):
+        return np.nanmean(self.likelihoods[zone])
+
+    def max(self, zone):
+        return np.nanmax(self.likelihoods[zone])
+
+
+class Zones:
+    """A set of decoded likelihoods for a given task time
+
+            Parameters
+            ----------
+            likelihoods : np.array
+                With shape (ntimebins, nxbins, nybins)
+
+            Attributes
+            ----------
+            likelihoods : np.array
+                With shape (ntimebins, nxbins, nybins)
+
+        """
+
+    def __init__(self, zones):
+        self.zones = zones
 
 
 def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True):
@@ -71,121 +132,7 @@ def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True
     return nept.AnalogSignal(counts, bin_edges[:-1])
 
 
-def plot_summary_individual(info, likelihood_true, likelihood_shuff, position, lfp, spikes, start, stop,
-                            zones, maze_segments, colours, filepath=None, savefig=False):
-    buffer = 0.1
-
-    means = [np.nansum(likelihood_true[zones[trajectory]]) for trajectory in maze_segments]
-
-    means_shuff = [np.nanmean(np.nansum(likelihood_shuff[:, zones[trajectory]], axis=1)) for trajectory in maze_segments]
-    sems_shuff = [scipy.stats.sem(np.nansum(likelihood_shuff[:, zones[trajectory]], axis=1), nan_policy="omit") for trajectory in maze_segments]
-
-    sliced_spikes = [spiketrain.time_slice(start-buffer, stop+buffer) for spiketrain in spikes]
-
-    rows = len(sliced_spikes)
-    add_rows = int(rows / 8)
-
-    ms = 600 / rows
-    mew = 0.7
-    spike_loc = 1
-
-    fig = plt.figure(figsize=(8, 8))
-    gs1 = gridspec.GridSpec(3, 2)
-    gs1.update(wspace=0.3, hspace=0.3)
-
-    ax1 = plt.subplot(gs1[1:, 0])
-    for idx, neuron_spikes in enumerate(sliced_spikes):
-        ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time)) + (idx * spike_loc), '|',
-                 color='k', ms=ms, mew=mew)
-    ax1.axis('off')
-
-    ax2 = plt.subplot(gs1[0, 0], sharex=ax1)
-
-    swr_highlight = "#fc4e2a"
-    start_idx = nept.find_nearest_idx(lfp.time, start - buffer)
-    stop_idx = nept.find_nearest_idx(lfp.time, stop + buffer)
-    ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color="k", lw=0.3, alpha=0.9)
-
-    start_idx = nept.find_nearest_idx(lfp.time, start)
-    stop_idx = nept.find_nearest_idx(lfp.time, stop)
-    ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color=swr_highlight, lw=0.6)
-    ax2.axis("off")
-
-    ax1.axvline(lfp.time[start_idx], linewidth=1, color=swr_highlight)
-    ax1.axvline(lfp.time[stop_idx], linewidth=1, color=swr_highlight)
-    ax1.axvspan(lfp.time[start_idx], lfp.time[stop_idx], alpha=0.2, color=swr_highlight)
-
-    scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
-                          bbox_to_anchor=(0.25, 0.05), units='ms')
-
-    likelihood_true[np.isnan(likelihood_true)] = 0
-
-    xx, yy = np.meshgrid(info.xedges, info.yedges)
-    xcenters, ycenters = get_bin_centers(info)
-    xxx, yyy = np.meshgrid(xcenters, ycenters)
-
-    maze_highlight = "#fed976"
-    ax3 = plt.subplot(gs1[0, 1])
-    sliced_position = position.time_slice(info.task_times["phase3"].starts, info.task_times["phase3"].stops)
-    ax3.plot(sliced_position.x, sliced_position.y, ".", color=maze_highlight, ms=1, alpha=0.2)
-    pp = ax3.pcolormesh(xx, yy, likelihood_true, cmap='bone_r')
-    ax3.contour(xxx, yyy, zones["u"], levels=0, colors=colours["u"])
-    ax3.contour(xxx, yyy, zones["shortcut"], levels=0, colors=colours["shortcut"])
-    ax3.contour(xxx, yyy, zones["novel"], levels=0, colors=colours["novel"])
-    plt.colorbar(pp)
-    ax3.axis('off')
-
-    ax4 = plt.subplot(gs1[1:2, 1])
-    n = np.arange(len(maze_segments))
-    ax4.bar(n, means,
-            color=[colours["u"], colours["shortcut"], colours["novel"], colours["other"]], edgecolor='k')
-    ax4.set_xticks(n)
-    ax4.set_xticklabels([], rotation=90)
-    ax4.set_ylim([0, 1.])
-    ax4.set_title("True proportion", fontsize=14)
-
-    ax5 = plt.subplot(gs1[2:, 1], sharey=ax4)
-    n = np.arange(len(maze_segments))
-    ax5.bar(n, means_shuff,
-            yerr=sems_shuff,
-            color=[colours["u"], colours["shortcut"], colours["novel"], colours["other"]], edgecolor='k')
-    ax5.set_xticks(n)
-    ax5.set_xticklabels(maze_segments, rotation=90)
-    ax5.set_ylim([0, 1.])
-    ax5.set_title("Shuffled proportion", fontsize=14)
-
-    plt.tight_layout()
-
-    if savefig:
-        plt.savefig(filepath)
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_likelihood_overspace(info, position, likelihoods, zones, colours, filepath=None):
-
-    xx, yy = np.meshgrid(info.xedges, info.yedges)
-    xcenters, ycenters = get_bin_centers(info)
-    xxx, yyy = np.meshgrid(xcenters, ycenters)
-
-    sliced_position = position.time_slice(info.task_times["phase3"].starts, info.task_times["phase3"].stops)
-    plt.plot(sliced_position.x, sliced_position.y, "b.", ms=1, alpha=0.2)
-    pp = plt.pcolormesh(xx, yy, np.nanmean(likelihoods, axis=0), vmax=0.2, cmap='bone_r')
-    plt.contour(xxx, yyy, zones["u"], levels=0, colors=colours["u"], corner_mask=False)
-    plt.contour(xxx, yyy, zones["shortcut"], levels=0, colors=colours["shortcut"], corner_mask=False)
-    plt.contour(xxx, yyy, zones["novel"], levels=0, colors=colours["novel"], corner_mask=False)
-
-    plt.colorbar(pp)
-    plt.axis('off')
-    if filepath is not None:
-        plt.savefig(filepath)
-        plt.close()
-    else:
-        plt.show()
-
-
-def get_likelihood(spikes, tuning_curves, tc_shape, start, stop):
+def raw_likelihood(spikes, tuning_curves, tc_shape, start, stop):
     sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
     t_window = stop-start  # 0.1 for running, 0.025 for swr
     counts = bin_spikes(sliced_spikes, np.array([start, stop]), dt=t_window, window=t_window,
@@ -195,116 +142,8 @@ def get_likelihood(spikes, tuning_curves, tc_shape, start, stop):
     return likelihood.reshape(tc_shape[1], tc_shape[2])
 
 
-def plot_combined(summary_likelihoods, n_all_swrs, task_times, maze_segments, n_sessions, colours, filename=None):
-
-    trajectory_means = {key: [] for key in maze_segments}
-    trajectory_sems = {key: [] for key in maze_segments}
-
-    for trajectory in maze_segments:
-        trajectory_means[trajectory] = [np.nanmean(summary_likelihoods[task_time][trajectory])
-                                        if len(summary_likelihoods[task_time][trajectory]) > 0 else 0.0
-                                        for task_time in task_times]
-
-        trajectory_sems[trajectory] = [scipy.stats.sem(summary_likelihoods[task_time][trajectory], nan_policy="omit")
-                                       if len(summary_likelihoods[task_time][trajectory]) > 1 else 0.0
-                                       for task_time in task_times]
-
-    fig = plt.figure(figsize=(12, 6))
-    gs1 = gridspec.GridSpec(1, 4)
-    gs1.update(wspace=0.3, hspace=0.)
-
-    n = np.arange(len(task_times))
-    ax1 = plt.subplot(gs1[0])
-    ax1.bar(n, trajectory_means["u"], yerr=trajectory_sems["u"], color=colours["u"])
-    ax2 = plt.subplot(gs1[1])
-    ax2.bar(n, trajectory_means["shortcut"], yerr=trajectory_sems["shortcut"], color=colours["shortcut"])
-    ax3 = plt.subplot(gs1[2])
-    ax3.bar(n, trajectory_means["novel"], yerr=trajectory_sems["novel"], color=colours["novel"])
-    ax4 = plt.subplot(gs1[3])
-    ax4.bar(n, trajectory_means["other"], yerr=trajectory_sems["other"], color=colours["other"])
-
-    for ax in [ax1, ax2, ax3, ax4]:
-        ax.set_ylim([0, 1.])
-
-        ax.set_xticks(np.arange(len(task_times)))
-        ax.set_xticklabels(task_times, rotation = 90)
-
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.yaxis.set_ticks_position('left')
-        ax.xaxis.set_ticks_position('bottom')
-
-        for i, task_time in enumerate(task_times):
-            ax.text(i, 0.01, str(n_all_swrs[task_time]), ha="center", fontsize=14)
-
-    for ax in [ax2, ax3, ax4]:
-        ax.set_yticklabels([])
-
-    plt.text(1., 1., "n sessions: "+ str(n_sessions), horizontalalignment='left',
-             verticalalignment='top', fontsize=14)
-
-    fig.suptitle(filename, fontsize=18)
-#     ax1.set_ylabel("Proportion")
-
-    legend_elements = [Patch(facecolor=colours["u"], edgecolor='k', label="u"),
-                       Patch(facecolor=colours["shortcut"], edgecolor='k', label="shortcut"),
-                       Patch(facecolor=colours["novel"], edgecolor='k', label="novel"),
-                       Patch(facecolor=colours["other"], edgecolor='k', label="other")]
-    plt.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1.0))
-
-    gs1.tight_layout(fig)
-
-    if filename is not None:
-        plt.savefig(os.path.join(output_filepath, filename+".png"))
-        plt.close()
-    else:
-        plt.show()
-
-
-def plot_stacked_summary(summary_likelihoods, n_all_swrs, task_times,
-                         maze_segments, n_sessions, colours, filename=None):
-
-    trajectory_means = {key: [] for key in maze_segments}
-    trajectory_sems = {key: [] for key in maze_segments}
-
-    for trajectory in maze_segments:
-        trajectory_means[trajectory] = [np.nanmean(summary_likelihoods[task_time][trajectory])
-                                        for task_time in task_times]
-        trajectory_sems[trajectory] = [scipy.stats.sem(summary_likelihoods[task_time][trajectory])
-                                       for task_time in task_times]
-
-    fig, ax = plt.subplots(figsize=(7,5))
-    n = np.arange(len(task_times))
-    pu = plt.bar(n, trajectory_means["u"], yerr=trajectory_sems["u"], color=colours["u"])
-    ps = plt.bar(n, trajectory_means["shortcut"], yerr=trajectory_sems["shortcut"],
-                 bottom=trajectory_means["u"], color=colours["shortcut"])
-    pn = plt.bar(n, trajectory_means["novel"], yerr=trajectory_sems["novel"],
-                 bottom=np.array(trajectory_means["u"])+np.array(trajectory_means["shortcut"]), color=colours["novel"])
-    po = plt.bar(n, trajectory_means["other"], yerr=trajectory_sems["other"],
-                 bottom=np.array(trajectory_means["u"])+np.array(trajectory_means["shortcut"])+np.array(trajectory_means["novel"]),
-                 color=colours["other"])
-    plt.xticks(n, task_times)
-    plt.title(filename)
-
-    for i, task_time in enumerate(task_times):
-        ax.text(i, 0.01, str(n_all_swrs[task_time]), ha="center", fontsize=14)
-
-    plt.text(2.8, -0.15, "n sessions: "+ str(n_sessions), fontsize=14)
-
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks_position('bottom')
-
-    plt.tight_layout()
-    if filename is not None:
-        plt.savefig(os.path.join(output_filepath, filename+".png"))
-        plt.close()
-    else:
-        plt.show()
-
-
-def get_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, zones, task_times, maze_segments, shuffled_id=False):
+def get_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs,
+                    zones, task_times, maze_segments, shuffled_id=False):
 
     if shuffled_id:
         tuning_curves = np.random.permutation(tuning_curves_fromdata)
@@ -313,17 +152,14 @@ def get_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, zones,
 
     tuning_curves = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-    likelihoods_sum = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    raw_likelihoods = {task_time: [] for task_time in task_times}
+    # likelihoods_sum = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
+    # raw_likelihoods = {task_time: [] for task_time in task_times}
 
     for i, task_time in enumerate(task_times):
-        for (start, stop) in zip(phase_swrs[task_time].starts, phase_swrs[task_time].stops):
-            likelihood = get_likelihood(spikes, tuning_curves, tc_shape, start, stop)
-            raw_likelihoods[task_time].append(likelihood)
-
-            for trajectory in maze_segments:
-                likelihoods_sum[task_time][trajectory].append(np.nansum(likelihood[zones[trajectory]]))
-
+        likelihoods = np.zeros(len(phase_swrs[task_time].n_epochs))
+        for j, (start, stop) in enumerate(zip(phase_swrs[task_time].starts, phase_swrs[task_time].stops)):
+            likelihoods[j] = raw_likelihood(spikes, tuning_curves, tc_shape, start, stop)
+        huh = TaskTime(likelihoods)
     return likelihoods_sum, raw_likelihoods
 
 
@@ -394,14 +230,20 @@ def save_likelihoods(info, position, spikes, phase_swrs, zones, task_times, maze
             raw_likelihoods_shuffs[task_time].append(raw_likelihoods_shuff[task_time])
             for trajectory in maze_segments:
                 combined_likelihoods_shuff[task_time][trajectory].append(np.array(session_likelihoods_shuff[task_time][trajectory]))
-    return session_likelihoods_true, raw_likelihoods_true, combined_likelihoods_shuff, raw_likelihoods_shuffs
+    return true_likelihoods, shuffled_likelihoods
 
 
-def get_decoded_swr_plots(infos, group):
+if __name__ == "__main__":
+
+    import info.r063d2 as r063d2
+    import info.r068d8 as r068d8
+    infos = [r068d8, r063d2]
+    group = "test"
+
     plot_individual = False
     update_cache = False
 
-    n_shuffles = 100
+    n_shuffles = 2
     percentile_thresh = 99
 
     colours = dict()
@@ -421,14 +263,11 @@ def get_decoded_swr_plots(infos, group):
     maze_segments = ["u", "shortcut", "novel", "other"]
 
     n_sessions = len(infos)
-    all_likelihoods_true = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    all_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    all_likelihoods_proportion = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    all_likelihoods_true_passthresh = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-    all_likelihoods_true_passthresh_n_swr = {task_time: 0 for task_time in task_times}
-    all_compareshuffle = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
-
-    n_all_swrs = {task_time: 0 for task_time in task_times}
+    all_true = []
+    all_shuffled = []
+    all_proportion = []
+    all_passthresh = []
+    all_compareshuffle = []
 
     for info in infos:
         print(info.session_id)
@@ -463,7 +302,6 @@ def get_decoded_swr_plots(infos, group):
 
         # Restrict SWRs to those during epochs of interest during rest
         phase_swrs = dict()
-        n_swrs = {task_time: 0 for task_time in task_times}
 
         for task_time in task_times:
             epochs_of_interest = info.task_times[task_time].intersect(rest_epochs)
@@ -471,65 +309,53 @@ def get_decoded_swr_plots(infos, group):
             phase_swrs[task_time] = epochs_of_interest.overlaps(swrs)
             phase_swrs[task_time] = phase_swrs[task_time][phase_swrs[task_time].durations >= 0.05]
 
-            n_swrs[task_time] += phase_swrs[task_time].n_epochs
-            n_all_swrs[task_time] += phase_swrs[task_time].n_epochs
-
-        raw_path_true = os.path.join(pickle_filepath, info.session_id+"_raw-likelihoods_true.pkl")
-        sum_path_true = os.path.join(pickle_filepath, info.session_id+"_sum-likelihoods_true.pkl")
+        true_likelihoods_path = os.path.join(pickle_filepath, info.session_id+"_likelihoods_true.pkl")
 
         # Remove previous pickle if update_cache
         if update_cache:
-            if os.path.exists(raw_path_true):
-                os.remove(raw_path_true)
-            if os.path.exists(sum_path_true):
-                os.remove(sum_path_true)
-
-        compute_likelihoods = False
+            if os.path.exists(true_likelihoods_path):
+                os.remove(true_likelihoods_path)
 
         # Load pickle if it exists, otherwise compute and pickle
-        if os.path.exists(raw_path_true) and os.path.exists(sum_path_true):
+        if os.path.exists(true_likelihoods_path):
             print("Loading pickled true likelihoods...")
-            with open(raw_path_true, 'rb') as fileobj:
-                raw_likelihoods_true = pickle.load(fileobj)
-            with open(sum_path_true, 'rb') as fileobj:
-                session_sums_true = pickle.load(fileobj)
+            compute_likelihoods = False
+            with open(true_likelihoods_path, 'rb') as fileobj:
+                true_likelihoods = pickle.load(fileobj)
+        else:
+            compute_likelihoods = True
 
-        combined_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
-        raw_likelihoods_shuffs = {task_time: [] for task_time in task_times}
+        shuffled_likelihoods = []
 
         for i_shuffle in range(n_shuffles):
-            raw_path_shuff = os.path.join(pickle_filepath,
-                                          info.session_id+"_raw-likelihoods_shuffled-%03d.pkl" % i_shuffle)
-            sum_path_shuff = os.path.join(pickle_filepath,
-                                          info.session_id+"_sum-likelihoods_shuffled-%03d.pkl" % i_shuffle)
+            shuffled_likelihoods_path = os.path.join(pickle_filepath,
+                                                     info.session_id+"_likelihoods_shuffled-%03d.pkl" % i_shuffle)
 
             # Remove previous pickle if update_cache
             if update_cache:
-                if os.path.exists(raw_path_shuff):
-                    os.remove(raw_path_shuff)
-                if os.path.exists(sum_path_shuff):
-                    os.remove(sum_path_shuff)
+                if os.path.exists(shuffled_likelihoods_path):
+                    os.remove(shuffled_likelihoods_path)
 
             # Load pickle if it exists, otherwise compute and pickle
-            if os.path.exists(raw_path_shuff) and os.path.exists(sum_path_shuff):
+            if os.path.exists(shuffled_likelihoods_path):
                 print("Loading pickled shuffled likelihoods "+str(i_shuffle)+"...")
-                with open(raw_path_shuff, 'rb') as fileobj:
-                    raw_likelihoods_shuff = pickle.load(fileobj)
-                with open(sum_path_shuff, 'rb') as fileobj:
-                    session_sums_shuff = pickle.load(fileobj)
+                with open(shuffled_likelihoods_path, 'rb') as fileobj:
+                    single_shuffled_likelihoods = pickle.load(fileobj)
             else:
                 compute_likelihoods = True
                 break
 
-            for task_time in task_times:
-                raw_likelihoods_shuffs[task_time].append(raw_likelihoods_shuff[task_time])
-                for trajectory in maze_segments:
-                    combined_likelihoods_shuff[task_time][trajectory].append(np.array(session_sums_shuff[task_time][trajectory]))
-        else:
-            compute_likelihoods = True
+            shuffled_likelihoods.append(single_shuffled_likelihoods)
 
         if compute_likelihoods:
-            session_sums_true, raw_likelihoods_true, combined_likelihoods_shuff, raw_likelihoods_shuffs = save_likelihoods(info, position, spikes, phase_swrs, zones, task_times, maze_segments, n_shuffles)
+            true_likelihoods, shuffled_likelihoods = save_likelihoods(info,
+                                                                      position,
+                                                                      spikes,
+                                                                      phase_swrs,
+                                                                      zones,
+                                                                      task_times,
+                                                                      maze_segments,
+                                                                      n_shuffles)
 
         compareshuffle = {task_time: {trajectory: 0 for trajectory in maze_segments} for task_time in task_times}
         percentiles = {task_time: {trajectory: [] for trajectory in maze_segments} for task_time in task_times}
@@ -667,27 +493,3 @@ def get_decoded_swr_plots(infos, group):
     filename = group + " proportion of SWRs above the "+str(percentile_thresh)+" percentile (shuffle" + str(n_shuffles) + ")"
     plot_combined(all_likelihoods_proportion, n_all_swrs, task_times, maze_segments,
                   n_sessions=len(infos), colours=colours, filename=filename)
-
-
-if __name__ == "__main__":
-
-    from run import (analysis_infos,
-                     r063_infos, r066_infos, r067_infos, r068_infos,
-                     days1234_infos, days5678_infos,
-                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
-
-    get_decoded_swr_plots(analysis_infos, "All")
-    get_decoded_swr_plots(r063_infos, "R063")
-    get_decoded_swr_plots(r066_infos, "R066")
-    get_decoded_swr_plots(r067_infos, "R067")
-    get_decoded_swr_plots(r068_infos, "R068")
-    get_decoded_swr_plots(days1234_infos, "Days1234")
-    get_decoded_swr_plots(days5678_infos, "Days5678")
-    get_decoded_swr_plots(day1_infos, "Day1")
-    get_decoded_swr_plots(day2_infos, "Day2")
-    get_decoded_swr_plots(day3_infos, "Day3")
-    get_decoded_swr_plots(day4_infos, "Day4")
-    get_decoded_swr_plots(day5_infos, "Day5")
-    get_decoded_swr_plots(day6_infos, "Day6")
-    get_decoded_swr_plots(day7_infos, "Day7")
-    get_decoded_swr_plots(day8_infos, "Day8")
