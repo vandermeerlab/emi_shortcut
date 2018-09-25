@@ -37,7 +37,15 @@ class Session:
 
     def __init__(self, task_labels, zones):
         for task_label in task_labels:
-            setattr(self, task_label, TaskTime([], zones))
+            setattr(self, task_label, TaskTime([], [], [], zones))
+
+    def pickle(self, save_path):
+        with open(save_path, 'wb') as fileobj:
+            print("Saving " + save_path)
+            pickle.dump(self, fileobj)
+
+    def n_tasktimes(self):
+        return len(task_labels)
 
 
 class TaskTime:
@@ -56,50 +64,27 @@ class TaskTime:
 
     """
 
-    def __init__(self, likelihoods, zones):
+    def __init__(self, tuning_curves, swrs, likelihoods, zones):
+        self.tuning_curves = tuning_curves
+        self.swrs = swrs
         self.likelihoods = likelihoods
-        for label in zones:
-            setattr(self, label, Zone(label, zones[label], self.likelihoods))
+        self.zones = zones
 
-
-class Zone:
-    """Summary of decoded likelihoods for a given physical zone
-
-            Parameters
-            ----------
-            label : str
-            zone : bool
-
-            Attributes
-            ----------
-            label : str
-            zone : bool
-            sum : np.array
-            mean : np.array
-            max : np.array
-
-        """
-
-    def __init__(self, label, zone, likelihoods):
-        self.label = label
-        self.zone = zone
-        self.likelihoods = likelihoods
-
-    def sum(self):
+    def sums(self, zone_label):
         if len(self.likelihoods) > 0:
-            return np.nansum(self.likelihoods[:, self.zone], axis=1)
+            return np.nansum(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
         else:
             return np.nan
 
-    def mean(self):
+    def means(self, zone_label):
         if len(self.likelihoods) > 0:
-            return np.nanmean(self.likelihoods[:, self.zone], axis=1)
+            return np.nanmean(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
         else:
             return np.nan
 
-    def max(self):
+    def maxs(self, zone_label):
         if len(self.likelihoods) > 0:
-            return np.nanmax(self.likelihoods[:, self.zone], axis=1)
+            return np.nanmax(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
         else:
             return np.nan
 
@@ -150,99 +135,78 @@ def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True
     return nept.AnalogSignal(counts, bin_edges[:-1])
 
 
-def get_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs,
-                    zones, task_labels, zone_labels, shuffled_id=False):
+def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, save_path=None):
 
-    if shuffled_id:
-        tuning_curves = np.random.permutation(tuning_curves_fromdata)
-    else:
-        tuning_curves = tuning_curves_fromdata
+    _, position, spikes, lfp, _ = get_data(info)
 
-    tuning_curves = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
+    zones = dict()
+    zones["u"], zones["shortcut"], zones["novel"] = get_zones(info, position, subset=True)
+    combined_zones = zones["u"] + zones["shortcut"] + zones["novel"]
+    zones["other"] = ~combined_zones
 
-    session = Session(task_labels, zone_labels)
+    session = Session(task_labels, zones)
 
-    for i, task_label in enumerate(task_labels):
-        phase_likelihoods = np.empty((phase_swrs[task_label].n_epochs, tc_shape[1], tc_shape[2]))
-        for j, (start, stop) in enumerate(zip(phase_swrs[task_label].starts, phase_swrs[task_label].stops)):
-            t_window = stop-start  # 0.1 for running, 0.025 for swr
-
-            sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
-
-            counts = bin_spikes(sliced_spikes, np.array([start, stop]), dt=t_window, window=t_window,
-                                gaussian_std=0.0075, normalized=False)
-
-            likelihood = nept.bayesian_prob(counts, tuning_curves, binsize=t_window, min_neurons=3, min_spikes=1)
-
-            phase_likelihoods[j] = likelihood.reshape(tc_shape[1], tc_shape[2])
-
-        tasktime = getattr(session, task_label)
-        tasktime.likelihoods = phase_likelihoods
-
-        for zone_label in zone_labels:
-            zone = getattr(tasktime, zone_label)
-            zone.likelihoods = phase_likelihoods
-
-    return session
-
-
-def pickle_likelihoods(tuning_curves_fromdata, tc_shape, spikes, phase_swrs, zones, task_labels, maze_segments,
-                       shuffled_id, save_path):
-
-    session = get_likelihoods(tuning_curves_fromdata,
-                              tc_shape,
-                              spikes,
-                              phase_swrs,
-                              zones,
-                              task_labels,
-                              maze_segments,
-                              shuffled_id)
-
-    with open(save_path, 'wb') as fileobj:
-        pickle.dump(session, fileobj)
-
-    return session
-
-
-def save_likelihoods(info, position, spikes, phase_swrs, zones, task_labels, zone_labels, n_shuffles):
-    tuning_curves_fromdata = get_only_tuning_curves(info,
-                                           position,
-                                           spikes,
-                                           info.task_times["phase3"])
+    tuning_curves_fromdata = get_only_tuning_curves(info, position, spikes, info.task_times["phase3"])
 
     tc_shape = tuning_curves_fromdata.shape
 
-    save_path_true = os.path.join(pickle_filepath, info.session_id+"_likelihoods_true.pkl")
+    swrs = nept.detect_swr_hilbert(lfp,
+                                   fs=info.fs,
+                                   thresh=swr_params["swr_thresh"],
+                                   z_thresh=swr_params["z_thresh"],
+                                   power_thresh=swr_params["power_thresh"],
+                                   merge_thresh=swr_params["merge_thresh"],
+                                   min_length=swr_params["min_length"])
+    swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=swr_params["min_involved"])
 
-    session_true = pickle_likelihoods(tuning_curves_fromdata,
-                                      tc_shape,
-                                      spikes,
-                                      phase_swrs,
-                                      zones,
-                                      task_labels,
-                                      zone_labels,
-                                      shuffled_id=False,
-                                      save_path=save_path_true)
+    rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
 
-    session_shuffs = []
+    if n_shuffles > 0:
+        n_passes = n_shuffles
+    else:
+        n_passes = 1
 
-    for i_shuffle in range(n_shuffles):
-        save_path_shuff = os.path.join(pickle_filepath,
-                                       info.session_id+"_likelihoods_shuffled-%03d.pkl" % i_shuffle)
+    for task_label in task_labels:
+        epochs_of_interest = info.task_times[task_label].intersect(rest_epochs)
 
+        phase_swrs = epochs_of_interest.overlaps(swrs)
+        phase_swrs = phase_swrs[phase_swrs.durations >= 0.05]
 
-        session_shuff = pickle_likelihoods(tuning_curves_fromdata,
-                                           tc_shape,
-                                           spikes,
-                                           phase_swrs,
-                                           zones,
-                                           task_labels,
-                                           zone_labels,
-                                           shuffled_id=True,
-                                           save_path=save_path_shuff)
+        phase_likelihoods = np.zeros((n_passes, phase_swrs.n_epochs, tc_shape[1], tc_shape[2]))
+        phase_tuningcurves = np.zeros((n_passes, tc_shape[0], tc_shape[1], tc_shape[2]))
+        for n_pass in range(n_passes):
 
-        session_shuffs.append(session_shuff)
-    return session_true, session_shuffs
+            if n_shuffles > 0:
+                tuning_curves = np.random.permutation(tuning_curves_fromdata)
+            else:
+                tuning_curves = tuning_curves_fromdata
+
+            phase_tuningcurves[n_pass, ] = tuning_curves
+            tuning_curves = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
+
+            for n_timebin, (start, stop) in enumerate(zip(phase_swrs.starts,
+                                                          phase_swrs.stops)):
+                t_window = stop-start  # 0.1 for running, 0.025 for swr
+
+                sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
+
+                counts = bin_spikes(sliced_spikes, np.array([start, stop]), dt=t_window, window=t_window,
+                                    gaussian_std=0.0075, normalized=False)
+
+                likelihood = nept.bayesian_prob(counts, tuning_curves, binsize=t_window,
+                                                min_neurons=3, min_spikes=1)
+
+                phase_likelihoods[n_pass, n_timebin] = likelihood.reshape(tc_shape[1], tc_shape[2])
+
+        tasktime = getattr(session, task_label)
+        tasktime.likelihoods = phase_likelihoods
+        tasktime.tuning_curves = phase_tuningcurves
+        tasktime.swrs = phase_swrs
+
+    if save_path is not None:
+        session.pickle(save_path)
+
+    return session
 
 
 if __name__ == "__main__":
@@ -253,7 +217,8 @@ if __name__ == "__main__":
     group = "test"
 
     plot_individual = False
-    update_cache = False
+    update_cache = True
+    dont_save_pickle = False
 
     n_shuffles = 2
     percentile_thresh = 99
@@ -265,14 +230,18 @@ if __name__ == "__main__":
     colours["other"] = "#bdbdbd"
 
     # swr params
-    z_thresh = 2.0
-    power_thresh = 3.0
-    merge_thresh = 0.02
-    min_length = 0.05
-    swr_thresh = (140.0, 250.0)
+    swr_params = dict()
+    swr_params["z_thresh"] = 2.0
+    swr_params["power_thresh"] = 3.0
+    swr_params["merge_thresh"] = 0.02
+    swr_params["min_length"] = 0.05
+    swr_params["swr_thresh"] = (140.0, 250.0)
+    swr_params["min_involved"] = 4
 
     task_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
     zone_labels = ["u", "shortcut", "novel", "other"]
+
+    n_sessions=len(infos)
 
     n_sessions = len(infos)
     all_true = []
@@ -284,91 +253,55 @@ if __name__ == "__main__":
     for info in infos:
         print(info.session_id)
 
-        events, position, spikes, lfp, _ = get_data(info)
-
-        # Define zones
-        zones = dict()
-        zones["u"], zones["shortcut"], zones["novel"] = get_zones(info, position, subset=True)
-        combined_zones = zones["u"] + zones["shortcut"] + zones["novel"]
-        zones["other"] = ~combined_zones
-
-        # Find SWRs for the whole session
-        swrs_path = os.path.join(pickle_filepath, info.session_id+"_swrs.pkl")
+        # Get true data
+        true_path = os.path.join(pickle_filepath, info.session_id+"_likelihoods_true.pkl")
 
         # Remove previous pickle if update_cache
         if update_cache:
-            if os.path.exists(swrs_path):
-                os.remove(swrs_path)
+            if os.path.exists(true_path):
+                os.remove(true_path)
 
         # Load pickle if it exists, otherwise compute and pickle
-        if os.path.exists(swrs_path):
-            print("Loading pickled true likelihoods...")
-            with open(swrs_path, 'rb') as fileobj:
-                swrs = pickle.load(fileobj)
-        else:
-            swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=swr_thresh, z_thresh=z_thresh,
-                                           power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
-            swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=4)
-
-        rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
-
-        # Restrict SWRs to those during epochs of interest during rest
-        phase_swrs = dict()
-
-        for task_time in task_labels:
-            epochs_of_interest = info.task_times[task_time].intersect(rest_epochs)
-
-            phase_swrs[task_time] = epochs_of_interest.overlaps(swrs)
-            phase_swrs[task_time] = phase_swrs[task_time][phase_swrs[task_time].durations >= 0.05]
-
-        true_likelihoods_path = os.path.join(pickle_filepath, info.session_id+"_likelihoods_true.pkl")
-
-        # Remove previous pickle if update_cache
-        if update_cache:
-            if os.path.exists(true_likelihoods_path):
-                os.remove(true_likelihoods_path)
-
-        # Load pickle if it exists, otherwise compute and pickle
-        if os.path.exists(true_likelihoods_path):
+        if os.path.exists(true_path):
             print("Loading pickled true likelihoods...")
             compute_likelihoods = False
-            with open(true_likelihoods_path, 'rb') as fileobj:
-                true_likelihoods = pickle.load(fileobj)
+            with open(true_path, 'rb') as fileobj:
+                true_session = pickle.load(fileobj)
         else:
-            compute_likelihoods = True
+            if dont_save_pickle:
+                true_path = None
+            true_session = get_likelihoods(info,
+                                           swr_params,
+                                           task_labels,
+                                           zone_labels,
+                                           save_path=true_path)
 
-        shuffled_likelihoods = []
+        # Get shuffled data
+        shuffled_path = os.path.join(pickle_filepath,
+                                     info.session_id+"_likelihoods_shuffled-%03d.pkl" % n_shuffles)
 
-        for i_shuffle in range(n_shuffles):
-            shuffled_likelihoods_path = os.path.join(pickle_filepath,
-                                                     info.session_id+"_likelihoods_shuffled-%03d.pkl" % i_shuffle)
+        # Remove previous pickle if update_cache
+        if update_cache:
+            if os.path.exists(shuffled_path):
+                os.remove(shuffled_path)
 
-            # Remove previous pickle if update_cache
-            if update_cache:
-                if os.path.exists(shuffled_likelihoods_path):
-                    os.remove(shuffled_likelihoods_path)
+        # Load pickle if it exists, otherwise compute and pickle
+        if os.path.exists(shuffled_path):
+            print("Loading pickled shuffled likelihoods...")
+            with open(shuffled_path, 'rb') as fileobj:
+                shuffled_session = pickle.load(fileobj)
+        else:
+            if dont_save_pickle:
+                shuffled_path = None
+            shuffled_session = get_likelihoods(info,
+                                               swr_params,
+                                               task_labels,
+                                               zone_labels,
+                                               n_shuffles=n_shuffles,
+                                               save_path=shuffled_path)
 
-            # Load pickle if it exists, otherwise compute and pickle
-            if os.path.exists(shuffled_likelihoods_path):
-                print("Loading pickled shuffled likelihoods "+str(i_shuffle)+"...")
-                with open(shuffled_likelihoods_path, 'rb') as fileobj:
-                    single_shuffled_likelihoods = pickle.load(fileobj)
-            else:
-                compute_likelihoods = True
-                break
 
-            shuffled_likelihoods.append(single_shuffled_likelihoods)
-
-        if compute_likelihoods:
-            true_likelihoods, shuffled_likelihoods = save_likelihoods(info,
-                                                                      position,
-                                                                      spikes,
-                                                                      phase_swrs,
-                                                                      zones,
-                                                                      task_labels,
-                                                                      zone_labels,
-                                                                      n_shuffles)
-
+        # TODO got here
         compareshuffle = {task_time: {trajectory: 0 for trajectory in zone_labels} for task_time in task_labels}
         percentiles = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
         passedshuffthresh = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
