@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import numpy as np
 import warnings
 import random
@@ -6,6 +7,7 @@ import scipy
 import pickle
 import os
 import nept
+import scalebar
 
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
@@ -14,6 +16,7 @@ from analyze_decode_swrs import (plot_summary_individual,
                                  plot_likelihood_overspace,
                                  plot_combined,
                                  plot_stacked_summary)
+from utils_maze import get_bin_centers
 
 thisdir = os.getcwd()
 pickle_filepath = os.path.join(thisdir, "cache", "pickled")
@@ -209,6 +212,116 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
     return session
 
 
+def plot_summary_individual(info, session_true, session_shuffled, zone_labels, task_labels, colours, filepath=None):
+    _, position, spikes, lfp, _ = get_data(info)
+
+    buffer = 0.1
+
+    for task_label in task_labels:
+        print(task_label)
+        swrs = getattr(session_true, task_label).swrs
+        zones = getattr(session_true, task_label).zones
+
+        for swr_idx in range(swrs.n_epochs):
+            print("swr:" + str(swr_idx))
+            start = swrs[swr_idx].start
+            stop = swrs[swr_idx].stop
+
+            sliced_spikes = [spiketrain.time_slice(start - buffer, stop + buffer) for spiketrain in spikes]
+
+            add_rows = int(len(sliced_spikes) / 8)
+
+            ms = 600 / len(sliced_spikes)
+            mew = 0.7
+            spike_loc = 1
+
+            fig = plt.figure(figsize=(8, 8))
+            gs1 = gridspec.GridSpec(3, 2)
+            gs1.update(wspace=0.3, hspace=0.3)
+
+            ax1 = plt.subplot(gs1[1:, 0])
+            for idx, neuron_spikes in enumerate(sliced_spikes):
+                ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time)) + (idx * spike_loc), '|',
+                         color='k', ms=ms, mew=mew)
+            ax1.axis('off')
+
+            ax2 = plt.subplot(gs1[0, 0], sharex=ax1)
+
+            swr_highlight = "#fc4e2a"
+            start_idx = nept.find_nearest_idx(lfp.time, start - buffer)
+            stop_idx = nept.find_nearest_idx(lfp.time, stop + buffer)
+            ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color="k", lw=0.3, alpha=0.9)
+
+            start_idx = nept.find_nearest_idx(lfp.time, start)
+            stop_idx = nept.find_nearest_idx(lfp.time, stop)
+            ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color=swr_highlight, lw=0.6)
+            ax2.axis("off")
+
+            ax1.axvline(lfp.time[start_idx], linewidth=1, color=swr_highlight)
+            ax1.axvline(lfp.time[stop_idx], linewidth=1, color=swr_highlight)
+            ax1.axvspan(lfp.time[start_idx], lfp.time[stop_idx], alpha=0.2, color=swr_highlight)
+
+            scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
+                                  bbox_to_anchor=(0.25, 0.05), units='ms')
+
+            likelihood_true = np.array(getattr(session_true, task_label).likelihoods[:, swr_idx])
+
+            likelihood_true[np.isnan(likelihood_true)] = 0
+
+            xx, yy = np.meshgrid(info.xedges, info.yedges)
+            xcenters, ycenters = get_bin_centers(info)
+            xxx, yyy = np.meshgrid(xcenters, ycenters)
+
+            maze_highlight = "#fed976"
+            ax3 = plt.subplot(gs1[0, 1])
+            sliced_position = position.time_slice(info.task_times["phase3"].starts, info.task_times["phase3"].stops)
+            ax3.plot(sliced_position.x, sliced_position.y, ".", color=maze_highlight, ms=1, alpha=0.2)
+            pp = ax3.pcolormesh(xx, yy, likelihood_true[0], cmap='bone_r')
+            for label in ["u", "shortcut", "novel"]:
+                ax3.contour(xxx, yyy, zones[label], levels=0, linewidths=2, colors=colours[label])
+            plt.colorbar(pp)
+            ax3.axis('off')
+
+            likelihood_true = getattr(session_true, task_label).likelihoods[:, swr_idx]
+            means_true = [np.nanmean(np.nansum(likelihood_true[:, zones[zone_label]], axis=1))
+                          for zone_label in zone_labels]
+
+            ax4 = plt.subplot(gs1[1:2, 1])
+            ax4.bar(np.arange(len(zone_labels)),
+                    means_true,
+                    color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
+            ax4.set_xticks(n)
+            ax4.set_xticklabels([], rotation=90)
+            ax4.set_ylim([0, 1.])
+            ax4.set_title("True proportion", fontsize=14)
+
+            likelihood_shuffled = getattr(session_shuffled, task_label).likelihoods[:, swr_idx]
+
+            means_shuffled = [np.nanmean(np.nansum(likelihood_shuffled[:, zones[zone_label]], axis=1))
+                              for zone_label in zone_labels]
+            sems_shuffled = [scipy.stats.sem(np.nansum(likelihood_shuffled[:, zones[zone_label]], axis=1))
+                             for zone_label in zone_labels]
+
+            ax5 = plt.subplot(gs1[2:, 1], sharey=ax4)
+            ax5.bar(np.arange(len(zone_labels)),
+                    means_shuffled,
+                    yerr=sems_shuffled,
+                    color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
+            ax5.set_xticks(n)
+            ax5.set_xticklabels(zone_labels, rotation=90)
+            ax5.set_ylim([0, 1.])
+            ax5.set_title("Shuffled proportion", fontsize=14)
+
+            plt.tight_layout()
+
+            if filepath is not None:
+                filename = info.session_id + "_" + task_label + "_summary-swr" + str(swr_idx) + ".png"
+                plt.savefig(os.path.join(output_filepath, filename))
+                plt.close()
+            else:
+                plt.show()
+
+
 if __name__ == "__main__":
 
     import info.r063d2 as r063d2
@@ -241,7 +354,7 @@ if __name__ == "__main__":
     task_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
     zone_labels = ["u", "shortcut", "novel", "other"]
 
-    n_sessions=len(infos)
+    n_sessions = len(infos)
 
     n_sessions = len(infos)
     all_true = []
@@ -299,6 +412,9 @@ if __name__ == "__main__":
                                                zone_labels,
                                                n_shuffles=n_shuffles,
                                                save_path=shuffled_path)
+
+        if plot_individual:
+            plot_summary_individual(info, true_session, shuffled_session, zone_labels, task_labels, colours)
 
 
         # TODO got here
