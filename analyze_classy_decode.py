@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from matplotlib.patches import Patch
 import numpy as np
 import warnings
 import random
@@ -12,8 +13,7 @@ import scalebar
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
 from utils_maze import get_zones
-from analyze_decode_swrs import (plot_summary_individual,
-                                 plot_likelihood_overspace,
+from analyze_decode_swrs import (plot_likelihood_overspace,
                                  plot_combined,
                                  plot_stacked_summary)
 from utils_maze import get_bin_centers
@@ -38,7 +38,8 @@ class Session:
 
     """
 
-    def __init__(self, task_labels, zones):
+    def __init__(self, position, task_labels, zones):
+        self.position = position
         for task_label in task_labels:
             setattr(self, task_label, TaskTime([], [], [], zones))
 
@@ -147,7 +148,7 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
     combined_zones = zones["u"] + zones["shortcut"] + zones["novel"]
     zones["other"] = ~combined_zones
 
-    session = Session(task_labels, zones)
+    session = Session(position, task_labels, zones)
 
     tuning_curves_fromdata = get_only_tuning_curves(info, position, spikes, info.task_times["phase3"])
 
@@ -274,8 +275,9 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
 
             maze_highlight = "#fed976"
             ax3 = plt.subplot(gs1[0, 1])
-            sliced_position = position.time_slice(info.task_times["phase3"].starts, info.task_times["phase3"].stops)
-            ax3.plot(sliced_position.x, sliced_position.y, ".", color=maze_highlight, ms=1, alpha=0.2)
+
+            ax3.plot(session_true.position.x, session_true.position.y, ".",
+                     color=maze_highlight, ms=1, alpha=0.2)
             pp = ax3.pcolormesh(xx, yy, likelihood_true[0], cmap='bone_r')
             for label in ["u", "shortcut", "novel"]:
                 ax3.contour(xxx, yyy, zones[label], levels=0, linewidths=2, colors=colours[label])
@@ -322,6 +324,71 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
                 plt.show()
 
 
+def plot_session(sessions, title, filepath=None):
+
+    fig = plt.figure(figsize=(12, 6))
+    gs1 = gridspec.GridSpec(1, 4)
+    gs1.update(wspace=0.3, hspace=0.)
+
+    for i, zone_label in enumerate(zone_labels):
+        sums = {task_label: [] for task_label in task_labels}
+        n_swrs = {task_label: 0 for task_label in task_labels}
+        for session in sessions:
+            for task_label in task_labels:
+                zone_sums = getattr(session, task_label).sums(zone_label)
+                sums[task_label].extend(zone_sums)
+                n_swrs[task_label] += getattr(session, task_label).swrs.n_epochs
+
+        means = [np.nanmean(sums[task_label])
+                 if len(sums[task_label]) > 0 else 0.0
+                 for task_label in task_labels]
+
+        sems = [np.nanmean(scipy.stats.sem(sums[task_label], axis=0, nan_policy="omit"))
+                if len(sums[task_label]) > 1 else 0.0
+                for task_label in task_labels]
+
+        ax = plt.subplot(gs1[i])
+        ax.bar(np.arange(sessions[0].n_tasktimes()),
+               means, yerr=sems, color=colours[zone_label])
+
+        ax.set_ylim([0, 1.])
+
+        ax.set_xticks(np.arange(sessions[0].n_tasktimes()))
+        ax.set_xticklabels(task_labels, rotation = 90)
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks_position('bottom')
+
+        if i > 0:
+            ax.set_yticklabels([])
+
+        if i == 0:
+            ax.set_ylabel("Proportion")
+
+        if zone_label == "other":
+            for n_tasktimes, task_label in enumerate(task_labels):
+                ax.text(n_tasktimes, 0.01, str(n_swrs[task_label]), ha="center", fontsize=14)
+
+    plt.text(1., 1., "n sessions: "+ str(len(sessions)), horizontalalignment='left',
+             verticalalignment='top', fontsize=14)
+
+    fig.suptitle(title, fontsize=16)
+
+    legend_elements = [Patch(facecolor=colours[zone_label], edgecolor='k', label=zone_label)
+                       for zone_label in zone_labels]
+
+    plt.legend(handles=legend_elements, bbox_to_anchor=(1., 0.95))
+
+    gs1.tight_layout(fig)
+
+    if filepath is not None:
+        plt.savefig(filepath)
+    else:
+        plt.show()
+
+
 if __name__ == "__main__":
 
     import info.r063d2 as r063d2
@@ -329,9 +396,10 @@ if __name__ == "__main__":
     infos = [r068d8, r063d2]
     group = "test"
 
-    plot_individual = False
-    update_cache = True
+    update_cache = False
     dont_save_pickle = False
+    plot_individual = False
+    plot_summary = True
 
     n_shuffles = 2
     percentile_thresh = 99
@@ -354,14 +422,8 @@ if __name__ == "__main__":
     task_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
     zone_labels = ["u", "shortcut", "novel", "other"]
 
-    n_sessions = len(infos)
-
-    n_sessions = len(infos)
-    all_true = []
-    all_shuffled = []
-    all_proportion = []
-    all_passthresh = []
-    all_compareshuffle = []
+    true_sessions = []
+    shuffled_sessions = []
 
     for info in infos:
         print(info.session_id)
@@ -389,6 +451,8 @@ if __name__ == "__main__":
                                            zone_labels,
                                            save_path=true_path)
 
+        true_sessions.append(true_session)
+
         # Get shuffled data
         shuffled_path = os.path.join(pickle_filepath,
                                      info.session_id+"_likelihoods_shuffled-%03d.pkl" % n_shuffles)
@@ -413,10 +477,22 @@ if __name__ == "__main__":
                                                n_shuffles=n_shuffles,
                                                save_path=shuffled_path)
 
+        shuffled_sessions.append(shuffled_session)
+
         if plot_individual:
             plot_summary_individual(info, true_session, shuffled_session, zone_labels, task_labels, colours)
 
+    if plot_summary:
+        title = group + "_average-posterior-during-SWRs_true"
+        filepath = os.path.join(output_filepath, title+".png")
+        plot_session(true_sessions, title, filepath)
 
+        title = group + "_average-posterior-during-SWRs_shuffled-%03d" % n_shuffles
+        filepath = os.path.join(output_filepath, title+".png")
+        plot_session(shuffled_sessions, title)
+
+
+        1/0
         # TODO got here
         compareshuffle = {task_time: {trajectory: 0 for trajectory in zone_labels} for task_time in task_labels}
         percentiles = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
