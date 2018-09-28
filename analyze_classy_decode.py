@@ -13,9 +13,6 @@ import scalebar
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
 from utils_maze import get_zones
-from analyze_decode_swrs import (plot_likelihood_overspace,
-                                 plot_combined,
-                                 plot_stacked_summary)
 from utils_maze import get_bin_centers
 
 thisdir = os.getcwd()
@@ -75,22 +72,22 @@ class TaskTime:
         self.zones = zones
 
     def sums(self, zone_label):
-        if len(self.likelihoods) > 0:
-            return np.nansum(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
+        if self.swrs.n_epochs > 0:
+            return np.squeeze(np.nansum(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
         else:
-            return np.nan
+            return np.ones((self.likelihoods.shape[0], 1)) * np.nan
 
     def means(self, zone_label):
-        if len(self.likelihoods) > 0:
-            return np.nanmean(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
+        if self.swrs.n_epochs > 0:
+            return np.squeeze(np.nanmean(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
         else:
-            return np.nan
+            return np.ones((self.likelihoods.shape[0], 1)) * np.nan
 
     def maxs(self, zone_label):
-        if len(self.likelihoods) > 0:
-            return np.nanmax(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
+        if self.swrs.n_epochs > 0:
+            return np.squeeze(np.nanmax(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
         else:
-            return np.nan
+            return np.ones((self.likelihoods.shape[0], 1)) * np.nan
 
 
 def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True):
@@ -213,24 +210,48 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
     return session
 
 
+def plot_likelihood_overspace(info, session, task_labels,  colours, filepath=None):
+    for task_label in task_labels:
+        zones = getattr(session, task_label).zones
+        likelihood = np.nanmean(np.array(getattr(session, task_label).likelihoods), axis=(0, 1))
+
+        likelihood[np.isnan(likelihood)] = 0
+
+        xx, yy = np.meshgrid(info.xedges, info.yedges)
+        xcenters, ycenters = get_bin_centers(info)
+        xxx, yyy = np.meshgrid(xcenters, ycenters)
+
+        maze_highlight = "#fed976"
+        plt.plot(session.position.x, session.position.y, ".", color=maze_highlight, ms=1, alpha=0.2)
+        pp = plt.pcolormesh(xx, yy, likelihood, cmap='bone_r')
+        for label in ["u", "shortcut", "novel"]:
+            plt.contour(xxx, yyy, zones[label], levels=0, linewidths=2, colors=colours[label])
+        plt.colorbar(pp)
+        plt.axis('off')
+
+        plt.tight_layout()
+        if filepath is not None:
+            filename = info.session_id + "_" + task_label + "_likelihoods-overspace.png"
+            plt.savefig(os.path.join(output_filepath, filename))
+            plt.close()
+        else:
+            plt.show()
+
+
 def plot_summary_individual(info, session_true, session_shuffled, zone_labels, task_labels, colours, filepath=None):
     _, position, spikes, lfp, _ = get_data(info)
 
     buffer = 0.1
 
     for task_label in task_labels:
-        print(task_label)
         swrs = getattr(session_true, task_label).swrs
         zones = getattr(session_true, task_label).zones
 
         for swr_idx in range(swrs.n_epochs):
-            print("swr:" + str(swr_idx))
             start = swrs[swr_idx].start
             stop = swrs[swr_idx].stop
 
             sliced_spikes = [spiketrain.time_slice(start - buffer, stop + buffer) for spiketrain in spikes]
-
-            add_rows = int(len(sliced_spikes) / 8)
 
             ms = 600 / len(sliced_spikes)
             mew = 0.7
@@ -292,7 +313,7 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
             ax4.bar(np.arange(len(zone_labels)),
                     means_true,
                     color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
-            ax4.set_xticks(n)
+            ax4.set_xticks(np.arange(len(zone_labels)))
             ax4.set_xticklabels([], rotation=90)
             ax4.set_ylim([0, 1.])
             ax4.set_title("True proportion", fontsize=14)
@@ -309,7 +330,7 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
                     means_shuffled,
                     yerr=sems_shuffled,
                     color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
-            ax5.set_xticks(n)
+            ax5.set_xticks(np.arange(len(zone_labels)))
             ax5.set_xticklabels(zone_labels, rotation=90)
             ax5.set_ylim([0, 1.])
             ax5.set_title("Shuffled proportion", fontsize=14)
@@ -354,7 +375,7 @@ def plot_session(sessions, title, filepath=None):
         ax.set_ylim([0, 1.])
 
         ax.set_xticks(np.arange(sessions[0].n_tasktimes()))
-        ax.set_xticklabels(task_labels, rotation = 90)
+        ax.set_xticklabels(task_labels, rotation=90)
 
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -400,10 +421,11 @@ if __name__ == "__main__":
     infos = [r068d8, r063d2]
     group = "test"
 
-    update_cache = False
+    update_cache = True
     dont_save_pickle = False
     plot_individual = False
     plot_individual_passthresh = False
+    plot_overspace = False
     plot_summary = True
 
     n_shuffles = 2
@@ -492,6 +514,12 @@ if __name__ == "__main__":
             plot_summary_individual(info, true_session, shuffled_session,
                                     zone_labels, task_labels, colours, filepath)
 
+        if plot_overspace:
+            filepath = os.path.join(output_filepath, "overspace")
+            if not os.path.exists(filepath):
+                os.makedirs(filepath)
+            plot_likelihood_overspace(info, true_session, task_labels, colours, filepath)
+
         keep_idx = {task_label: [] for task_label in task_labels}
 
         for task_label in task_labels:
@@ -499,11 +527,13 @@ if __name__ == "__main__":
                 zones = getattr(true_session, task_label).zones
                 true_sums = np.array(getattr(true_session, task_label).sums(zone_label))
                 shuffled_sums = np.array(getattr(shuffled_session, task_label).sums(zone_label))
-                for idx in range(true_sums.shape[1]):
-                    percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]),
-                                                               true_sums[:, idx])
-                    if percentile >= percentile_thresh:
-                        keep_idx[task_label].append(idx)
+                if true_sums.size == 1 and np.isnan(true_sums).all():
+                    continue
+                else:
+                    for idx in range(true_sums.shape[0]):
+                        percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]), true_sums[idx])
+                        if percentile >= percentile_thresh:
+                            keep_idx[task_label].append(idx)
 
         passthresh_session = Session(true_session.position, task_labels, zones)
 
@@ -515,7 +545,7 @@ if __name__ == "__main__":
             else:
                 passthresh_likelihoods = np.ones((1, 1) + getattr(true_session, task_label).likelihoods.shape[2:]) * np.nan
                 passthresh_swrs = None
-            print(passthresh_likelihoods.shape)
+
             passthresh_tuningcurves = getattr(true_session, task_label).tuning_curves
 
             tasktime = getattr(passthresh_session, task_label)
