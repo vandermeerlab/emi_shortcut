@@ -318,7 +318,7 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
 
             if filepath is not None:
                 filename = info.session_id + "_" + task_label + "_summary-swr" + str(swr_idx) + ".png"
-                plt.savefig(os.path.join(output_filepath, filename))
+                plt.savefig(os.path.join(filepath, filename))
                 plt.close()
             else:
                 plt.show()
@@ -391,6 +391,10 @@ def plot_session(sessions, title, filepath=None):
 
 if __name__ == "__main__":
 
+    from run import (analysis_infos,
+                     r063_infos, r066_infos, r067_infos, r068_infos,
+                     days1234_infos, days5678_infos,
+                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
     import info.r063d2 as r063d2
     import info.r068d8 as r068d8
     infos = [r068d8, r063d2]
@@ -399,10 +403,11 @@ if __name__ == "__main__":
     update_cache = False
     dont_save_pickle = False
     plot_individual = False
+    plot_individual_passthresh = False
     plot_summary = True
 
     n_shuffles = 2
-    percentile_thresh = 99
+    percentile_thresh = 95
 
     colours = dict()
     colours["u"] = "#2b8cbe"
@@ -424,6 +429,7 @@ if __name__ == "__main__":
 
     true_sessions = []
     shuffled_sessions = []
+    passthresh_sessions = []
 
     for info in infos:
         print(info.session_id)
@@ -480,7 +486,51 @@ if __name__ == "__main__":
         shuffled_sessions.append(shuffled_session)
 
         if plot_individual:
-            plot_summary_individual(info, true_session, shuffled_session, zone_labels, task_labels, colours)
+            filepath = os.path.join(output_filepath, "individual")
+            if not os.path.exists(filepath):
+                os.makedirs(filepath)
+            plot_summary_individual(info, true_session, shuffled_session,
+                                    zone_labels, task_labels, colours, filepath)
+
+        keep_idx = {task_label: [] for task_label in task_labels}
+
+        for task_label in task_labels:
+            for zone_label in zone_labels:
+                zones = getattr(true_session, task_label).zones
+                true_sums = np.array(getattr(true_session, task_label).sums(zone_label))
+                shuffled_sums = np.array(getattr(shuffled_session, task_label).sums(zone_label))
+                for idx in range(true_sums.shape[1]):
+                    percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]),
+                                                               true_sums[:, idx])
+                    if percentile >= percentile_thresh:
+                        keep_idx[task_label].append(idx)
+
+        passthresh_session = Session(true_session.position, task_labels, zones)
+
+        for task_label in task_labels:
+            passthresh_idx = np.sort(np.unique(keep_idx[task_label]))
+            if len(passthresh_idx) > 0:
+                passthresh_likelihoods = np.array(getattr(true_session, task_label).likelihoods)[:, passthresh_idx]
+                passthresh_swrs = getattr(true_session, task_label).swrs[passthresh_idx]
+            else:
+                passthresh_likelihoods = np.ones((1, 1) + getattr(true_session, task_label).likelihoods.shape[2:]) * np.nan
+                passthresh_swrs = None
+            print(passthresh_likelihoods.shape)
+            passthresh_tuningcurves = getattr(true_session, task_label).tuning_curves
+
+            tasktime = getattr(passthresh_session, task_label)
+            tasktime.likelihoods = passthresh_likelihoods
+            tasktime.swrs = passthresh_swrs
+            tasktime.tuning_curves = passthresh_tuningcurves
+
+        passthresh_sessions.append(passthresh_session)
+
+        if plot_individual_passthresh:
+            filepath = os.path.join(output_filepath, "passthresh")
+            if not os.path.exists(filepath):
+                os.makedirs(filepath)
+            plot_summary_individual(info, passthresh_session, shuffled_session, zone_labels,
+                                    task_labels, colours, filepath)
 
     if plot_summary:
         title = group + "_average-posterior-during-SWRs_true"
@@ -491,142 +541,6 @@ if __name__ == "__main__":
         filepath = os.path.join(output_filepath, title+".png")
         plot_session(shuffled_sessions, title)
 
-
-        1/0
-        # TODO got here
-        compareshuffle = {task_time: {trajectory: 0 for trajectory in zone_labels} for task_time in task_labels}
-        percentiles = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
-        passedshuffthresh = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
-
-        keep_idx = {task_time: [] for task_time in task_labels}
-
-        for task_label in task_labels:
-            raw_likelihoods_shuffs[task_label] = np.swapaxes(raw_likelihoods_shuffs[task_label], 0, 1)
-            for trajectory in zone_labels:
-                for idx, event in enumerate(range(len(session_sums_true[task_time][trajectory]))):
-                    percentile = scipy.stats.percentileofscore(np.sort(np.array(combined_likelihoods_shuff[task_time][trajectory])[:,event]),
-                                                               session_sums_true[task_time][trajectory][event])
-                    percentiles[task_time][trajectory].append(percentile)
-                    if percentile >= percentile_thresh:
-                        compareshuffle[task_time][trajectory] += 1
-                        all_compareshuffle[task_time][trajectory] += 1
-                        keep_idx[task_time].append(idx)
-
-        morelikelythanshuffle_proportion = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
-        mean_combined_likelihoods_shuff = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
-        passedshuffthresh_n_swr = {task_time: 0 for task_time in task_labels}
-
-        for task_time in task_labels:
-            passedshuffthresh_n_swr[task_time] += len(np.unique(keep_idx[task_time]))
-            all_likelihoods_true_passthresh_n_swr[task_time] += len(np.unique(keep_idx[task_time]))
-            for trajectory in zone_labels:
-                if len(np.sort(np.unique(keep_idx[task_time]))) > 0:
-                    passedshuffthresh[task_time][trajectory].append(np.array(session_sums_true[task_time][trajectory])[np.sort(np.unique(keep_idx[task_time]))])
-                if len(session_sums_true[task_time][trajectory]) > 0:
-                    morelikelythanshuffle_proportion[task_time][trajectory].append(compareshuffle[task_time][trajectory] / len(session_sums_true[task_time][trajectory]))
-                else:
-                    morelikelythanshuffle_proportion[task_time][trajectory].append(0.0)
-                mean_combined_likelihoods_shuff[task_time][trajectory] = np.nanmean(combined_likelihoods_shuff[task_time][trajectory], axis=0)
-
-                all_likelihoods_true[task_time][trajectory].extend(session_sums_true[task_time][trajectory])
-                if len(passedshuffthresh[task_time][trajectory]) > 0:
-                    all_likelihoods_true_passthresh[task_time][trajectory].append(passedshuffthresh[task_time][trajectory][0])
-                else:
-                    all_likelihoods_true_passthresh[task_time][trajectory].append([])
-                all_likelihoods_shuff[task_time][trajectory].extend(mean_combined_likelihoods_shuff[task_time][trajectory])
-                all_likelihoods_proportion[task_time][trajectory].extend(morelikelythanshuffle_proportion[task_time][trajectory])
-
-                if plot_individual:
-                    # plot percentiles
-                    fig, ax = plt.subplots()
-                    n = np.arange(len(percentiles[task_time][trajectory]))
-                    plt.bar(n, np.sort(percentiles[task_time][trajectory]), color=colours[trajectory])
-                    ax.axhline(percentile_thresh, ls="--", lw=1.5, color="k")
-                    title = info.session_id + " individual SWR percentile with shuffle" + str(n_shuffles) + " for " + task_time + " " + trajectory
-                    plt.title(title, fontsize=11)
-                    plt.tight_layout()
-                    plt.savefig(os.path.join(output_filepath, "percentiles", title))
-                    plt.close()
-
-            filepath = os.path.join(output_filepath, info.session_id+"-average-likelihood-overspace_"+task_time+".png")
-            if len(session_sums_true[task_time]) > 0:
-                if plot_individual:
-                    plot_likelihood_overspace(info, position, raw_likelihoods_true[task_time],
-                                              zones, colours, filepath)
-
-        filename = info.session_id + " proportion of SWRs above "+str(percentile_thresh)+" percentile"
-        plot_combined(morelikelythanshuffle_proportion, passedshuffthresh_n_swr,
-                      task_labels, zone_labels, n_sessions=1, colours=colours, filename=filename)
-
-        filename = info.session_id + " average posteriors during SWRs_sum-shuffled"+str(n_shuffles)
-        plot_combined(mean_combined_likelihoods_shuff, n_swrs, task_labels, zone_labels,
-                      n_sessions=1, colours=colours, filename=filename)
-
-        filename = info.session_id + " average posteriors during SWRs_sum-true"
-        plot_combined(session_sums_true, n_swrs, task_labels, zone_labels,
-                      n_sessions=1, colours=colours, filename=filename)
-
-        filename = info.session_id + " average posteriors during SWRs_sum-true_passthresh"
-        plot_combined(passedshuffthresh, n_swrs, task_labels, zone_labels,
-                      n_sessions=1, colours=colours, filename=filename)
-
-        if plot_individual:
-            for task_time in task_labels:
-                for idx in range(phase_swrs[task_time].n_epochs):
-                    filename = info.session_id + "_" + task_time + "_summary-swr" + str(idx) + ".png"
-                    filepath = os.path.join(output_filepath, "swr", filename)
-                    plot_summary_individual(info, raw_likelihoods_true[task_time][idx],
-                                            raw_likelihoods_shuffs[task_time][idx],
-                                            position, lfp, spikes,
-                                            phase_swrs[task_time].starts[idx],
-                                            phase_swrs[task_time].stops[idx],
-                                            zones, zone_labels, colours, filepath, savefig=True)
-
-    n_total = {task_time: 0 for task_time in task_labels}
-    for task_time in task_labels:
-        for trajectory in zone_labels:
-            n_total[task_time] += all_compareshuffle[task_time][trajectory]
-
-    all_compareshuffles = {task_time: {trajectory: [] for trajectory in zone_labels} for task_time in task_labels}
-    for task_time in task_labels:
-        for trajectory in zone_labels:
-            all_compareshuffles[task_time][trajectory].append(all_compareshuffle[task_time][trajectory] / n_total[task_time])
-
-
-    for task_time in task_labels:
-        for trajectory in zone_labels:
-            all_likelihoods_true_passthresh[task_time][trajectory] = np.squeeze(np.hstack(all_likelihoods_true_passthresh[task_time][trajectory]))
-
-
-
-    filename = group + " average posteriors during SWRs_sum-shuffled"+str(n_shuffles)
-    plot_combined(all_likelihoods_shuff, n_all_swrs, task_labels, zone_labels,
-                  n_sessions=len(infos), colours=colours, filename=filename)
-
-    filename = group + " average posteriors during SWRs_sum-true"
-    plot_combined(all_likelihoods_true, n_all_swrs, task_labels, zone_labels,
-                  n_sessions=len(infos), colours=colours, filename=filename)
-
-    filename = group + " average posteriors during SWRs_sum-true_passthresh"
-    plot_combined(all_likelihoods_true_passthresh, all_likelihoods_true_passthresh_n_swr,
-                  task_labels, zone_labels, n_sessions=len(infos), colours=colours, filename=filename)
-
-    filename = group + " average posteriors during SWRs_sum-true_passthresh-overallproportion"
-    plot_combined(all_compareshuffles, all_likelihoods_true_passthresh_n_swr,
-                  task_labels, zone_labels, n_sessions=len(infos), colours=colours, filename=filename)
-
-    filename = group + "average posteriors during SWRs_sum-stacked-shuffled"+str(n_shuffles)
-    plot_stacked_summary(all_likelihoods_shuff, n_all_swrs, task_labels, zone_labels,
-                         n_sessions=len(infos), colours=colours, filename=filename)
-
-    filename = group + " average posteriors during SWRs_sum-stacked-true"
-    plot_stacked_summary(all_likelihoods_true, n_all_swrs, task_labels, zone_labels,
-                         n_sessions=len(infos), colours=colours, filename=filename)
-
-    filename = group + " average posteriors during SWRs_sum-stacked-true_passthresh"
-    plot_stacked_summary(all_likelihoods_true_passthresh, n_all_swrs, task_labels,
-                         zone_labels, n_sessions=len(infos), colours=colours, filename=filename)
-
-    filename = group + " proportion of SWRs above the "+str(percentile_thresh)+" percentile (shuffle" + str(n_shuffles) + ")"
-    plot_combined(all_likelihoods_proportion, n_all_swrs, task_labels, zone_labels,
-                  n_sessions=len(infos), colours=colours, filename=filename)
+        title = group + "_average-posterior-during-SWRs_passthresh"
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_session(passthresh_sessions, title, filepath)
