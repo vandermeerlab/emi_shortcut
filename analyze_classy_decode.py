@@ -72,22 +72,13 @@ class TaskTime:
         self.zones = zones
 
     def sums(self, zone_label):
-        if self.swrs.n_epochs > 0:
-            return np.squeeze(np.nansum(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
-        else:
-            return np.ones((self.likelihoods.shape[0], 1)) * np.nan
+        return np.squeeze(np.nansum(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
 
     def means(self, zone_label):
-        if self.swrs.n_epochs > 0:
-            return np.squeeze(np.nanmean(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
-        else:
-            return np.ones((self.likelihoods.shape[0], 1)) * np.nan
+        return np.squeeze(np.nanmean(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
 
     def maxs(self, zone_label):
-        if self.swrs.n_epochs > 0:
-            return np.squeeze(np.nanmax(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
-        else:
-            return np.ones((self.likelihoods.shape[0], 1)) * np.nan
+        return np.squeeze(np.nanmax(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
 
 
 def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True):
@@ -357,14 +348,18 @@ def plot_session(sessions, title, filepath=None):
         for session in sessions:
             for task_label in task_labels:
                 zone_sums = getattr(session, task_label).sums(zone_label)
-                sums[task_label].extend(zone_sums)
-                n_swrs[task_label] += getattr(session, task_label).swrs.n_epochs
+                if zone_sums.all() != 0.0:
+                    sums[task_label].extend(zone_sums)
+                    n_swrs[task_label] += getattr(session, task_label).swrs.n_epochs
+
+        for task_label in task_labels:
+            sums[task_label] = np.hstack(sums[task_label])
 
         means = [np.nanmean(sums[task_label])
                  if len(sums[task_label]) > 0 else 0.0
                  for task_label in task_labels]
 
-        sems = [np.nanmean(scipy.stats.sem(sums[task_label], axis=0, nan_policy="omit"))
+        sems = [np.nanmean(scipy.stats.sem(sums[task_label], nan_policy="omit"))
                 if len(sums[task_label]) > 1 else 0.0
                 for task_label in task_labels]
 
@@ -418,14 +413,17 @@ if __name__ == "__main__":
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
     import info.r063d2 as r063d2
     import info.r068d8 as r068d8
-    infos = [r068d8, r063d2]
-    group = "test"
+    # infos = [r068d8, r063d2]
+    # group = "test"
+
+    infos = analysis_infos
+    group = "All"
 
     update_cache = True
     dont_save_pickle = False
-    plot_individual = False
-    plot_individual_passthresh = False
-    plot_overspace = False
+    plot_individual = True
+    plot_individual_passthresh = True
+    plot_overspace = True
     plot_summary = True
 
     n_shuffles = 2
@@ -569,7 +567,7 @@ if __name__ == "__main__":
 
         title = group + "_average-posterior-during-SWRs_shuffled-%03d" % n_shuffles
         filepath = os.path.join(output_filepath, title+".png")
-        plot_session(shuffled_sessions, title)
+        plot_session(shuffled_sessions, title, filepath)
 
         title = group + "_average-posterior-during-SWRs_passthresh"
         filepath = os.path.join(output_filepath, title + ".png")
