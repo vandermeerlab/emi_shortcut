@@ -336,7 +336,7 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
                 plt.show()
 
 
-def plot_session(sessions, title, filepath=None):
+def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=None):
 
     fig = plt.figure(figsize=(12, 6))
     gs1 = gridspec.GridSpec(1, 4)
@@ -405,19 +405,7 @@ def plot_session(sessions, title, filepath=None):
         plt.show()
 
 
-if __name__ == "__main__":
-
-    from run import (analysis_infos,
-                     r063_infos, r066_infos, r067_infos, r068_infos,
-                     days1234_infos, days5678_infos,
-                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
-    import info.r063d2 as r063d2
-    import info.r068d8 as r068d8
-    # infos = [r068d8, r063d2]
-    # group = "test"
-
-    infos = analysis_infos
-    group = "All"
+def get_decoded_swr_plots(infos, group):
 
     update_cache = True
     dont_save_pickle = False
@@ -426,7 +414,7 @@ if __name__ == "__main__":
     plot_overspace = True
     plot_summary = True
 
-    n_shuffles = 2
+    n_shuffles = 100
     percentile_thresh = 95
 
     colours = dict()
@@ -455,7 +443,7 @@ if __name__ == "__main__":
         print(info.session_id)
 
         # Get true data
-        true_path = os.path.join(pickle_filepath, info.session_id+"_likelihoods_true.pkl")
+        true_path = os.path.join(pickle_filepath, info.session_id + "_likelihoods_true.pkl")
 
         # Remove previous pickle if update_cache
         if update_cache:
@@ -481,7 +469,7 @@ if __name__ == "__main__":
 
         # Get shuffled data
         shuffled_path = os.path.join(pickle_filepath,
-                                     info.session_id+"_likelihoods_shuffled-%03d.pkl" % n_shuffles)
+                                     info.session_id + "_likelihoods_shuffled-%03d.pkl" % n_shuffles)
 
         # Remove previous pickle if update_cache
         if update_cache:
@@ -541,7 +529,8 @@ if __name__ == "__main__":
                 passthresh_likelihoods = np.array(getattr(true_session, task_label).likelihoods)[:, passthresh_idx]
                 passthresh_swrs = getattr(true_session, task_label).swrs[passthresh_idx]
             else:
-                passthresh_likelihoods = np.ones((1, 1) + getattr(true_session, task_label).likelihoods.shape[2:]) * np.nan
+                passthresh_likelihoods = np.ones(
+                    (1, 1) + getattr(true_session, task_label).likelihoods.shape[2:]) * np.nan
                 passthresh_swrs = None
 
             passthresh_tuningcurves = getattr(true_session, task_label).tuning_curves
@@ -562,13 +551,45 @@ if __name__ == "__main__":
 
     if plot_summary:
         title = group + "_average-posterior-during-SWRs_true"
-        filepath = os.path.join(output_filepath, title+".png")
-        plot_session(true_sessions, title, filepath)
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_session(true_sessions, title, task_labels, zone_labels, colours, filepath)
 
         title = group + "_average-posterior-during-SWRs_shuffled-%03d" % n_shuffles
-        filepath = os.path.join(output_filepath, title+".png")
-        plot_session(shuffled_sessions, title, filepath)
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_session(shuffled_sessions, title, task_labels, zone_labels, colours, filepath)
 
         title = group + "_average-posterior-during-SWRs_passthresh"
         filepath = os.path.join(output_filepath, title + ".png")
-        plot_session(passthresh_sessions, title, filepath)
+        plot_session(passthresh_sessions, title, task_labels, zone_labels, colours, filepath)
+
+
+if __name__ == "__main__":
+
+    from run import (analysis_infos,
+                     r063_infos, r066_infos, r067_infos, r068_infos,
+                     days1234_infos, days5678_infos,
+                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
+    import info.r063d2 as r063d2
+    import info.r068d8 as r068d8
+    # infos = [r068d8, r063d2]
+    # group = "test"
+
+    info_groups = dict()
+    info_groups["All"] = analysis_infos
+    info_groups["R063"] = r063_infos
+    info_groups["R066"] = r066_infos
+    info_groups["R067"] = r067_infos
+    info_groups["R068"] = r068_infos
+    info_groups["Days1234"] = days1234_infos
+    info_groups["Days5678"] = days5678_infos
+    info_groups["Day1"] = day1_infos
+    info_groups["Day2"] = day2_infos
+    info_groups["Day3"] = day3_infos
+    info_groups["Day4"] = day4_infos
+    info_groups["Day5"] = day5_infos
+    info_groups["Day6"] = day6_infos
+    info_groups["Day7"] = day7_infos
+    info_groups["Day8"] = day8_infos
+
+    for infos, group in zip(info_groups.values(), info_groups.keys()):
+        get_decoded_swr_plots(infos, group)
