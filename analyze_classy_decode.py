@@ -37,6 +37,7 @@ class Session:
 
     def __init__(self, position, task_labels, zones):
         self.position = position
+        self.task_labels = task_labels
         for task_label in task_labels:
             setattr(self, task_label, TaskTime([], [], [], zones))
 
@@ -46,7 +47,7 @@ class Session:
             pickle.dump(self, fileobj)
 
     def n_tasktimes(self):
-        return len(task_labels)
+        return len(self.task_labels)
 
 
 class TaskTime:
@@ -237,103 +238,103 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
     for task_label in task_labels:
         swrs = getattr(session_true, task_label).swrs
         zones = getattr(session_true, task_label).zones
+        if swrs is not None:
+            for swr_idx in range(swrs.n_epochs):
+                start = swrs[swr_idx].start
+                stop = swrs[swr_idx].stop
 
-        for swr_idx in range(swrs.n_epochs):
-            start = swrs[swr_idx].start
-            stop = swrs[swr_idx].stop
+                sliced_spikes = [spiketrain.time_slice(start - buffer, stop + buffer) for spiketrain in spikes]
 
-            sliced_spikes = [spiketrain.time_slice(start - buffer, stop + buffer) for spiketrain in spikes]
+                ms = 600 / len(sliced_spikes)
+                mew = 0.7
+                spike_loc = 1
 
-            ms = 600 / len(sliced_spikes)
-            mew = 0.7
-            spike_loc = 1
+                fig = plt.figure(figsize=(8, 8))
+                gs1 = gridspec.GridSpec(3, 2)
+                gs1.update(wspace=0.3, hspace=0.3)
 
-            fig = plt.figure(figsize=(8, 8))
-            gs1 = gridspec.GridSpec(3, 2)
-            gs1.update(wspace=0.3, hspace=0.3)
+                ax1 = plt.subplot(gs1[1:, 0])
+                for idx, neuron_spikes in enumerate(sliced_spikes):
+                    ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time)) + (idx * spike_loc), '|',
+                             color='k', ms=ms, mew=mew)
+                ax1.axis('off')
 
-            ax1 = plt.subplot(gs1[1:, 0])
-            for idx, neuron_spikes in enumerate(sliced_spikes):
-                ax1.plot(neuron_spikes.time, np.ones(len(neuron_spikes.time)) + (idx * spike_loc), '|',
-                         color='k', ms=ms, mew=mew)
-            ax1.axis('off')
+                ax2 = plt.subplot(gs1[0, 0], sharex=ax1)
 
-            ax2 = plt.subplot(gs1[0, 0], sharex=ax1)
+                swr_highlight = "#fc4e2a"
+                start_idx = nept.find_nearest_idx(lfp.time, start - buffer)
+                stop_idx = nept.find_nearest_idx(lfp.time, stop + buffer)
+                ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color="k", lw=0.3, alpha=0.9)
 
-            swr_highlight = "#fc4e2a"
-            start_idx = nept.find_nearest_idx(lfp.time, start - buffer)
-            stop_idx = nept.find_nearest_idx(lfp.time, stop + buffer)
-            ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color="k", lw=0.3, alpha=0.9)
+                start_idx = nept.find_nearest_idx(lfp.time, start)
+                stop_idx = nept.find_nearest_idx(lfp.time, stop)
+                ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color=swr_highlight, lw=0.6)
+                ax2.axis("off")
 
-            start_idx = nept.find_nearest_idx(lfp.time, start)
-            stop_idx = nept.find_nearest_idx(lfp.time, stop)
-            ax2.plot(lfp.time[start_idx:stop_idx], lfp.data[start_idx:stop_idx], color=swr_highlight, lw=0.6)
-            ax2.axis("off")
+                ax1.axvline(lfp.time[start_idx], linewidth=1, color=swr_highlight)
+                ax1.axvline(lfp.time[stop_idx], linewidth=1, color=swr_highlight)
+                ax1.axvspan(lfp.time[start_idx], lfp.time[stop_idx], alpha=0.2, color=swr_highlight)
 
-            ax1.axvline(lfp.time[start_idx], linewidth=1, color=swr_highlight)
-            ax1.axvline(lfp.time[stop_idx], linewidth=1, color=swr_highlight)
-            ax1.axvspan(lfp.time[start_idx], lfp.time[stop_idx], alpha=0.2, color=swr_highlight)
+                scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
+                                      bbox_to_anchor=(0.25, 0.05), units='ms')
 
-            scalebar.add_scalebar(ax2, matchy=False, bbox_transform=fig.transFigure,
-                                  bbox_to_anchor=(0.25, 0.05), units='ms')
+                likelihood_true = np.array(getattr(session_true, task_label).likelihoods[:, swr_idx])
 
-            likelihood_true = np.array(getattr(session_true, task_label).likelihoods[:, swr_idx])
+                likelihood_true[np.isnan(likelihood_true)] = 0
 
-            likelihood_true[np.isnan(likelihood_true)] = 0
+                xx, yy = np.meshgrid(info.xedges, info.yedges)
+                xcenters, ycenters = get_bin_centers(info)
+                xxx, yyy = np.meshgrid(xcenters, ycenters)
 
-            xx, yy = np.meshgrid(info.xedges, info.yedges)
-            xcenters, ycenters = get_bin_centers(info)
-            xxx, yyy = np.meshgrid(xcenters, ycenters)
+                maze_highlight = "#fed976"
+                ax3 = plt.subplot(gs1[0, 1])
 
-            maze_highlight = "#fed976"
-            ax3 = plt.subplot(gs1[0, 1])
+                ax3.plot(session_true.position.x, session_true.position.y, ".",
+                         color=maze_highlight, ms=1, alpha=0.2)
+                pp = ax3.pcolormesh(xx, yy, likelihood_true[0], cmap='bone_r')
+                for label in ["u", "shortcut", "novel"]:
+                    ax3.contour(xxx, yyy, zones[label], levels=0, linewidths=2, colors=colours[label])
+                plt.colorbar(pp)
+                ax3.axis('off')
 
-            ax3.plot(session_true.position.x, session_true.position.y, ".",
-                     color=maze_highlight, ms=1, alpha=0.2)
-            pp = ax3.pcolormesh(xx, yy, likelihood_true[0], cmap='bone_r')
-            for label in ["u", "shortcut", "novel"]:
-                ax3.contour(xxx, yyy, zones[label], levels=0, linewidths=2, colors=colours[label])
-            plt.colorbar(pp)
-            ax3.axis('off')
-
-            likelihood_true = getattr(session_true, task_label).likelihoods[:, swr_idx]
-            means_true = [np.nanmean(np.nansum(likelihood_true[:, zones[zone_label]], axis=1))
-                          for zone_label in zone_labels]
-
-            ax4 = plt.subplot(gs1[1:2, 1])
-            ax4.bar(np.arange(len(zone_labels)),
-                    means_true,
-                    color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
-            ax4.set_xticks(np.arange(len(zone_labels)))
-            ax4.set_xticklabels([], rotation=90)
-            ax4.set_ylim([0, 1.])
-            ax4.set_title("True proportion", fontsize=14)
-
-            likelihood_shuffled = getattr(session_shuffled, task_label).likelihoods[:, swr_idx]
-
-            means_shuffled = [np.nanmean(np.nansum(likelihood_shuffled[:, zones[zone_label]], axis=1))
+                likelihood_true = getattr(session_true, task_label).likelihoods[:, swr_idx]
+                means_true = [np.nanmean(np.nansum(likelihood_true[:, zones[zone_label]], axis=1))
                               for zone_label in zone_labels]
-            sems_shuffled = [scipy.stats.sem(np.nansum(likelihood_shuffled[:, zones[zone_label]], axis=1))
-                             for zone_label in zone_labels]
 
-            ax5 = plt.subplot(gs1[2:, 1], sharey=ax4)
-            ax5.bar(np.arange(len(zone_labels)),
-                    means_shuffled,
-                    yerr=sems_shuffled,
-                    color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
-            ax5.set_xticks(np.arange(len(zone_labels)))
-            ax5.set_xticklabels(zone_labels, rotation=90)
-            ax5.set_ylim([0, 1.])
-            ax5.set_title("Shuffled proportion", fontsize=14)
+                ax4 = plt.subplot(gs1[1:2, 1])
+                ax4.bar(np.arange(len(zone_labels)),
+                        means_true,
+                        color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
+                ax4.set_xticks(np.arange(len(zone_labels)))
+                ax4.set_xticklabels([], rotation=90)
+                ax4.set_ylim([0, 1.])
+                ax4.set_title("True proportion", fontsize=14)
 
-            plt.tight_layout()
+                likelihood_shuffled = getattr(session_shuffled, task_label).likelihoods[:, swr_idx]
 
-            if filepath is not None:
-                filename = info.session_id + "_" + task_label + "_summary-swr" + str(swr_idx) + ".png"
-                plt.savefig(os.path.join(filepath, filename))
-                plt.close()
-            else:
-                plt.show()
+                means_shuffled = [np.nanmean(np.nansum(likelihood_shuffled[:, zones[zone_label]], axis=1))
+                                  for zone_label in zone_labels]
+                sems_shuffled = [scipy.stats.sem(np.nansum(likelihood_shuffled[:, zones[zone_label]], axis=1))
+                                 for zone_label in zone_labels]
+
+                ax5 = plt.subplot(gs1[2:, 1], sharey=ax4)
+                ax5.bar(np.arange(len(zone_labels)),
+                        means_shuffled,
+                        yerr=sems_shuffled,
+                        color=[colours[zone_label] for zone_label in zone_labels], edgecolor='k')
+                ax5.set_xticks(np.arange(len(zone_labels)))
+                ax5.set_xticklabels(zone_labels, rotation=90)
+                ax5.set_ylim([0, 1.])
+                ax5.set_title("Shuffled proportion", fontsize=14)
+
+                plt.tight_layout()
+
+                if filepath is not None:
+                    filename = info.session_id + "_" + task_label + "_summary-swr" + str(swr_idx) + ".png"
+                    plt.savefig(os.path.join(filepath, filename))
+                    plt.close()
+                else:
+                    plt.show()
 
 
 def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=None):
@@ -405,9 +406,8 @@ def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=No
         plt.show()
 
 
-def get_decoded_swr_plots(infos, group):
+def get_decoded_swr_plots(infos, group, update_cache=False):
 
-    update_cache = True
     dont_save_pickle = False
     plot_individual = True
     plot_individual_passthresh = True
@@ -513,7 +513,7 @@ def get_decoded_swr_plots(infos, group):
                 zones = getattr(true_session, task_label).zones
                 true_sums = np.array(getattr(true_session, task_label).sums(zone_label))
                 shuffled_sums = np.array(getattr(shuffled_session, task_label).sums(zone_label))
-                if true_sums.size == 1 and np.isnan(true_sums).all():
+                if true_sums.size <= 1 and np.isnan(true_sums).all():
                     continue
                 else:
                     for idx in range(true_sums.shape[0]):
@@ -569,13 +569,15 @@ if __name__ == "__main__":
                      r063_infos, r066_infos, r067_infos, r068_infos,
                      days1234_infos, days5678_infos,
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
-    import info.r063d2 as r063d2
+
+    import info.r066d2 as r066d2
     import info.r068d8 as r068d8
-    # infos = [r068d8, r063d2]
-    # group = "test"
+    infos = [r068d8, r066d2]
+    group = "test"
+    get_decoded_swr_plots(infos, group=group, update_cache=True)
 
     info_groups = dict()
-    info_groups["All"] = analysis_infos
+    # info_groups["All"] = analysis_infos
     info_groups["R063"] = r063_infos
     info_groups["R066"] = r066_infos
     info_groups["R067"] = r067_infos
@@ -591,5 +593,7 @@ if __name__ == "__main__":
     info_groups["Day7"] = day7_infos
     info_groups["Day8"] = day8_infos
 
-    for infos, group in zip(info_groups.values(), info_groups.keys()):
-        get_decoded_swr_plots(infos, group)
+    # get_decoded_swr_plots(analysis_infos, group="All", update_cache=True)
+    #
+    # for infos, group in zip(info_groups.values(), info_groups.keys()):
+    #     get_decoded_swr_plots(infos, group)
