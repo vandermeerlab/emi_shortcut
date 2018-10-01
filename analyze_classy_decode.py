@@ -250,6 +250,7 @@ def plot_summary_individual(info, session_true, session_shuffled, zone_labels, t
                 spike_loc = 1
 
                 fig = plt.figure(figsize=(8, 8))
+
                 gs1 = gridspec.GridSpec(3, 2)
                 gs1.update(wspace=0.3, hspace=0.3)
 
@@ -349,7 +350,9 @@ def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=No
         for session in sessions:
             for task_label in task_labels:
                 zone_sums = getattr(session, task_label).sums(zone_label)
-                if zone_sums.all() != 0.0:
+                if zone_sums.size == 1:
+                    sums[task_label].extend([np.nan])
+                else:
                     sums[task_label].extend(zone_sums)
                     n_swrs[task_label] += getattr(session, task_label).swrs.n_epochs
 
@@ -570,11 +573,11 @@ if __name__ == "__main__":
                      days1234_infos, days5678_infos,
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
 
-    import info.r066d2 as r066d2
-    import info.r068d8 as r068d8
-    infos = [r068d8, r066d2]
-    group = "test"
-    get_decoded_swr_plots(infos, group=group, update_cache=True)
+    # import info.r066d2 as r066d2
+    # import info.r068d8 as r068d8
+    # infos = [r068d8, r066d2]
+    # group = "test"
+    # get_decoded_swr_plots(infos, group=group, update_cache=True)
 
     info_groups = dict()
     # info_groups["All"] = analysis_infos
@@ -593,7 +596,7 @@ if __name__ == "__main__":
     info_groups["Day7"] = day7_infos
     info_groups["Day8"] = day8_infos
 
-    # get_decoded_swr_plots(analysis_infos, group="All", update_cache=True)
-    #
-    # for infos, group in zip(info_groups.values(), info_groups.keys()):
-    #     get_decoded_swr_plots(infos, group)
+    get_decoded_swr_plots(analysis_infos, group="All", update_cache=True)
+
+    for infos, group in zip(info_groups.values(), info_groups.keys()):
+        get_decoded_swr_plots(infos, group)
