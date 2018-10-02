@@ -224,7 +224,7 @@ def plot_likelihood_overspace(info, session, task_labels,  colours, filepath=Non
         plt.tight_layout()
         if filepath is not None:
             filename = info.session_id + "_" + task_label + "_likelihoods-overspace.png"
-            plt.savefig(os.path.join(output_filepath, filename))
+            plt.savefig(os.path.join(filepath, filename))
             plt.close()
         else:
             plt.show()
@@ -405,6 +405,7 @@ def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=No
 
     if filepath is not None:
         plt.savefig(filepath)
+        plt.close()
     else:
         plt.show()
 
