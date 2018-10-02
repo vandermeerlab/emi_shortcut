@@ -73,13 +73,13 @@ class TaskTime:
         self.zones = zones
 
     def sums(self, zone_label):
-        return np.squeeze(np.nansum(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
+        return np.nansum(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
 
     def means(self, zone_label):
-        return np.squeeze(np.nanmean(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
+        return np.nanmean(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
 
     def maxs(self, zone_label):
-        return np.squeeze(np.nanmax(self.likelihoods[:, :, self.zones[zone_label]], axis=2))
+        return np.nanmax(self.likelihoods[:, :, self.zones[zone_label]], axis=2)
 
 
 def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True):
@@ -519,8 +519,8 @@ def get_decoded_swr_plots(infos, group, update_cache=False):
                 if true_sums.size <= 1 and np.isnan(true_sums).all():
                     continue
                 else:
-                    for idx in range(true_sums.shape[0]):
-                        percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]), true_sums[idx])
+                    for idx in range(true_sums.shape[1]):
+                        percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]), true_sums[:, idx])
                         if percentile >= percentile_thresh:
                             keep_idx[task_label].append(idx)
 
@@ -596,7 +596,7 @@ if __name__ == "__main__":
     info_groups["Day7"] = day7_infos
     info_groups["Day8"] = day8_infos
 
-    get_decoded_swr_plots(analysis_infos, group="All", update_cache=True)
+    get_decoded_swr_plots(analysis_infos, group="All", update_cache=False)
 
     for infos, group in zip(info_groups.values(), info_groups.keys()):
         get_decoded_swr_plots(infos, group)
