@@ -360,11 +360,11 @@ def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=No
             sums[task_label] = np.hstack(sums[task_label])
 
         means = [np.nanmean(sums[task_label])
-                 if len(sums[task_label]) > 0 else 0.0
+                 if np.isnan(np.sum(sums[task_label])) else 0.0
                  for task_label in task_labels]
 
         sems = [np.nanmean(scipy.stats.sem(sums[task_label], nan_policy="omit"))
-                if len(sums[task_label]) > 1 else 0.0
+                if np.isnan(np.sum(sums[task_label])) else 0.0
                 for task_label in task_labels]
 
         ax = plt.subplot(gs1[i])
@@ -410,12 +410,140 @@ def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=No
         plt.show()
 
 
-def get_decoded_swr_plots(infos, group, update_cache=False):
+def plot_counts_merged(counts, title, task_labels, zone_labels, colours, filepath=None):
 
-    dont_save_pickle = False
-    plot_individual = True
-    plot_individual_passthresh = True
-    plot_overspace = True
+    fig = plt.figure(figsize=(12, 6))
+    gs1 = gridspec.GridSpec(1, 4)
+    gs1.update(wspace=0.3, hspace=0.)
+
+    n_swrs = {task_label: 0 for task_label in task_labels}
+    for i, zone_label in enumerate(zone_labels):
+        for count in counts:
+            for task_label in task_labels:
+                n_swrs[task_label] += count[task_label][zone_label]
+
+    for i, zone_label in enumerate(zone_labels):
+        merged_counts = {task_label: 0 for task_label in task_labels}
+        for count in counts:
+            for task_label in task_labels:
+                merged_counts[task_label] += count[task_label][zone_label]
+
+        means = [merged_counts[task_label]/n_swrs[task_label]
+                 if n_swrs[task_label] != 0 else 0.0
+                 for task_label in task_labels]
+
+        ax = plt.subplot(gs1[i])
+        ax.bar(np.arange(len(task_labels)), means, color=colours[zone_label])
+
+        ax.set_ylim([0, 1.])
+
+        ax.set_xticks(np.arange(len(task_labels)))
+        ax.set_xticklabels(task_labels, rotation=90)
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks_position('bottom')
+
+        if i > 0:
+            ax.set_yticklabels([])
+
+        if i == 0:
+            ax.set_ylabel("Proportion")
+
+        if zone_label == "other":
+            for n_tasktimes, task_label in enumerate(task_labels):
+                ax.text(n_tasktimes, 0.01, str(n_swrs[task_label]), ha="center", fontsize=14)
+
+    plt.text(1., 1., "n sessions: " + str(len(counts)), horizontalalignment='left',
+             verticalalignment='top', fontsize=14)
+
+    fig.suptitle(title, fontsize=16)
+
+    legend_elements = [Patch(facecolor=colours[zone_label], edgecolor='k', label=zone_label)
+                       for zone_label in zone_labels]
+
+    plt.legend(handles=legend_elements, bbox_to_anchor=(1., 0.95))
+
+    gs1.tight_layout(fig)
+
+    if filepath is not None:
+        plt.savefig(filepath)
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_counts_averaged(counts, title, task_labels, zone_labels, colours, filepath=None):
+
+    fig = plt.figure(figsize=(12, 6))
+    gs1 = gridspec.GridSpec(1, 4)
+    gs1.update(wspace=0.3, hspace=0.)
+
+    proportions = {task_label: {zone_label: [] for zone_label in zone_labels} for task_label in task_labels}
+    n_total = {task_label: [] for task_label in task_labels}
+    n_swrs = {task_label: 0 for task_label in task_labels}
+    for count in counts:
+        for task_label in task_labels:
+            n_total[task_label] = np.nansum([count[task_label][zone_label] for zone_label in zone_labels])
+            for zone_label in zone_labels:
+                proportions[task_label][zone_label].append(count[task_label][zone_label]/n_total[task_label])
+                n_swrs[task_label] += count[task_label][zone_label]
+
+    for i, zone_label in enumerate(zone_labels):
+        means = [np.nanmean(proportions[task_label][zone_label]) for task_label in task_labels]
+        sems = [scipy.stats.sem(proportions[task_label][zone_label]) for task_label in task_labels]
+
+        ax = plt.subplot(gs1[i])
+        ax.bar(np.arange(len(task_labels)), means, yerr=sems, color=colours[zone_label])
+
+        ax.set_ylim([0, 1.])
+
+        ax.set_xticks(np.arange(len(task_labels)))
+        ax.set_xticklabels(task_labels, rotation=90)
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks_position('bottom')
+
+        if i > 0:
+            ax.set_yticklabels([])
+
+        if i == 0:
+            ax.set_ylabel("Proportion")
+
+        if zone_label == "other":
+            for n_tasktimes, task_label in enumerate(task_labels):
+                ax.text(n_tasktimes, 0.01, str(n_swrs[task_label]), ha="center", fontsize=14)
+
+    plt.text(1., 1., "n sessions: "+ str(len(counts)), horizontalalignment='left',
+             verticalalignment='top', fontsize=14)
+
+    fig.suptitle(title, fontsize=16)
+
+    legend_elements = [Patch(facecolor=colours[zone_label], edgecolor='k', label=zone_label)
+                       for zone_label in zone_labels]
+
+    plt.legend(handles=legend_elements, bbox_to_anchor=(1., 0.95))
+
+    gs1.tight_layout(fig)
+
+    if filepath is not None:
+        plt.savefig(filepath)
+        plt.close()
+    else:
+        plt.show()
+
+
+def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cache=False):
+
+    group = group + "_z-" + str(z_thresh) + "-power-" + str(power_thresh)
+
+    dont_save_pickle = True
+    plot_individual = False
+    plot_individual_passthresh = False
+    plot_overspace = False
     plot_summary = True
 
     n_shuffles = 100
@@ -429,8 +557,8 @@ def get_decoded_swr_plots(infos, group, update_cache=False):
 
     # swr params
     swr_params = dict()
-    swr_params["z_thresh"] = 2.0
-    swr_params["power_thresh"] = 3.0
+    swr_params["z_thresh"] = z_thresh
+    swr_params["power_thresh"] = power_thresh
     swr_params["merge_thresh"] = 0.02
     swr_params["min_length"] = 0.05
     swr_params["swr_thresh"] = (140.0, 250.0)
@@ -442,6 +570,7 @@ def get_decoded_swr_plots(infos, group, update_cache=False):
     true_sessions = []
     shuffled_sessions = []
     passthresh_sessions = []
+    passthresh_counts = []
 
     for info in infos:
         print(info.session_id)
@@ -511,6 +640,7 @@ def get_decoded_swr_plots(infos, group, update_cache=False):
             plot_likelihood_overspace(info, true_session, task_labels, colours, filepath)
 
         keep_idx = {task_label: [] for task_label in task_labels}
+        passthresh_count = {task_label: {zone_label: 0 for zone_label in zone_labels} for task_label in task_labels}
 
         for task_label in task_labels:
             for zone_label in zone_labels:
@@ -524,7 +654,9 @@ def get_decoded_swr_plots(infos, group, update_cache=False):
                         percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]), true_sums[:, idx])
                         if percentile >= percentile_thresh:
                             keep_idx[task_label].append(idx)
+                            passthresh_count[task_label][zone_label] += 1
 
+        passthresh_counts.append(passthresh_count)
         passthresh_session = Session(true_session.position, task_labels, zones)
 
         for task_label in task_labels:
@@ -562,9 +694,17 @@ def get_decoded_swr_plots(infos, group, update_cache=False):
         filepath = os.path.join(output_filepath, title + ".png")
         plot_session(shuffled_sessions, title, task_labels, zone_labels, colours, filepath)
 
-        title = group + "_average-posterior-during-SWRs_passthresh"
+        title = group + "_average-posterior-during-SWRs_passthresh" + str(percentile_thresh)
         filepath = os.path.join(output_filepath, title + ".png")
         plot_session(passthresh_sessions, title, task_labels, zone_labels, colours, filepath)
+
+        title = group + "merged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_counts_merged(passthresh_counts, title, task_labels, zone_labels, colours, filepath)
+
+        title = group + "averaged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_counts_averaged(passthresh_counts, title, task_labels, zone_labels, colours)
 
 
 if __name__ == "__main__":
@@ -586,18 +726,24 @@ if __name__ == "__main__":
     info_groups["R066"] = r066_infos
     info_groups["R067"] = r067_infos
     info_groups["R068"] = r068_infos
-    info_groups["Days1234"] = days1234_infos
-    info_groups["Days5678"] = days5678_infos
-    info_groups["Day1"] = day1_infos
-    info_groups["Day2"] = day2_infos
-    info_groups["Day3"] = day3_infos
-    info_groups["Day4"] = day4_infos
-    info_groups["Day5"] = day5_infos
-    info_groups["Day6"] = day6_infos
-    info_groups["Day7"] = day7_infos
-    info_groups["Day8"] = day8_infos
+    # info_groups["Days1234"] = days1234_infos
+    # info_groups["Days5678"] = days5678_infos
+    # info_groups["Day1"] = day1_infos
+    # info_groups["Day2"] = day2_infos
+    # info_groups["Day3"] = day3_infos
+    # info_groups["Day4"] = day4_infos
+    # info_groups["Day5"] = day5_infos
+    # info_groups["Day6"] = day6_infos
+    # info_groups["Day7"] = day7_infos
+    # info_groups["Day8"] = day8_infos
 
-    get_decoded_swr_plots(analysis_infos, group="All", update_cache=False)
+    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
 
     for infos, group in zip(info_groups.values(), info_groups.keys()):
-        get_decoded_swr_plots(infos, group)
+        get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=True)
+
+    for power_thresh in [2, 3, 4, 5]:
+        get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
+
+        for infos, group in zip(info_groups.values(), info_groups.keys()):
+            get_decoded_swr_plots(infos, group, power_thresh=power_thresh, update_cache=True)
