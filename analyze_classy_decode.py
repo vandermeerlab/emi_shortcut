@@ -704,7 +704,7 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cac
 
         title = group + "averaged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
         filepath = os.path.join(output_filepath, title + ".png")
-        plot_counts_averaged(passthresh_counts, title, task_labels, zone_labels, colours)
+        plot_counts_averaged(passthresh_counts, title, task_labels, zone_labels, colours, filepath)
 
 
 if __name__ == "__main__":
