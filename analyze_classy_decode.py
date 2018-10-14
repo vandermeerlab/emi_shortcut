@@ -660,6 +660,8 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cac
                 shuffled_sums = np.array(getattr(shuffled_session, task_label).sums(zone_label))
                 if true_sums.size <= 1 and np.isnan(true_sums).all():
                     continue
+                elif getattr(true_session, task_label).swrs.n_epochs == 0:
+                    continue
                 else:
                     for idx in range(true_sums.shape[1]):
                         percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]), true_sums[:, idx])
@@ -748,10 +750,10 @@ if __name__ == "__main__":
     # info_groups["Day7"] = day7_infos
     # info_groups["Day8"] = day8_infos
 
-    # get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
-    #
-    # for infos, group in zip(info_groups.values(), info_groups.keys()):
-    #     get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=False)
+    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
+
+    for infos, group in zip(info_groups.values(), info_groups.keys()):
+        get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=False)
 
     for power_thresh in [3, 4, 5]:
         get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
