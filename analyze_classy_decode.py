@@ -129,7 +129,6 @@ def bin_spikes(spikes, time, dt, window=None, gaussian_std=None, normalized=True
 
 
 def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, save_path=None):
-
     _, position, spikes, lfp, _ = get_data(info)
 
     zones = dict()
@@ -174,22 +173,34 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
             else:
                 tuning_curves = tuning_curves_fromdata
 
-            phase_tuningcurves[n_pass, ] = tuning_curves
+            phase_tuningcurves[n_pass,] = tuning_curves
             tuning_curves = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-            for n_timebin, (start, stop) in enumerate(zip(phase_swrs.starts,
-                                                          phase_swrs.stops)):
-                t_window = stop-start  # 0.1 for running, 0.025 for swr
+            if phase_swrs.n_epochs == 0:
+                phase_likelihoods = np.empty((n_passes, 1, tc_shape[1], tc_shape[2]))
+            else:
+                counts_data = []
+                counts_time = []
+                t_windows = []
 
-                sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
+                for n_timebin, (start, stop) in enumerate(zip(phase_swrs.starts,
+                                                              phase_swrs.stops)):
+                    t_window = stop - start  # 0.1 for running, 0.025 for swr
 
-                counts = bin_spikes(sliced_spikes, np.array([start, stop]), dt=t_window, window=t_window,
-                                    gaussian_std=0.0075, normalized=False)
+                    sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
 
-                likelihood = nept.bayesian_prob(counts, tuning_curves, binsize=t_window,
+                    these_counts = bin_spikes(sliced_spikes, np.array([start, stop]), dt=t_window, window=t_window,
+                                              gaussian_std=0.0075, normalized=False)
+
+                    counts_data.append(these_counts.data)
+                    counts_time.append(these_counts.time)
+                    t_windows.append(t_window)
+
+                counts = nept.AnalogSignal(np.vstack(counts_data), np.hstack(counts_time))
+                likelihood = nept.bayesian_prob(counts, tuning_curves, binsize=t_windows,
                                                 min_neurons=3, min_spikes=1)
 
-                phase_likelihoods[n_pass, n_timebin] = likelihood.reshape(tc_shape[1], tc_shape[2])
+                phase_likelihoods[n_pass] = likelihood.reshape(phase_swrs.n_epochs, tc_shape[1], tc_shape[2])
 
         tasktime = getattr(session, task_label)
         tasktime.likelihoods = phase_likelihoods
@@ -546,7 +557,7 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cac
     plot_overspace = False
     plot_summary = True
 
-    n_shuffles = 100
+    n_shuffles = 2
     percentile_thresh = 95
 
     colours = dict()
