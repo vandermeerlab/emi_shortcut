@@ -557,7 +557,7 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cac
     plot_overspace = False
     plot_summary = True
 
-    n_shuffles = 2
+    n_shuffles = 100
     percentile_thresh = 95
 
     colours = dict()
