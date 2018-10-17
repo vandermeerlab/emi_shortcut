@@ -213,7 +213,7 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
     return session
 
 
-def plot_likelihood_overspace(info, session, task_labels,  colours, filepath=None):
+def plot_likelihood_overspace(info, session, task_labels, colours, filepath=None):
     for task_label in task_labels:
         zones = getattr(session, task_label).zones
         likelihood = np.nanmean(np.array(getattr(session, task_label).likelihoods), axis=(0, 1))
@@ -551,7 +551,7 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cac
 
     group = group + "_z-" + str(z_thresh) + "-power-" + str(power_thresh)
 
-    dont_save_pickle = True
+    dont_save_pickle = False
     plot_individual = False
     plot_individual_passthresh = False
     plot_overspace = False
