@@ -502,8 +502,13 @@ def plot_counts_averaged(counts, title, task_labels, zone_labels, colours, filep
                 n_swrs[task_label] += count[task_label][zone_label]
 
     for i, zone_label in enumerate(zone_labels):
-        means = [np.nanmean(proportions[task_label][zone_label]) for task_label in task_labels]
-        sems = [scipy.stats.sem(proportions[task_label][zone_label]) for task_label in task_labels]
+        means = [np.nanmean(proportions[task_label][zone_label])
+                 if n_swrs[task_label] != 0 else 0
+                 for task_label in task_labels]
+
+        sems = [scipy.stats.sem(proportions[task_label][zone_label], nan_policy="omit")
+                if n_swrs[task_label] != 0 else 0
+                for task_label in task_labels]
 
         ax = plt.subplot(gs1[i])
         ax.bar(np.arange(len(task_labels)), means, yerr=sems, color=colours[zone_label])
@@ -729,11 +734,11 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., n_shuffles
         filepath = os.path.join(output_filepath, title + ".png")
         plot_session(passthresh_sessions, title, task_labels, zone_labels, colours, filepath)
 
-        title = group + "merged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
+        title = group + "_merged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
         filepath = os.path.join(output_filepath, title + ".png")
         plot_counts_merged(passthresh_counts, title, task_labels, zone_labels, colours, filepath)
 
-        title = group + "averaged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
+        title = group + "_averaged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
         filepath = os.path.join(output_filepath, title + ".png")
         plot_counts_averaged(passthresh_counts, title, task_labels, zone_labels, colours, filepath)
 
@@ -775,7 +780,7 @@ def main():
     for info in analysis_infos:
         get_decoded_swr_plots([info], info.session_id, z_thresh=1., power_thresh=2., update_cache=False)
 
-    for power_thresh in [3, 4, 5]:
+    for power_thresh in [2, 3, 4, 5]:
         get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
 
         for infos, group in zip(info_groups.values(), info_groups.keys()):
