@@ -17,7 +17,7 @@ from utils_maze import get_bin_centers
 
 thisdir = os.getcwd()
 pickle_filepath = os.path.join(thisdir, "cache", "pickled")
-output_filepath = os.path.join(thisdir, "plots", "trials", "decoding", "shuffled")
+output_filepath = os.path.join(thisdir, "plots", "trials", "decoding", "classy")
 if not os.path.exists(output_filepath):
     os.makedirs(output_filepath)
 
@@ -177,7 +177,7 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
             tuning_curves = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
             if phase_swrs.n_epochs == 0:
-                phase_likelihoods = np.empty((n_passes, 1, tc_shape[1], tc_shape[2]))
+                phase_likelihoods = np.ones((n_passes, 1, tc_shape[1], tc_shape[2])) * np.nan
             else:
                 counts_data = []
                 counts_time = []
@@ -371,11 +371,11 @@ def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=No
             sums[task_label] = np.hstack(sums[task_label])
 
         means = [np.nanmean(sums[task_label])
-                 if np.isnan(np.sum(sums[task_label])) else 0.0
+                 if n_swrs[task_label] != 0 else 0.0
                  for task_label in task_labels]
 
         sems = [np.nanmean(scipy.stats.sem(sums[task_label], nan_policy="omit"))
-                if np.isnan(np.sum(sums[task_label])) else 0.0
+                if n_swrs[task_label] != 0 else 0.0
                 for task_label in task_labels]
 
         ax = plt.subplot(gs1[i])
@@ -738,8 +738,7 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., n_shuffles
         plot_counts_averaged(passthresh_counts, title, task_labels, zone_labels, colours, filepath)
 
 
-if __name__ == "__main__":
-
+def main():
     from run import (analysis_infos,
                      r063_infos, r066_infos, r067_infos, r068_infos,
                      days1234_infos, days5678_infos,
@@ -757,26 +756,34 @@ if __name__ == "__main__":
     info_groups["R066"] = r066_infos
     info_groups["R067"] = r067_infos
     info_groups["R068"] = r068_infos
-    # info_groups["Days1234"] = days1234_infos
-    # info_groups["Days5678"] = days5678_infos
-    # info_groups["Day1"] = day1_infos
-    # info_groups["Day2"] = day2_infos
-    # info_groups["Day3"] = day3_infos
-    # info_groups["Day4"] = day4_infos
-    # info_groups["Day5"] = day5_infos
-    # info_groups["Day6"] = day6_infos
-    # info_groups["Day7"] = day7_infos
-    # info_groups["Day8"] = day8_infos
+    info_groups["Days1234"] = days1234_infos
+    info_groups["Days5678"] = days5678_infos
+    info_groups["Day1"] = day1_infos
+    info_groups["Day2"] = day2_infos
+    info_groups["Day3"] = day3_infos
+    info_groups["Day4"] = day4_infos
+    info_groups["Day5"] = day5_infos
+    info_groups["Day6"] = day6_infos
+    info_groups["Day7"] = day7_infos
+    info_groups["Day8"] = day8_infos
 
-    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=2., power_thresh=3., n_shuffles=100, update_cache=True)
+    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
 
-    # get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
-    #
-    # for infos, group in zip(info_groups.values(), info_groups.keys()):
-    #     get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=False)
-    #
-    # for power_thresh in [3, 4, 5]:
-    #     get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
-    #
-    #     for infos, group in zip(info_groups.values(), info_groups.keys()):
-    #         get_decoded_swr_plots(infos, group, power_thresh=power_thresh, update_cache=False)
+    for infos, group in zip(info_groups.values(), info_groups.keys()):
+        get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=False)
+
+    for info in analysis_infos:
+        get_decoded_swr_plots([info], info.session_id, z_thresh=1., power_thresh=2., update_cache=False)
+
+    for power_thresh in [3, 4, 5]:
+        get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
+
+        for infos, group in zip(info_groups.values(), info_groups.keys()):
+            get_decoded_swr_plots(infos, group, power_thresh=power_thresh, update_cache=False)
+
+        for info in analysis_infos:
+            get_decoded_swr_plots([info], info.session_id, power_thresh=power_thresh, update_cache=False)
+
+
+if __name__ == "__main__":
+    main()
