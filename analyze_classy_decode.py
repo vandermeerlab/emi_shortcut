@@ -142,13 +142,14 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
 
     tc_shape = tuning_curves_fromdata.shape
 
-    swrs = nept.detect_swr_hilbert(lfp,
-                                   fs=info.fs,
-                                   thresh=swr_params["swr_thresh"],
-                                   z_thresh=swr_params["z_thresh"],
-                                   power_thresh=swr_params["power_thresh"],
-                                   merge_thresh=swr_params["merge_thresh"],
-                                   min_length=swr_params["min_length"])
+    swrs = detect_swr_hilbert_limited_zscore(lfp,
+                                             fs=info.fs,
+                                             thresh=swr_params["swr_thresh"],
+                                             times_for_zscore=nept.Epoch([info.task_times["pauseB"].start,
+                                                                         info.task_times["pauseB"].stop]),
+                                             z_thresh=swr_params["z_thresh"],
+                                             merge_thresh=swr_params["merge_thresh"],
+                                             min_length=swr_params["min_length"])
     swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=swr_params["min_involved"])
 
     rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
@@ -211,6 +212,91 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
         session.pickle(save_path)
 
     return session
+
+
+def detect_swr_hilbert_limited_zscore(lfp,
+                                      fs,
+                                      thresh,
+                                      times_for_zscore,
+                                      z_thresh=3,
+                                      merge_thresh=0.02,
+                                      min_length=0.01):
+    """Finds sharp-wave ripple (SWR) times and indices.
+
+    Parameters
+    ----------
+    lfp : nept.LocalFieldPotential
+    fs : int
+        Experiment-specific, something in the range of 2000 typical.
+    thresh : tuple
+        With format (lowcut, highcut).
+        Typically (140.0, 250.0) for sharp-wave ripple detection.
+    times_for_zscore : nept.Epoch
+        Containing the epoch for which the zscore will be computed and the z_thresh applied.
+    z_thresh : int or float
+        The default is set to 3
+    merge_thres : int or float
+        The default is set to 0.02
+    min_length : float
+        Any sequence less than this amount is not considered a sharp-wave ripple.
+        The default is set to 0.01.
+
+    Returns
+    -------
+    swrs : nept.Epoch
+        Containing nept.LocalFieldPotential for each SWR event
+
+    """
+    # Filtering signal with butterworth fitler
+    filtered_butter = nept.butter_bandpass(lfp.data, thresh, fs)
+
+    # Get LFP power (using Hilbert)
+    # Zero padding to nearest regular number to speed up fast fourier transforms (FFT) computed in the hilbert function.
+    # Regular numbers are composites of the prime factors 2, 3, and 5.
+    hilbert_n = nept.next_regular(lfp.n_samples)
+    power = np.abs(scipy.signal.hilbert(filtered_butter, N=hilbert_n))
+
+    # removing the zero padding now that the power is computed
+    power_lfp = nept.AnalogSignal(power[:lfp.n_samples], lfp.time)
+
+    # Apply zscore thresh to restricted data to find power thresh
+    sliced_power_lfp = power_lfp.time_slice(times_for_zscore.start, times_for_zscore.stop)
+    zpower = scipy.stats.zscore(np.squeeze(sliced_power_lfp.data))
+
+    zthresh_idx = (np.abs(zpower - z_thresh)).argmin()
+    power_thresh = sliced_power_lfp.data[zthresh_idx][0]
+
+    # Finding locations where the power changes
+    detect = np.squeeze(power_lfp.data) > power_thresh
+    detect = np.hstack([0, detect, 0])  # pad to detect first or last element change
+    signal_change = np.diff(detect.astype(int))
+
+    start_swr_idx = np.where(signal_change == 1)[0]
+    stop_swr_idx = np.where(signal_change == -1)[0] - 1
+
+    # Getting times associated with these power changes
+    start_time = lfp.time[start_swr_idx]
+    stop_time = lfp.time[stop_swr_idx]
+
+    # Merging ranges that are closer - in time - than the merge_threshold.
+    no_double = start_time[1:] - stop_time[:-1]
+    merge_idx = np.where(no_double < merge_thresh)[0]
+    start_merged = np.delete(start_time, merge_idx + 1)
+    stop_merged = np.delete(stop_time, merge_idx)
+    start_merged_idx = np.delete(start_swr_idx, merge_idx + 1)
+    stop_merged_idx = np.delete(stop_swr_idx, merge_idx)
+
+    # Removing ranges that are shorter - in time - than the min_length value.
+    swr_len = stop_merged - start_merged
+    short_idx = np.where(swr_len < min_length)[0]
+    start_merged = np.delete(start_merged, short_idx)
+    stop_merged = np.delete(stop_merged, short_idx)
+    start_merged_idx = np.delete(start_merged_idx, short_idx)
+    stop_merged_idx = np.delete(stop_merged_idx, short_idx)
+
+    swrs = nept.Epoch(np.array([start_merged, stop_merged]))
+
+    return swrs
 
 
 def plot_likelihood_overspace(info, session, task_labels, colours, filepath=None):
