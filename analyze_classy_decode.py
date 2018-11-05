@@ -165,6 +165,8 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
         phase_swrs = epochs_of_interest.overlaps(swrs)
         phase_swrs = phase_swrs[phase_swrs.durations >= 0.05]
 
+        print(task_label + str(phase_swrs.n_epochs))
+
         phase_likelihoods = np.zeros((n_passes, phase_swrs.n_epochs, tc_shape[1], tc_shape[2]))
         phase_tuningcurves = np.zeros((n_passes, tc_shape[0], tc_shape[1], tc_shape[2]))
         for n_pass in range(n_passes):
@@ -638,9 +640,9 @@ def plot_counts_averaged(counts, title, task_labels, zone_labels, colours, filep
         plt.show()
 
 
-def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., n_shuffles=100, update_cache=False):
+def get_decoded_swr_plots(infos, group, z_thresh=2., n_shuffles=100, update_cache=False):
 
-    group = group + "_z-" + str(z_thresh) + "-power-" + str(power_thresh)
+    group = group + "_z-" + str(z_thresh)
 
     dont_save_pickle = False
     plot_individual = False
@@ -660,7 +662,6 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., n_shuffles
     # swr params
     swr_params = dict()
     swr_params["z_thresh"] = z_thresh
-    swr_params["power_thresh"] = power_thresh
     swr_params["merge_thresh"] = 0.02
     swr_params["min_length"] = 0.05
     swr_params["swr_thresh"] = (140.0, 250.0)
@@ -858,22 +859,24 @@ def main():
     info_groups["Day7"] = day7_infos
     info_groups["Day8"] = day8_infos
 
-    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
+    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=2., n_shuffles=100, update_cache=True)
 
-    for infos, group in zip(info_groups.values(), info_groups.keys()):
-        get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=False)
-
-    for info in analysis_infos:
-        get_decoded_swr_plots([info], info.session_id, z_thresh=1., power_thresh=2., update_cache=False)
-
-    for power_thresh in [2, 3, 4, 5]:
-        get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
-
-        for infos, group in zip(info_groups.values(), info_groups.keys()):
-            get_decoded_swr_plots(infos, group, power_thresh=power_thresh, update_cache=False)
-
-        for info in analysis_infos:
-            get_decoded_swr_plots([info], info.session_id, power_thresh=power_thresh, update_cache=False)
+    # get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
+    #
+    # for infos, group in zip(info_groups.values(), info_groups.keys()):
+    #     get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=False)
+    #
+    # for info in analysis_infos:
+    #     get_decoded_swr_plots([info], info.session_id, z_thresh=1., power_thresh=2., update_cache=False)
+    #
+    # for power_thresh in [2, 3, 4, 5]:
+    #     get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
+    #
+    #     for infos, group in zip(info_groups.values(), info_groups.keys()):
+    #         get_decoded_swr_plots(infos, group, power_thresh=power_thresh, update_cache=False)
+    #
+    #     for info in analysis_infos:
+    #         get_decoded_swr_plots([info], info.session_id, power_thresh=power_thresh, update_cache=False)
 
 
 if __name__ == "__main__":
