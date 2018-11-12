@@ -398,8 +398,8 @@ def save_likelihoods(info, position, spikes, phase_swrs, zones, task_times, maze
 
 
 def get_decoded_swr_plots(infos, group):
-    plot_individual = False
-    update_cache = False
+    plot_individual = True
+    update_cache = True
 
     n_shuffles = 100
     percentile_thresh = 99
