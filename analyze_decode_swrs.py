@@ -397,9 +397,8 @@ def save_likelihoods(info, position, spikes, phase_swrs, zones, task_times, maze
     return session_likelihoods_true, raw_likelihoods_true, combined_likelihoods_shuff, raw_likelihoods_shuffs
 
 
-def get_decoded_swr_plots(infos, group):
+def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cache=True):
     plot_individual = True
-    update_cache = True
 
     n_shuffles = 100
     percentile_thresh = 99
@@ -411,8 +410,6 @@ def get_decoded_swr_plots(infos, group):
     colours["other"] = "#bdbdbd"
 
     # swr params
-    z_thresh = 2.0
-    power_thresh = 3.0
     merge_thresh = 0.02
     min_length = 0.05
     swr_thresh = (140.0, 250.0)
@@ -588,8 +585,9 @@ def get_decoded_swr_plots(infos, group):
             filepath = os.path.join(output_filepath, info.session_id+"-average-likelihood-overspace_"+task_time+".png")
             if len(session_sums_true[task_time]) > 0:
                 if plot_individual:
-                    plot_likelihood_overspace(info, position, raw_likelihoods_true[task_time],
-                                              zones, colours, filepath)
+                    if len(raw_likelihoods_true[task_time]) > 0:
+                        plot_likelihood_overspace(info, position, raw_likelihoods_true[task_time],
+                                                  zones, colours, filepath)
 
         filename = info.session_id + " proportion of SWRs above "+str(percentile_thresh)+" percentile"
         plot_combined(morelikelythanshuffle_proportion, passedshuffthresh_n_swr,
