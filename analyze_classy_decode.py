@@ -165,8 +165,6 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
         phase_swrs = epochs_of_interest.overlaps(swrs)
         phase_swrs = phase_swrs[phase_swrs.durations >= 0.05]
 
-        print(task_label + str(phase_swrs.n_epochs))
-
         phase_likelihoods = np.zeros((n_passes, phase_swrs.n_epochs, tc_shape[1], tc_shape[2]))
         phase_tuningcurves = np.zeros((n_passes, tc_shape[0], tc_shape[1], tc_shape[2]))
         for n_pass in range(n_passes):
@@ -650,7 +648,6 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., n_shuffles=100, update_cach
     plot_overspace = False
     plot_summary = True
 
-
     percentile_thresh = 95
 
     colours = dict()
@@ -781,13 +778,14 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., n_shuffles=100, update_cach
 
             for task_label in task_labels:
                 passthresh_idx = np.sort(np.unique(keep_idx[task_label]))
+                print(passthresh_idx)
                 if len(passthresh_idx) > 0:
                     passthresh_likelihoods = np.array(getattr(true_session, task_label).likelihoods)[:, passthresh_idx]
                     passthresh_swrs = getattr(true_session, task_label).swrs[passthresh_idx]
                 else:
                     passthresh_likelihoods = np.ones(
                         (1, 1) + getattr(true_session, task_label).likelihoods.shape[2:]) * np.nan
-                    passthresh_swrs = None
+                    passthresh_swrs = nept.Epoch([], [])
 
                 passthresh_tuningcurves = getattr(true_session, task_label).tuning_curves
 
@@ -836,11 +834,12 @@ def main():
                      days1234_infos, days5678_infos,
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
 
-    # import info.r063d2 as r063d2
-    # import info.r068d8 as r068d8
-    # infos = [r063d2, r068d8]
-    # group = "test"
-    # get_decoded_swr_plots(infos, group=group, n_shuffles=2, update_cache=True)
+    import info.r063d2 as r063d2
+    import info.r068d8 as r068d8
+    infos = [r063d2, r068d8]
+    group = "test"
+    get_decoded_swr_plots(infos, group=group, z_thresh=1., n_shuffles=2, update_cache=True)
+
 
     info_groups = dict()
     # info_groups["All"] = analysis_infos
@@ -859,24 +858,16 @@ def main():
     info_groups["Day7"] = day7_infos
     info_groups["Day8"] = day8_infos
 
-    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=2., n_shuffles=100, update_cache=True)
+    # get_decoded_swr_plots(analysis_infos, group="All", z_thresh=3., n_shuffles=100, update_cache=True)
 
-    # get_decoded_swr_plots(analysis_infos, group="All", z_thresh=1., power_thresh=2., update_cache=True)
-    #
-    # for infos, group in zip(info_groups.values(), info_groups.keys()):
-    #     get_decoded_swr_plots(infos, group, z_thresh=1., power_thresh=2., update_cache=False)
-    #
-    # for info in analysis_infos:
-    #     get_decoded_swr_plots([info], info.session_id, z_thresh=1., power_thresh=2., update_cache=False)
-    #
-    # for power_thresh in [2, 3, 4, 5]:
-    #     get_decoded_swr_plots(analysis_infos, group="All", power_thresh=power_thresh, update_cache=True)
+    # for z_thresh in [1, 2, 3, 4, 5]:
+    #     get_decoded_swr_plots(analysis_infos, group="All", z_thresh=z_thresh, update_cache=True)
     #
     #     for infos, group in zip(info_groups.values(), info_groups.keys()):
-    #         get_decoded_swr_plots(infos, group, power_thresh=power_thresh, update_cache=False)
+    #         get_decoded_swr_plots(infos, group, z_thresh=z_thresh, update_cache=False)
     #
     #     for info in analysis_infos:
-    #         get_decoded_swr_plots([info], info.session_id, power_thresh=power_thresh, update_cache=False)
+    #         get_decoded_swr_plots([info], info.session_id, z_thresh=z_thresh, update_cache=False)
 
 
 if __name__ == "__main__":
