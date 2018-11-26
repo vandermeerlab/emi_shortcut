@@ -152,7 +152,7 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
                                              min_length=swr_params["min_length"])
     swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=swr_params["min_involved"])
 
-    rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
+    # rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
 
     if n_shuffles > 0:
         n_passes = n_shuffles
@@ -160,7 +160,8 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
         n_passes = 1
 
     for task_label in task_labels:
-        epochs_of_interest = info.task_times[task_label].intersect(rest_epochs)
+        # epochs_of_interest = info.task_times[task_label].intersect(rest_epochs)
+        epochs_of_interest = info.task_times[task_label]
 
         phase_swrs = epochs_of_interest.overlaps(swrs)
         phase_swrs = phase_swrs[phase_swrs.durations >= 0.05]
@@ -218,7 +219,7 @@ def detect_swr_hilbert_limited_zscore(lfp,
                                       fs,
                                       thresh,
                                       times_for_zscore,
-                                      z_thresh=3,
+                                      z_thresh=2,
                                       merge_thresh=0.02,
                                       min_length=0.01):
     """Finds sharp-wave ripple (SWR) times and indices.
