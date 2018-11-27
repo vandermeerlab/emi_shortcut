@@ -5,7 +5,7 @@ import nept
 
 from loading_data import get_data
 
-import info.r063d5 as info
+import info.r068d5 as info
 events, position, spikes, lfp, lfp_theta = get_data(info)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -24,13 +24,17 @@ fs = info.fs
 thresh = (140.0, 250.0)
 min_involved = 4
 
-swrs = nept.detect_swr_hilbert(lfp, fs, thresh, z_thresh, merge_thresh=merge_thresh, min_length=min_length)
+rest_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
+rest_starts = [info.task_times[task_label].start for task_label in rest_labels]
+rest_stops = [info.task_times[task_label].stop for task_label in rest_labels]
+rest_lfp = lfp.time_slice(rest_starts, rest_stops)
+
+swrs = nept.detect_swr_hilbert(rest_lfp, fs, thresh, z_thresh, merge_thresh=merge_thresh, min_length=min_length)
 swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=min_involved)
 
 swrs = swrs.time_slice(start, stop)
 
 print(swrs.n_epochs)
-
 sliced_lfp = lfp.time_slice(start, stop)
 
 all_spikes = np.sort(np.concatenate([spiketrain.time for spiketrain in spikes]))
