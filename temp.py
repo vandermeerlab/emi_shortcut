@@ -47,7 +47,7 @@ bin_edges = nept.get_edges(sliced_lfp.time, dt)
 convolved_spikes = np.histogram(all_spikes, bins=bin_edges)[0].astype(float)
 convolved_spikes = nept.gaussian_filter(convolved_spikes, std=std, dt=dt)
 
-z_spikes_thresh = 2
+z_spikes_thresh = 3
 multi_unit = nept.get_epoch_from_zscored_thresh(convolved_spikes, bin_edges, thresh=z_spikes_thresh)
 
 #for plotting
@@ -71,8 +71,9 @@ for start, stop in zip(multi_unit.starts, multi_unit.stops):
     this_swr_lfp = lfp.time_slice(start, stop)
     plt.plot(this_swr_lfp.time, this_swr_lfp.data, "y")
 for start, stop in zip(these_swrs.starts, these_swrs.stops):
-    this_swr_lfp = lfp.time_slice(start, stop)
-    plt.plot(this_swr_lfp.time, this_swr_lfp.data, "c")
+    plt.fill_between([start, stop], np.max(lfp.data), np.min(lfp.data), color="#cccccc")
+    # this_swr_lfp = lfp.time_slice(start, stop)
+    # plt.plot(this_swr_lfp.time, this_swr_lfp.data, "c")
 plt.text(0.01, 0.01, "n_swrs: " + str(swrs.n_epochs), transform=ax.transAxes)
 # plt.xlim(prerecord_start, prerecord_stop)
 plt.show()
