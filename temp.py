@@ -6,7 +6,7 @@ import nept
 
 from loading_data import get_data
 
-import info.r063d5 as info
+import info.r068d5 as info
 events, position, spikes, lfp, lfp_theta = get_data(info)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -18,7 +18,7 @@ prerecord_start = info.task_times["prerecord"].start
 prerecord_stop = info.task_times["prerecord"].stop
 
 # parameters
-z_thresh = 1
+z_thresh = 1.5
 merge_thresh = 0.01
 min_length = 0.03
 fs = info.fs
@@ -47,7 +47,7 @@ bin_edges = nept.get_edges(sliced_lfp.time, dt)
 convolved_spikes = np.histogram(all_spikes, bins=bin_edges)[0].astype(float)
 convolved_spikes = nept.gaussian_filter(convolved_spikes, std=std, dt=dt)
 
-z_spikes_thresh = 3
+z_spikes_thresh = 2
 multi_unit = nept.get_epoch_from_zscored_thresh(convolved_spikes, bin_edges, thresh=z_spikes_thresh)
 
 #for plotting
@@ -74,7 +74,7 @@ for start, stop in zip(these_swrs.starts, these_swrs.stops):
     plt.fill_between([start, stop], np.max(lfp.data), np.min(lfp.data), color="#cccccc")
     # this_swr_lfp = lfp.time_slice(start, stop)
     # plt.plot(this_swr_lfp.time, this_swr_lfp.data, "c")
-plt.text(0.01, 0.01, "n_swrs: " + str(swrs.n_epochs), transform=ax.transAxes)
+plt.text(0.01, 0.01, "n_swrs: " + str(these_swrs.n_epochs), transform=ax.transAxes)
 # plt.xlim(prerecord_start, prerecord_stop)
 plt.show()
 # plt.savefig(os.path.join(output_filepath, info.session_id+"_check-swr-prerecord_zthresh"+str(z_thresh)+".png"))
