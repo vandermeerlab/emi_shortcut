@@ -411,9 +411,9 @@ if __name__ == "__main__":
     from run import analysis_infos, r063_infos, r066_infos, r067_infos, r068_infos, spike_sorted_infos
     import info.r063d8 as r063d8
     import info.r067d5 as r067d5
-    import info.r068d5 as r068d5
+    import info.r068d4 as r068d4
     # import info.r068d6 as r068d6
-    infos = [r067d5, r068d5]
+    infos = [r068d4]
     # infos = analysis_infos
 
     for info in infos:
