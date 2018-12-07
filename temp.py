@@ -7,7 +7,7 @@ import nept
 
 from loading_data import get_data
 
-import info.r068d3 as info
+import info.r068d8 as info
 events, position, spikes, lfp, lfp_theta = get_data(info)
 
 # thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -15,8 +15,8 @@ events, position, spikes, lfp, lfp_theta = get_data(info)
 # if not os.path.exists(output_filepath):
 #     os.makedirs(output_filepath)
 
-task_times = ["prerecord", "postrecord"]
-# task_times = ["postrecord"]
+# task_times = ["prerecord", "postrecord"]
+task_times = ["postrecord"]
 for task_time in task_times:
     # parameters
     z_thresh = 1.5
