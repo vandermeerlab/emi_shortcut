@@ -46,7 +46,7 @@ task_times['pauseA'] = nept.Epoch(np.array([1607.7, 2291.3]))
 task_times['phase2'] = nept.Epoch(np.array([2348.3, 3534.1]))
 task_times['pauseB'] = nept.Epoch(np.array([3586.1, 5440.6]))
 task_times['phase3'] = nept.Epoch(np.array([5490.2, 8480.1]))
-task_times['postrecord'] = nept.Epoch(np.array([8523.7, 8855.9]))
+task_times['postrecord'] = nept.Epoch(np.array([8524., 8855.9]))
 
 session_length = 0
 for phase in task_times.keys():

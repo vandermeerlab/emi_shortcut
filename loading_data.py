@@ -410,10 +410,10 @@ def get_data(info, output_path=None):
 if __name__ == "__main__":
     from run import analysis_infos, r063_infos, r066_infos, r067_infos, r068_infos, spike_sorted_infos
     import info.r063d8 as r063d8
-    import info.r067d1 as r067d1
+    import info.r063d6 as r063d6
     import info.r068d4 as r068d4
-    # import info.r068d6 as r068d6
-    infos = [r067d1]
+    import info.r068d8 as r068d8
+    infos = [r068d8]
     # infos = analysis_infos
 
     for info in infos:
