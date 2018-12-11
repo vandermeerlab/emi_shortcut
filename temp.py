@@ -15,8 +15,8 @@ events, position, spikes, lfp, lfp_theta = get_data(info)
 # if not os.path.exists(output_filepath):
 #     os.makedirs(output_filepath)
 
-task_times = ["prerecord", "postrecord", "pauseA", "pauseB"]
-# task_times = ["postrecord"]
+# task_times = ["prerecord", "postrecord", "pauseA", "pauseB"]
+task_times = ["pauseB", "postrecord", "prerecord"]
 for task_time in task_times:
     print(task_time)
     # parameters
