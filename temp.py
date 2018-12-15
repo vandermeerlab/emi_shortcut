@@ -16,7 +16,7 @@ events, position, spikes, lfp, lfp_theta = get_data(info)
 #     os.makedirs(output_filepath)
 
 # task_times = ["prerecord", "postrecord", "pauseA", "pauseB"]
-task_times = ["pauseB", "postrecord", "prerecord"]
+task_times = ["pauseB"]
 for task_time in task_times:
     print(task_time)
     # parameters
@@ -33,9 +33,21 @@ for task_time in task_times:
     rest_lfp = lfp.time_slice(rest_starts, rest_stops)
 
     swrs = nept.detect_swr_hilbert(rest_lfp, fs, thresh, z_thresh, merge_thresh=merge_thresh, min_length=min_length)
+    print(swrs.stops[-10:])
     swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=min_involved)
+    print(swrs.stops[-10:])
 
+    t_stop = info.task_times[task_time].stop
+    print("t_stop", t_stop)
+
+    print("last stops", swrs.stops[-3:])
+    idx = nept.find_nearest_idx(swrs.stops, t_stop)
+
+    print("stops near slice", swrs.stops[idx - 3:idx + 2])
+
+    # swrs = swrs.time_slice(4850, info.task_times[task_time].stop)
     swrs = swrs.time_slice(info.task_times[task_time].start, info.task_times[task_time].stop)
+    print(swrs.stops[-3:])
 
     print("n_swrs before mua thresh:", swrs.n_epochs)
     sliced_lfp = lfp.time_slice(info.task_times[task_time].start, info.task_times[task_time].stop)
@@ -78,36 +90,40 @@ for task_time in task_times:
     print("Mean distance of", str(n_near_thresh), "near thresh:",
           str(np.round(np.mean(dist_from_thresh[idx_near_thresh]), 3)))
 
-    fig, ax = plt.subplots()
-    plt.plot(bin_edges[:-1], convolved_spikes/(50*2000)+0.00025, "g")
-    plt.axhline(raw_thresh/(50*2000)+0.00025, color="k")
-    plt.plot(sliced_lfp.time, sliced_lfp.data)
-    plt.plot(sliced_all_spikes, np.ones(len(sliced_all_spikes))*0.0002, ".")
-    for start, stop in zip(swrs.starts, swrs.stops):
-        this_swr_lfp = lfp.time_slice(start, stop)
-        plt.plot(this_swr_lfp.time, this_swr_lfp.data, color="c")
-    for start, stop in zip(multi_unit.starts, multi_unit.stops):
-        this_swr_lfp = lfp.time_slice(start, stop)
-        plt.plot(this_swr_lfp.time, this_swr_lfp.data, "y")
-    for i, (start, stop) in enumerate(zip(swrs_with_mua.starts, swrs_with_mua.stops)):
-        plt.fill_between([start, stop], np.max(lfp.data), np.min(lfp.data), color="#cccccc")
-        if i in idx_near_thresh:
-            color = "r"
-        else:
-            color = "b"
-        this_swr_lfp = lfp.time_slice(start, stop)
-        plt.plot(this_swr_lfp.time, this_swr_lfp.data, color=color)
-    plt.text(0.01, 0.01, "n_swrs: " + str(swrs_with_mua.n_epochs), transform=ax.transAxes)
+    if 1:
+        fig, ax = plt.subplots()
+        plt.plot(bin_edges[:-1], convolved_spikes/(50*2000)+0.00025, "g")
+        plt.axhline(raw_thresh/(50*2000)+0.00025, color="k")
+        # plt.plot(sliced_lfp.time, sliced_lfp.data)
+        plt.plot(sliced_all_spikes, np.ones(len(sliced_all_spikes))*0.0002, ".")
+        for start, stop in zip(swrs.starts, swrs.stops):
+            this_swr_lfp = lfp.time_slice(start, stop)
+            plt.plot(this_swr_lfp.time, this_swr_lfp.data, color="c")
+        for start, stop in zip(multi_unit.starts, multi_unit.stops):
+            this_swr_lfp = lfp.time_slice(start, stop)
+            plt.plot(this_swr_lfp.time, this_swr_lfp.data, "y")
+        for i, (start, stop) in enumerate(zip(swrs_with_mua.starts, swrs_with_mua.stops)):
+            plt.fill_between([start, stop], np.max(lfp.data), np.min(lfp.data), color="#cccccc")
+            if i in idx_near_thresh:
+                color = "r"
+            else:
+                color = "b"
+            this_swr_lfp = lfp.time_slice(start, stop)
+            plt.plot(this_swr_lfp.time, this_swr_lfp.data, color=color)
+        plt.text(0.01, 0.01, "n_swrs: " + str(swrs_with_mua.n_epochs), transform=ax.transAxes)
 
-    custom_lines = [Line2D([0], [0], color="c", lw=2),
-                    Line2D([0], [0], color="y", lw=2),
-                    Line2D([0], [0], color="r", lw=2),
-                    Line2D([0], [0], color="#cccccc", lw=2)]
-    ax.legend(custom_lines, ['SWRs', 'MUA', 'SWRs-MUA-near_thresh', 'SWRs-MUA'], fontsize=12)
-    plt.title(info.session_id+" " + task_time + " lfp_thresh:"+str(z_thresh)+", mua_thresh:"+str(z_spikes_thresh),
-              fontsize=12)
-    # plt.xlim(info.task_times[task_time].start, info.task_times[task_time].stop)
-    plt.show()
+        custom_lines = [Line2D([0], [0], color="c", lw=2),
+                        Line2D([0], [0], color="y", lw=2),
+                        Line2D([0], [0], color="r", lw=2),
+                        Line2D([0], [0], color="#cccccc", lw=2)]
+        ax.legend(custom_lines, ['SWRs', 'MUA', 'SWRs-MUA-near_thresh', 'SWRs-MUA'], fontsize=12)
+        plt.title(info.session_id+" " + task_time + " lfp_thresh:"+str(z_thresh)+", mua_thresh:"+str(z_spikes_thresh),
+                  fontsize=12)
+        # plt.xlim(info.task_times[task_time].start, info.task_times[task_time].stop)
+        plt.show()
+
+        plt.plot(rest_lfp.time, swr_zscored)
+        plt.show()
 
 
     # plt.savefig(os.path.join(output_filepath, info.session_id+"_check-swr-prerecord_zthresh"+str(z_thresh)+".png"))
