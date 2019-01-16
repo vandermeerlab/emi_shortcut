@@ -83,3 +83,5 @@ u_segment = [path_pts[i] for i in ['turn1', 'stable1', 'turn2', 'shortcut2']]
 shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3', 'shortcut2']]
 
 novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'novel2']]
+
+lfp_z_thresh = 1.5

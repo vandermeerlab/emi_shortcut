@@ -98,3 +98,5 @@ sequence['u']['swr'] = nept.Epoch(np.array([[38650.8, 38651.6],
 sequence['shortcut']['run'] = nept.Epoch(np.array([[35247.0, 35269.0]]))
 
 sequence['shortcut']['swr'] = nept.Epoch(np.array([[38650.8, 38651.6]]))
+
+lfp_z_thresh = 2.0
