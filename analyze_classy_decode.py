@@ -142,12 +142,12 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
 
     tc_shape = tuning_curves_fromdata.shape
 
-    swrs = detect_swr_hilbert_limited_zscore(lfp,
+    swrs = detect_swr_hilbert_limited_zscore(info,
+                                             lfp,
                                              fs=info.fs,
                                              thresh=swr_params["swr_thresh"],
                                              times_for_zscore=nept.Epoch([info.task_times["pauseB"].start,
                                                                          info.task_times["pauseB"].stop]),
-                                             z_thresh=swr_params["z_thresh"],
                                              merge_thresh=swr_params["merge_thresh"],
                                              min_length=swr_params["min_length"])
     swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=swr_params["min_involved"])
@@ -215,11 +215,11 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
     return session
 
 
-def detect_swr_hilbert_limited_zscore(lfp,
+def detect_swr_hilbert_limited_zscore(info,
+                                      lfp,
                                       fs,
                                       thresh,
                                       times_for_zscore,
-                                      z_thresh=2,
                                       merge_thresh=0.02,
                                       min_length=0.01):
     """Finds sharp-wave ripple (SWR) times and indices.
@@ -264,7 +264,7 @@ def detect_swr_hilbert_limited_zscore(lfp,
     sliced_power_lfp = power_lfp.time_slice(times_for_zscore.start, times_for_zscore.stop)
     zpower = scipy.stats.zscore(np.squeeze(sliced_power_lfp.data))
 
-    zthresh_idx = (np.abs(zpower - z_thresh)).argmin()
+    zthresh_idx = (np.abs(zpower - info.lfp_z_thresh)).argmin()
     power_thresh = sliced_power_lfp.data[zthresh_idx][0]
 
     # Finding locations where the power changes
@@ -639,9 +639,7 @@ def plot_counts_averaged(counts, title, task_labels, zone_labels, colours, filep
         plt.show()
 
 
-def get_decoded_swr_plots(infos, group, z_thresh=2., n_shuffles=100, update_cache=False):
-
-    group = group + "_z-" + str(z_thresh)
+def get_decoded_swr_plots(infos, group, n_shuffles=100, update_cache=False):
 
     dont_save_pickle = False
     plot_individual = False
@@ -659,7 +657,6 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., n_shuffles=100, update_cach
 
     # swr params
     swr_params = dict()
-    swr_params["z_thresh"] = z_thresh
     swr_params["merge_thresh"] = 0.02
     swr_params["min_length"] = 0.05
     swr_params["swr_thresh"] = (140.0, 250.0)
@@ -675,6 +672,8 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., n_shuffles=100, update_cach
 
     for info in infos:
         print(info.session_id)
+
+        group = group + "_z-" + str(info.lfp_z_thresh)
 
         # Get true data
         true_path = os.path.join(pickle_filepath, info.session_id + "_likelihoods_true.pkl")
@@ -834,13 +833,6 @@ def main():
                      days1234_infos, days5678_infos,
                      day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
 
-    # import info.r063d2 as r063d2
-    # import info.r068d8 as r068d8
-    # infos = [r063d2, r068d8]
-    # group = "test"
-    # get_decoded_swr_plots(infos, group=group, z_thresh=1., n_shuffles=2, update_cache=True)
-
-
     info_groups = dict()
     # info_groups["All"] = analysis_infos
     info_groups["R063"] = r063_infos
@@ -858,16 +850,13 @@ def main():
     info_groups["Day7"] = day7_infos
     info_groups["Day8"] = day8_infos
 
-    get_decoded_swr_plots(analysis_infos, group="All", z_thresh=3., n_shuffles=100, update_cache=True)
+    get_decoded_swr_plots(analysis_infos, group="All", n_shuffles=100, update_cache=True)
 
-    for z_thresh in [1, 2, 3, 4, 5]:
-        get_decoded_swr_plots(analysis_infos, group="All", z_thresh=z_thresh, update_cache=True)
+    for infos, group in zip(info_groups.values(), info_groups.keys()):
+        get_decoded_swr_plots(infos, group, update_cache=True)
 
-        for infos, group in zip(info_groups.values(), info_groups.keys()):
-            get_decoded_swr_plots(infos, group, z_thresh=z_thresh, update_cache=False)
-
-        for info in analysis_infos:
-            get_decoded_swr_plots([info], info.session_id, z_thresh=z_thresh, update_cache=False)
+    # for info in analysis_infos:
+    #     get_decoded_swr_plots([info], info.session_id, update_cache=False)
 
 
 if __name__ == "__main__":
