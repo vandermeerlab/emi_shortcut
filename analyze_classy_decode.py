@@ -673,8 +673,6 @@ def get_decoded_swr_plots(infos, group, n_shuffles=100, update_cache=False):
     for info in infos:
         print(info.session_id)
 
-        group = group + "_z-" + str(info.lfp_z_thresh)
-
         # Get true data
         true_path = os.path.join(pickle_filepath, info.session_id + "_likelihoods_true.pkl")
 
