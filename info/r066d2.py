@@ -41,13 +41,13 @@ pickled_spikes = session + '-spike.pkl'
 
 # Experimental session-specific task times for R066 day 2
 task_times = dict()
-task_times['prerecord'] = nept.Epoch(np.array([11850.2, 12154.5]))
-task_times['phase1'] = nept.Epoch(np.array([12209.6, 12839.8]))
-task_times['pauseA'] = nept.Epoch(np.array([12899.5, 13501.3]))
-task_times['phase2'] = nept.Epoch(np.array([13573.9, 14776.0]))
-task_times['pauseB'] = nept.Epoch(np.array([14825.4, 16632.3]))
-task_times['phase3'] = nept.Epoch(np.array([16683.4, 19397.5]))
-task_times['postrecord'] = nept.Epoch(np.array([19436.2, 19742.0]))
+task_times['prerecord'] = nept.Epoch([11850.2], [12154.5])
+task_times['phase1'] = nept.Epoch([12209.6], [12839.8])
+task_times['pauseA'] = nept.Epoch([12899.5], [13501.3])
+task_times['phase2'] = nept.Epoch([13573.9], [14776.0])
+task_times['pauseB'] = nept.Epoch([14825.4], [16632.3])
+task_times['phase3'] = nept.Epoch([16683.4], [19397.5])
+task_times['postrecord'] = nept.Epoch([19436.2], [19742.0])
 
 session_length = 0
 for phase in task_times.keys():
@@ -85,22 +85,22 @@ shortcut_trajectory = [path_pts[i] for i in ['shortcut1', 'spt1', 'spt2', 'spt3'
 
 novel_trajectory = [path_pts[i] for i in ['novel1', 'npt1', 'novel2']]
 
-sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr'] = nept.Epoch(np.array([[19482.6, 19483.0],
-                                           [19613.0, 19613.4],
-                                           [19719.95, 19720.5]]))
-sequence['u']['run'] = nept.Epoch(np.array([[14468.0, 14488.0],
-                                           [13826.0, 13866.0],
-                                           [14130.0, 14160.0],
-                                           [19220.0, 19260.0],
-                                           [14370.0, 14440.0]]))
-sequence['u']['ms'] = 10
-
-sequence['shortcut']['swr'] = nept.Epoch(np.array([[19370.7, 19371.55],
-                                                  [19709.5, 19710.8],
-                                                  [16584.8, 16585.2]]))
-sequence['shortcut']['run'] = nept.Epoch(np.array([[17960.0, 17990.0],
-                                                  [18800.0, 18830.0]]))
-sequence['shortcut']['ms'] = 10
+# sequence = dict(u=dict(), shortcut=dict())
+# sequence['u']['swr'] = nept.Epoch(np.array([[19482.6, 19483.0],
+#                                            [19613.0, 19613.4],
+#                                            [19719.95, 19720.5]]))
+# sequence['u']['run'] = nept.Epoch(np.array([[14468.0, 14488.0],
+#                                            [13826.0, 13866.0],
+#                                            [14130.0, 14160.0],
+#                                            [19220.0, 19260.0],
+#                                            [14370.0, 14440.0]]))
+# sequence['u']['ms'] = 10
+#
+# sequence['shortcut']['swr'] = nept.Epoch(np.array([[19370.7, 19371.55],
+#                                                   [19709.5, 19710.8],
+#                                                   [16584.8, 16585.2]]))
+# sequence['shortcut']['run'] = nept.Epoch(np.array([[17960.0, 17990.0],
+#                                                   [18800.0, 18830.0]]))
+# sequence['shortcut']['ms'] = 10
 
 lfp_z_thresh = 1.5

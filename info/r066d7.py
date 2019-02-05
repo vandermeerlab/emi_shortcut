@@ -40,13 +40,13 @@ pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
-task_times['prerecord'] = nept.Epoch(np.array([939.9, 1241.8]))
-task_times['phase1'] = nept.Epoch(np.array([1279.1, 1761.1]))
-task_times['pauseA'] = nept.Epoch(np.array([1786.6, 2390.0]))
-task_times['phase2'] = nept.Epoch(np.array([2416.8, 3723.5]))
-task_times['pauseB'] = nept.Epoch(np.array([3741.3, 5564.9]))
-task_times['phase3'] = nept.Epoch(np.array([5636.7, 8682.6]))
-task_times['postrecord'] = nept.Epoch(np.array([8713.2, 9049.1]))
+task_times['prerecord'] = nept.Epoch([939.9], [1241.8])
+task_times['phase1'] = nept.Epoch([1279.1], [1761.1])
+task_times['pauseA'] = nept.Epoch([1786.6], [2390.0])
+task_times['phase2'] = nept.Epoch([2416.8], [3723.5])
+task_times['pauseB'] = nept.Epoch([3741.3], [5564.9])
+task_times['phase3'] = nept.Epoch([5636.7], [8682.6])
+task_times['postrecord'] = nept.Epoch([8713.2], [9049.1])
 
 session_length = 0
 for phase in task_times.keys():
@@ -76,9 +76,8 @@ path_pts['pedestal'] = [194.3, 85.6]
 path_pts['stable1'] = [139.4, 122.6]
 path_pts['error'] = [[35., 10.], [135., -12.]]
 
-problem_positions = nept.Epoch(np.array([[6199.592711, 6279.716461],
-                                         [6513.185586, 6557.480055],
-                                         [6855.730149, 6893.134649]]))
+problem_positions = nept.Epoch([6199.592711, 6513.185586, 6855.730149],
+                               [6279.716461, 6557.480055, 6893.134649])
 position_problem_location = [85., 20.]
 
 u_trajectory = [path_pts[i] for i in ['feeder1', 'novel1', 'shortcut1', 'turn1', 'pt1', 'turn2',

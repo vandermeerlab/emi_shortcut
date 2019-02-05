@@ -40,13 +40,13 @@ pickled_lfp_theta = session + '-lfp_theta.pkl'
 pickled_spikes = session + '-spike.pkl'
 
 task_times = dict()
-task_times['prerecord'] = nept.Epoch(np.array([22586.2, 22887.2]))
-task_times['phase1'] = nept.Epoch(np.array([22920.1, 23495.1]))
-task_times['pauseA'] = nept.Epoch(np.array([23572.8, 24174.8]))
-task_times['phase2'] = nept.Epoch(np.array([24217.4, 25480.2]))
-task_times['pauseB'] = nept.Epoch(np.array([25513.0, 27339.6]))
-task_times['phase3'] = nept.Epoch(np.array([27376.6, 30061.2]))
-task_times['postrecord'] = nept.Epoch(np.array([30105.0, 30419.5]))
+task_times['prerecord'] = nept.Epoch([22586.2], [22887.2])
+task_times['phase1'] = nept.Epoch([22920.1], [23495.1])
+task_times['pauseA'] = nept.Epoch([23572.8], [24174.8])
+task_times['phase2'] = nept.Epoch([24217.4], [25480.2])
+task_times['pauseB'] = nept.Epoch([25513.0], [27339.6])
+task_times['phase3'] = nept.Epoch([27376.6], [30061.2])
+task_times['postrecord'] = nept.Epoch([30105.0], [30419.5])
 
 session_length = 0
 for phase in task_times.keys():
@@ -85,11 +85,11 @@ novel_trajectory = [path_pts[i] for i in ['novel1', 'novel2']]
 
 default = task_times['postrecord'].start
 
-sequence = dict(u=dict(), shortcut=dict())
-sequence['u']['swr'] = nept.Epoch(np.array([[25074, 25077]]))
-sequence['u']['run'] = nept.Epoch(np.array([[23100, 23150]]))
-
-sequence['shortcut']['swr'] = nept.Epoch(np.array([[29837, 29840]]))
-sequence['shortcut']['run'] = nept.Epoch(np.array([[29046, 29111]]))
+# sequence = dict(u=dict(), shortcut=dict())
+# sequence['u']['swr'] = nept.Epoch(np.array([[25074, 25077]]))
+# sequence['u']['run'] = nept.Epoch(np.array([[23100, 23150]]))
+#
+# sequence['shortcut']['swr'] = nept.Epoch(np.array([[29837, 29840]]))
+# sequence['shortcut']['run'] = nept.Epoch(np.array([[29046, 29111]]))
 
 lfp_z_thresh = 1.5
