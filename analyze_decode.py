@@ -62,7 +62,7 @@ def get_decoded(info, position, spikes, shuffled_id):
         sliced_spikes = [spiketrain.time_slice(run_epoch.start,
                                                run_epoch.stop) for spiketrain in sliced_spikes]
 
-        # epochs_interest = nept.Epoch(np.array([sliced_position.time[0], sliced_position.time[-1]]))
+        # epochs_interest = nept.Epoch(sliced_position.time[0], sliced_position.time[-1])
 
         t_window = 0.025  # 0.1 for running, 0.025 for swr
 

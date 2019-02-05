@@ -146,8 +146,8 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
                                              lfp,
                                              fs=info.fs,
                                              thresh=swr_params["swr_thresh"],
-                                             times_for_zscore=nept.Epoch([info.task_times["pauseB"].start,
-                                                                         info.task_times["pauseB"].stop]),
+                                             times_for_zscore=nept.Epoch(info.task_times["pauseB"].start,
+                                                                         info.task_times["pauseB"].stop),
                                              merge_thresh=swr_params["merge_thresh"],
                                              min_length=swr_params["min_length"])
     swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=swr_params["min_involved"])
@@ -295,7 +295,7 @@ def detect_swr_hilbert_limited_zscore(info,
     start_merged_idx = np.delete(start_merged_idx, short_idx)
     stop_merged_idx = np.delete(stop_merged_idx, short_idx)
 
-    swrs = nept.Epoch(np.array([start_merged, stop_merged]))
+    swrs = nept.Epoch(start_merged, stop_merged)
 
     return swrs
 

@@ -87,7 +87,7 @@ def get_trial_idx(low_priority, mid_priority, high_priority, feeder1_times, feed
     trials_idx['shortcut'] = mid_priority_trials
     trials_idx['u'] = low_priority_trials
 
-    trials_epochs = nept.Epoch([start_trials, stop_trials])
+    trials_epochs = nept.Epoch(start_trials, stop_trials)
 
     return trials_idx, trials_epochs
 
@@ -242,7 +242,7 @@ def get_trials(events, phase_epoch, first_trial=False):
         starts = np.insert(starts, 0, phase_epoch.start)
         stops = np.insert(stops, 0, feeder_events[0])
 
-    return nept.Epoch([starts, stops])
+    return nept.Epoch(starts, stops)
 
 
 def convert_to_cm(path_pts, xy_conversion):
@@ -411,7 +411,7 @@ def trials_by_trajectory(info, sliced_position, zone, min_epoch=1.5, min_distanc
     elif len(starts) > len(stops):
         starts = starts[:-1]
 
-    zone_epochs = nept.Epoch([starts, stops]).merge(gap=merge_gap)
+    zone_epochs = nept.Epoch(starts, stops).merge(gap=merge_gap)
 
     dur_idx = zone_epochs.durations >= min_epoch
 
@@ -422,7 +422,7 @@ def trials_by_trajectory(info, sliced_position, zone, min_epoch=1.5, min_distanc
     for i, (start_idx, stop_idx) in enumerate(zip(start_idxs, stop_idxs)):
         dist_idx[i] = sliced_position[start_idx].distance(sliced_position[stop_idx])[0] > min_distance
 
-    trial_epochs = nept.Epoch([zone_epochs.starts[dur_idx & dist_idx], zone_epochs.stops[dur_idx & dist_idx]])
+    trial_epochs = nept.Epoch(zone_epochs.starts[dur_idx & dist_idx], zone_epochs.stops[dur_idx & dist_idx])
 
     trial_starts = []
     trial_stops = []
@@ -434,7 +434,7 @@ def trials_by_trajectory(info, sliced_position, zone, min_epoch=1.5, min_distanc
             trial_starts.append(start)
             trial_stops.append(stop)
 
-    return nept.Epoch([trial_starts, trial_stops])
+    return nept.Epoch(trial_starts, trial_stops)
 
 
 def find_matched_trials(trial_epochs, fewest, to_match):
@@ -456,7 +456,7 @@ def find_matched_trials(trial_epochs, fewest, to_match):
         starts.append(trial_epochs[to_match][idx].start)
         stops.append(trial_epochs[to_match][idx].stop)
         centers[idx] = np.nan
-    return nept.Epoch([starts, stops])
+    return nept.Epoch(starts, stops)
 
 
 def get_matched_trials(info, sliced_position, subset=False):

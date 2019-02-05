@@ -121,7 +121,7 @@ def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neuron
         run_epoch = nept.run_threshold(position, thresh=speed_limit, t_smooth=t_smooth)
         position = position[run_epoch]
 
-        epochs_interest = nept.Epoch(np.array([position.time[0], position.time[-1]]))
+        epochs_interest = nept.Epoch(position.time[0], position.time[-1])
     else:
         sliced_lfp = lfp.time_slice(t_start, t_stop)
 
@@ -130,13 +130,13 @@ def get_decoded(info, dt, gaussian_std, min_neurons, min_spikes, min_swr, neuron
         merge_thresh = 0.02
         min_length = 0.05
         swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
-                                       power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+                                       merge_thresh=merge_thresh, min_length=min_length)
 
         min_involved = 4
         multi_swr = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=min_involved)
 
         if multi_swr.n_epochs < min_swr:
-            epochs_interest = nept.Epoch(np.array([[], []]))
+            epochs_interest = nept.Epoch([], [])
         else:
             epochs_interest = multi_swr
 

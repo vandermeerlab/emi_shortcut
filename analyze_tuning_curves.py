@@ -252,9 +252,9 @@ def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, spee
     if trial_times is None:
         trial_times = nept.Epoch([], [])
 
-    phase1 = nept.Epoch([info.task_times['phase1'].start, info.task_times['phase1'].stop])
-    phase2 = nept.Epoch([info.task_times['phase2'].start, info.task_times['phase2'].stop])
-    phase3 = nept.Epoch([info.task_times['phase3'].start, info.task_times['phase3'].stop])
+    phase1 = nept.Epoch(info.task_times['phase1'].start, info.task_times['phase1'].stop)
+    phase2 = nept.Epoch(info.task_times['phase2'].start, info.task_times['phase2'].stop)
+    phase3 = nept.Epoch(info.task_times['phase3'].start, info.task_times['phase3'].stop)
 
     if phase_id is None:
         track_starts = []
@@ -262,26 +262,26 @@ def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, spee
         for phase in [phase1, phase2, phase3]:
             if phase.overlaps(trial_times).durations.size > 0:
                 if trial_times.start < phase.start:
-                    phase = nept.Epoch([trial_times.stop, phase.stop])
+                    phase = nept.Epoch(trial_times.stop, phase.stop)
                 elif trial_times.stop > phase.stop:
-                    phase = nept.Epoch([phase.start, trial_times.start])
+                    phase = nept.Epoch(phase.start, trial_times.start)
                 else:
-                    phase = nept.Epoch([[phase.start, trial_times.stop], [trial_times.start, phase.stop]])
+                    phase = nept.Epoch([phase.start, trial_times.start], [trial_times.stop, phase.stop]) # TODO check logic
             track_starts.extend(phase.starts)
             track_stops.extend(phase.stops)
         filename = info.session_id + '_neurons_all-phases' + str(trial_number) + '.pkl'
     else:
-        phase = nept.Epoch([info.task_times[phase_id].start, info.task_times[phase_id].stop])
+        phase = nept.Epoch(info.task_times[phase_id].start, info.task_times[phase_id].stop)
 
         track_starts = []
         track_stops = []
         if phase.overlaps(trial_times).durations.size > 0:
             if trial_times.start < phase.start:
-                phase = nept.Epoch([trial_times.stop, phase.stop])
+                phase = nept.Epoch(trial_times.stop, phase.stop)
             elif trial_times.stop > phase.stop:
-                phase = nept.Epoch([phase.start, trial_times.start])
+                phase = nept.Epoch(phase.start, trial_times.start)
             else:
-                phase = nept.Epoch([[phase.start, trial_times.stop], [trial_times.start, phase.stop]])
+                phase = nept.Epoch([phase.start, trial_times.start], [trial_times.stop, phase.stop])  # TODO check logic
 
             track_starts.extend(phase.starts)
             track_stops.extend(phase.stops)
