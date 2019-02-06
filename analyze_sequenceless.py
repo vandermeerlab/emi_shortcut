@@ -90,6 +90,11 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
     combined_zones = zones["u"] + zones["shortcut"] + zones["novel"]
     zones["other"] = ~combined_zones
 
+    if n_shuffles > 0:
+        n_passes = n_shuffles
+    else:
+        n_passes = 1
+
     session = Session(position, task_labels, zones)
 
     tuning_curves_fromdata = get_only_tuning_curves(info, position, spikes, info.task_times["phase3"])
@@ -111,82 +116,66 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
 
     rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)
 
-    # Restrict SWRs to those during epochs of interest during rest
-    phase_swrs = dict()
-    n_swrs = {task_time: 0 for task_time in task_labels}
-
     for task_label in task_labels:
         epochs_of_interest = info.task_times[task_label].intersect(rest_epochs)
 
-        phase_swrs[task_label] = epochs_of_interest.overlaps(swrs)
-        phase_swrs[task_label] = phase_swrs[task_label][phase_swrs[task_label].durations >= 0.05]
+        phase_swrs = epochs_of_interest.overlaps(swrs)
+        phase_swrs = phase_swrs[phase_swrs.durations >= 0.05]
 
-        n_swrs[task_label] += phase_swrs[task_label].n_epochs
+        phase_likelihoods = np.zeros((n_passes, phase_swrs.n_epochs, tc_shape[1], tc_shape[2]))
+        phase_tuningcurves = np.zeros((n_passes, tc_shape[0], tc_shape[1], tc_shape[2]))
+        for n_pass in range(n_passes):
 
-    print(n_swrs)
-    return(n_swrs)
+            if n_shuffles > 0:
+                tuning_curves = np.random.permutation(tuning_curves_fromdata)
+            else:
+                tuning_curves = tuning_curves_fromdata
 
+            phase_tuningcurves[n_pass, ] = tuning_curves
+            tuning_curves = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
 
-    # if n_shuffles > 0:
+            if phase_swrs.n_epochs == 0:
+                phase_likelihoods = np.ones((n_passes, 1, tc_shape[1], tc_shape[2])) * np.nan
+            else:
+                counts_data = []
+                counts_time = []
+                t_windows = []
 
-    #     n_passes = n_shuffles
-    # else:
-    #     n_passes = 1
-    #
-    # for task_label in task_labels:
-    #     # epochs_of_interest = info.task_times[task_label].intersect(rest_epochs)
-    #     epochs_of_interest = info.task_times[task_label]
-    #
-    #     phase_swrs = epochs_of_interest.overlaps(swrs)
-    #     phase_swrs = phase_swrs[phase_swrs.durations >= 0.05]
-    #
-    #     phase_likelihoods = np.zeros((n_passes, phase_swrs.n_epochs, tc_shape[1], tc_shape[2]))
-    #     phase_tuningcurves = np.zeros((n_passes, tc_shape[0], tc_shape[1], tc_shape[2]))
-    #     for n_pass in range(n_passes):
-    #
-    #         if n_shuffles > 0:
-    #             tuning_curves = np.random.permutation(tuning_curves_fromdata)
-    #         else:
-    #             tuning_curves = tuning_curves_fromdata
-    #
-    #         phase_tuningcurves[n_pass,] = tuning_curves
-    #         tuning_curves = tuning_curves.reshape(tc_shape[0], tc_shape[1] * tc_shape[2])
-    #
-    #         if phase_swrs.n_epochs == 0:
-    #             phase_likelihoods = np.ones((n_passes, 1, tc_shape[1], tc_shape[2])) * np.nan
-    #         else:
-    #             counts_data = []
-    #             counts_time = []
-    #             t_windows = []
-    #
-    #             for n_timebin, (start, stop) in enumerate(zip(phase_swrs.starts,
-    #                                                           phase_swrs.stops)):
-    #                 t_window = stop - start  # 0.1 for running, 0.025 for swr
-    #
-    #                 sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
-    #
-    #                 these_counts = nept.bin_spikes(sliced_spikes, np.array([start, stop]), dt=t_window, window=t_window,
-    #                                           gaussian_std=0.0075, normalized=False)
-    #
-    #                 counts_data.append(these_counts.data)
-    #                 counts_time.append(these_counts.time)
-    #                 t_windows.append(t_window)
-    #
-    #             counts = nept.AnalogSignal(np.vstack(counts_data), np.hstack(counts_time))
-    #             likelihood = nept.bayesian_prob(counts, tuning_curves, binsize=t_windows,
-    #                                             min_neurons=3, min_spikes=1)
-    #
-    #             phase_likelihoods[n_pass] = likelihood.reshape(phase_swrs.n_epochs, tc_shape[1], tc_shape[2])
-    #
-    #     tasktime = getattr(session, task_label)
-    #     tasktime.likelihoods = phase_likelihoods
-    #     tasktime.tuning_curves = phase_tuningcurves
-    #     tasktime.swrs = phase_swrs
-    #
-    # if save_path is not None:
-    #     session.pickle(save_path)
-    #
-    # return session
+                for n_timebin, (start, stop) in enumerate(zip(phase_swrs.starts,
+                                                              phase_swrs.stops)):
+                    t_window = stop - start  # 0.1 for running, 0.025 for swr
+
+                    sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
+
+                    these_counts = nept.bin_spikes(sliced_spikes,
+                                                   np.array([start, stop]),
+                                                   dt=t_window,
+                                                   window=t_window,
+                                                   gaussian_std=0.0075,
+                                                   normalized=False)
+
+                    counts_data.append(these_counts.data)
+                    counts_time.append(these_counts.time)
+                    t_windows.append(t_window)
+
+                counts = nept.AnalogSignal(np.vstack(counts_data), np.hstack(counts_time))
+                likelihood = nept.bayesian_prob(counts,
+                                                tuning_curves,
+                                                binsize=t_windows,
+                                                min_neurons=3,
+                                                min_spikes=1)
+
+                phase_likelihoods[n_pass] = likelihood.reshape(phase_swrs.n_epochs, tc_shape[1], tc_shape[2])
+
+        tasktime = getattr(session, task_label)
+        tasktime.likelihoods = phase_likelihoods
+        tasktime.tuning_curves = phase_tuningcurves
+        tasktime.swrs = phase_swrs
+
+    if save_path is not None:
+        session.pickle(save_path)
+
+    return session
 
 
 import info.r063d2 as info
@@ -201,4 +190,5 @@ swr_params["min_involved"] = 4
 task_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
 zone_labels = ["u", "shortcut", "novel", "other"]
 
-n_swrs = get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, save_path=None)
+session = get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, save_path=None)
+print(session.pauseA.swrs.n_epochs)
