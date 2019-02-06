@@ -148,9 +148,9 @@ def get_likelihoods(info, swr_params, task_labels, zone_labels, n_shuffles=0, sa
                     sliced_spikes = [spiketrain.time_slice(start, stop) for spiketrain in spikes]
 
                     these_counts = nept.bin_spikes(sliced_spikes,
-                                                   np.array([start, stop]),
+                                                   start,
+                                                   stop,
                                                    dt=t_window,
-                                                   window=t_window,
                                                    gaussian_std=0.0075,
                                                    normalized=False)
 
