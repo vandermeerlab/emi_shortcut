@@ -1,26 +1,19 @@
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from matplotlib.patches import Patch
 import numpy as np
 import copy
-import warnings
 import random
 import scipy
 import pickle
 import os
 import nept
-import scalebar
 
 from loading_data import get_data
 from analyze_tuning_curves import get_only_tuning_curves
+from plots_decoding import (plot_session,
+                            plot_likelihood_overspace,
+                            plot_counts_merged,
+                            plot_counts_averaged,
+                            plot_summary_individual)
 from utils_maze import get_zones
-from utils_maze import get_bin_centers
-
-thisdir = os.getcwd()
-pickle_filepath = os.path.join(thisdir, "cache", "pickled")
-output_filepath = os.path.join(thisdir, "plots", "trials", "decoding", "classy")
-if not os.path.exists(output_filepath):
-    os.makedirs(output_filepath)
 
 # Set random seeds
 random.seed(0)
@@ -191,98 +184,241 @@ def limit_by_n_swr(session, task_labels, n_swr_thresh, zone_label="u"):
     return session_copy
 
 
-def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=None):
+def get_decoded_swr_plots(infos, group, pickle_filepath, output_filepath,
+                          n_swr_thresh=10, n_shuffles=100, update_cache=False):
 
-    fig = plt.figure(figsize=(12, 6))
-    gs1 = gridspec.GridSpec(1, 4)
-    gs1.update(wspace=0.3, hspace=0.)
+    dont_save_pickle = False
+    plot_individual = False
+    plot_individual_passthresh = False
+    plot_overspace = False
+    plot_summary = True
 
-    for i, zone_label in enumerate(zone_labels):
-        sums = {task_label: [] for task_label in task_labels}
-        n_swrs = {task_label: 0 for task_label in task_labels}
-        for session in sessions:
-            for task_label in task_labels:
-                zone_sums = getattr(session, task_label).sums(zone_label)
-                if zone_sums.size == 1:
-                    sums[task_label].extend([np.nan])
-                else:
-                    sums[task_label].extend(zone_sums)
-                    n_swrs[task_label] += getattr(session, task_label).swrs.n_epochs
+    percentile_thresh = 95
+
+    colours = dict()
+    colours["u"] = "#2b8cbe"
+    colours["shortcut"] = "#31a354"
+    colours["novel"] = "#d95f0e"
+    colours["other"] = "#bdbdbd"
+
+    # swr params
+    swr_params = dict()
+    swr_params["merge_thresh"] = 0.02
+    swr_params["min_length"] = 0.05
+    swr_params["swr_thresh"] = (140.0, 250.0)
+    swr_params["min_involved"] = 4
+
+    task_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
+    zone_labels = ["u", "shortcut", "novel", "other"]
+
+    true_sessions = []
+    shuffled_sessions = []
+    passthresh_sessions = []
+    passthresh_counts = []
+
+    for info in infos:
+        print(info.session_id)
+
+        # Get true data
+        true_path = os.path.join(pickle_filepath, info.session_id + "_likelihoods_true.pkl")
+
+        # Remove previous pickle if update_cache
+        if update_cache:
+            if os.path.exists(true_path):
+                os.remove(true_path)
+
+        # Load pickle if it exists, otherwise compute and pickle
+        if os.path.exists(true_path):
+            print("Loading pickled true likelihoods...")
+            compute_likelihoods = False
+            with open(true_path, 'rb') as fileobj:
+                true_session = pickle.load(fileobj)
+        else:
+            if dont_save_pickle:
+                true_path = None
+            true_session = get_likelihoods(info,
+                                           swr_params,
+                                           task_labels,
+                                           n_shuffles,
+                                           save_path=true_path)
+
+        true_sessions.append(true_session)
+
+        sessions_copy = []
+        for session in true_sessions:
+            session_copy = limit_by_n_swr(session, task_labels, n_swr_thresh)
+            sessions_copy.append(session_copy)
+        true_sessions = sessions_copy
+
+        # Get shuffled data
+        shuffled_path = os.path.join(pickle_filepath,
+                                     info.session_id + "_likelihoods_shuffled-%03d.pkl" % n_shuffles)
+
+        # Remove previous pickle if update_cache
+        if update_cache:
+            if os.path.exists(shuffled_path):
+                os.remove(shuffled_path)
+
+        # Load pickle if it exists, otherwise compute and pickle
+        if os.path.exists(shuffled_path):
+            print("Loading pickled shuffled likelihoods...")
+            with open(shuffled_path, 'rb') as fileobj:
+                shuffled_session = pickle.load(fileobj)
+        else:
+            if dont_save_pickle:
+                shuffled_path = None
+            shuffled_session = get_likelihoods(info,
+                                               swr_params,
+                                               task_labels,
+                                               n_shuffles=n_shuffles,
+                                               save_path=shuffled_path)
+
+        shuffled_sessions.append(shuffled_session)
+        sessions_copy = []
+        for session in true_sessions:
+            session_copy = limit_by_n_swr(session, task_labels, n_swr_thresh)
+            sessions_copy.append(session_copy)
+        shuffled_sessions = sessions_copy
+
+        if plot_individual:
+            filepath = os.path.join(output_filepath, "individual")
+            if not os.path.exists(filepath):
+                os.makedirs(filepath)
+            plot_summary_individual(info, true_session, shuffled_session,
+                                    zone_labels, task_labels, colours, filepath)
+
+        if plot_overspace:
+            filepath = os.path.join(output_filepath, "overspace")
+            if not os.path.exists(filepath):
+                os.makedirs(filepath)
+            plot_likelihood_overspace(info, true_session, task_labels, colours, filepath)
+
+        keep_idx = {task_label: [] for task_label in task_labels}
+        passthresh_count = {task_label: {zone_label: 0 for zone_label in zone_labels} for task_label in task_labels}
 
         for task_label in task_labels:
-            sums[task_label] = np.hstack(sums[task_label])
+            for zone_label in zone_labels:
+                zones = getattr(true_session, task_label).zones
+                true_sums = np.array(getattr(true_session, task_label).sums(zone_label))
+                shuffled_sums = np.array(getattr(shuffled_session, task_label).sums(zone_label))
+                if true_sums.size <= 1 and np.isnan(true_sums).all():
+                    continue
+                elif getattr(true_session, task_label).swrs.n_epochs == 0:
+                    continue
+                else:
+                    for idx in range(true_sums.shape[1]):
+                        percentile = scipy.stats.percentileofscore(np.sort(shuffled_sums[:, idx]), true_sums[:, idx][0])
+                        if percentile >= percentile_thresh:
+                            keep_idx[task_label].append(idx)
+                            passthresh_count[task_label][zone_label] += 1
 
-        means = [np.nanmean(sums[task_label])
-                 if n_swrs[task_label] != 0 else 0.0
-                 for task_label in task_labels]
+        passthresh_counts.append(passthresh_count)
 
-        sems = [np.nanmean(scipy.stats.sem(sums[task_label], nan_policy="omit"))
-                if n_swrs[task_label] != 0 else 0.0
-                for task_label in task_labels]
+        passthresh_path = os.path.join(pickle_filepath, info.session_id + "_likelihoods_true_passthresh.pkl")
 
-        ax = plt.subplot(gs1[i])
-        ax.bar(np.arange(sessions[0].n_tasktimes()),
-               means, yerr=sems, color=colours[zone_label])
+        if update_cache:
+            if os.path.exists(passthresh_path):
+                os.remove(passthresh_path)
 
-        ax.set_ylim([0, 1.])
+        if os.path.exists(passthresh_path):
+            print("Loading pickled passthresh likelihoods...")
+            with open(passthresh_path, 'rb') as fileobj:
+                passthresh_session = pickle.load(fileobj)
+                passthresh_sessions.append(passthresh_session)
 
-        ax.set_xticks(np.arange(sessions[0].n_tasktimes()))
-        ax.set_xticklabels(task_labels, rotation=90)
+        else:
+            passthresh_session = Session(true_session.position, task_labels, zones)
 
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.yaxis.set_ticks_position('left')
-        ax.xaxis.set_ticks_position('bottom')
+            for task_label in task_labels:
+                passthresh_idx = np.sort(np.unique(keep_idx[task_label]))
+                if len(passthresh_idx) > 0:
+                    passthresh_likelihoods = np.array(getattr(true_session, task_label).likelihoods)[:, passthresh_idx]
+                    passthresh_swrs = getattr(true_session, task_label).swrs[passthresh_idx]
+                else:
+                    passthresh_likelihoods = np.ones(
+                        (1, 1) + getattr(true_session, task_label).likelihoods.shape[2:]) * np.nan
+                    passthresh_swrs = nept.Epoch([], [])
 
-        if i > 0:
-            ax.set_yticklabels([])
+                passthresh_tuningcurves = getattr(true_session, task_label).tuning_curves
 
-        if i == 0:
-            ax.set_ylabel("Proportion")
+                tasktime = getattr(passthresh_session, task_label)
+                tasktime.likelihoods = passthresh_likelihoods
+                tasktime.swrs = passthresh_swrs
+                tasktime.tuning_curves = passthresh_tuningcurves
 
-        if zone_label == "other":
-            for n_tasktimes, task_label in enumerate(task_labels):
-                ax.text(n_tasktimes, 0.01, str(n_swrs[task_label]), ha="center", fontsize=14)
+            passthresh_sessions.append(passthresh_session)
 
-    plt.text(1., 1., "n sessions: "+ str(len(sessions)), horizontalalignment='left',
-             verticalalignment='top', fontsize=14)
-
-    fig.suptitle(title, fontsize=16)
-
-    legend_elements = [Patch(facecolor=colours[zone_label], edgecolor='k', label=zone_label)
-                       for zone_label in zone_labels]
-
-    plt.legend(handles=legend_elements, bbox_to_anchor=(1., 0.95))
-
-    gs1.tight_layout(fig)
-
-    if filepath is not None:
-        plt.savefig(filepath)
-        plt.close()
-    else:
-        plt.show()
+            passthresh_session.pickle(passthresh_path)
 
 
-import info.r063d2 as info
+        if plot_individual_passthresh:
+            filepath = os.path.join(output_filepath, "passthresh")
+            if not os.path.exists(filepath):
+                os.makedirs(filepath)
+            plot_summary_individual(info, passthresh_session, shuffled_session, zone_labels,
+                                    task_labels, colours, filepath)
 
-# swr params
-swr_params = dict()
-swr_params["merge_thresh"] = 0.02
-swr_params["min_length"] = 0.05
-swr_params["swr_thresh"] = (140.0, 250.0)
-swr_params["min_involved"] = 4
+    if plot_summary:
+        title = group + "_average-posterior-during-SWRs_true"
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_session(true_sessions, title, task_labels, zone_labels, colours, filepath)
 
-colours = dict()
-colours["u"] = "#2b8cbe"
-colours["shortcut"] = "#31a354"
-colours["novel"] = "#d95f0e"
-colours["other"] = "#bdbdbd"
+        title = group + "_average-posterior-during-SWRs_shuffled-%03d" % n_shuffles
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_session(shuffled_sessions, title, task_labels, zone_labels, colours, filepath)
 
-task_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
-zone_labels = ["u", "shortcut", "novel", "other"]
+        title = group + "_average-posterior-during-SWRs_passthresh" + str(percentile_thresh)
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_session(passthresh_sessions, title, task_labels, zone_labels, colours, filepath)
 
-session = get_likelihoods(info, swr_params, task_labels, n_swr_thresh=5, n_shuffles=0, save_path=None)
-print(session.pauseA.swrs.n_epochs)
+        title = group + "_merged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_counts_merged(passthresh_counts, title, task_labels, zone_labels, colours, filepath)
 
-title = info.session_id + "_average-posterior-during-SWRs_true"
-plot_session([session], title, task_labels, zone_labels, colours)
+        title = group + "_averaged-posterior-during-SWRs_passthresh" + str(percentile_thresh) + "-counts"
+        filepath = os.path.join(output_filepath, title + ".png")
+        plot_counts_averaged(passthresh_counts, title, task_labels, zone_labels, colours, filepath)
+
+
+def main():
+    from run import (analysis_infos,
+                     r063_infos, r066_infos, r067_infos, r068_infos,
+                     days1234_infos, days5678_infos,
+                     day1_infos, day2_infos, day3_infos, day4_infos, day5_infos, day6_infos, day7_infos, day8_infos)
+
+    thisdir = os.getcwd()
+    pickle_filepath = os.path.join(thisdir, "cache", "pickled")
+    output_filepath = os.path.join(thisdir, "plots", "decoding", "sequenceless")
+    if not os.path.exists(output_filepath):
+        os.makedirs(output_filepath)
+
+    info_groups = dict()
+    info_groups["All"] = analysis_infos
+    info_groups["R063"] = r063_infos
+    info_groups["R066"] = r066_infos
+    info_groups["R067"] = r067_infos
+    info_groups["R068"] = r068_infos
+    info_groups["Days1234"] = days1234_infos
+    info_groups["Days5678"] = days5678_infos
+    info_groups["Day1"] = day1_infos
+    info_groups["Day2"] = day2_infos
+    info_groups["Day3"] = day3_infos
+    info_groups["Day4"] = day4_infos
+    info_groups["Day5"] = day5_infos
+    info_groups["Day6"] = day6_infos
+    info_groups["Day7"] = day7_infos
+    info_groups["Day8"] = day8_infos
+
+    get_decoded_swr_plots(analysis_infos,
+                          group="All",
+                          pickle_filepath=pickle_filepath,
+                          output_filepath=output_filepath,
+                          n_shuffles=100,
+                          update_cache=False)
+
+    for infos, group in zip(info_groups.values(), info_groups.keys()):
+        get_decoded_swr_plots(infos, group, pickle_filepath,
+                              output_filepath, update_cache=False)
+
+if __name__ == "__main__":
+    main()
