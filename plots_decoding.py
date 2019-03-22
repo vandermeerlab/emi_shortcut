@@ -30,7 +30,7 @@ def plot_session(sessions, title, task_labels, zone_labels, colours, filepath=No
         for session in sessions:
             for task_label in task_labels:
                 zone_sums = getattr(session, task_label).sums(zone_label)
-                if zone_sums.size == 1:
+                if zone_sums.size >= 1:
                     sums[task_label].extend([np.nan])
                 else:
                     sums[task_label].extend(zone_sums)
