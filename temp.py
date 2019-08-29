@@ -23,8 +23,6 @@ for task_time in task_times:
     z_thresh = 2.
     merge_thresh = 0.01
     min_length = 0.03
-    fs = info.fs
-    thresh = (140.0, 250.0)
     min_involved = 4
 
     rest_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]
@@ -32,7 +30,7 @@ for task_time in task_times:
     rest_stops = [info.task_times[task_label].stop for task_label in rest_labels]
     rest_lfp = lfp.time_slice(rest_starts, rest_stops)
 
-    swrs = nept.detect_swr_hilbert(rest_lfp, fs, thresh, z_thresh, merge_thresh=merge_thresh, min_length=min_length)
+    swrs = nept.detect_swr_hilbert(rest_lfp, info.fs, z_thresh, merge_thresh=merge_thresh, min_length=min_length)
     print(swrs.stops[-10:])
     swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=min_involved)
     print(swrs.stops[-10:])

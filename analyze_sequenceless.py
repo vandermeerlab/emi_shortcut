@@ -99,7 +99,6 @@ def get_likelihoods(info, swr_params, task_labels, n_shuffles=0, save_path=None)
 
     swrs = nept.detect_swr_hilbert(lfp,
                                    fs=info.fs,
-                                   thresh=swr_params["swr_thresh"],
                                    z_thresh=info.lfp_z_thresh,
                                    merge_thresh=swr_params["merge_thresh"],
                                    min_length=swr_params["min_length"],
@@ -205,7 +204,6 @@ def get_decoded_swr_plots(infos, group, pickle_filepath, output_filepath,
     swr_params = dict()
     swr_params["merge_thresh"] = 0.02
     swr_params["min_length"] = 0.05
-    swr_params["swr_thresh"] = (140.0, 250.0)
     swr_params["min_involved"] = 4
 
     task_labels = ["prerecord", "pauseA", "pauseB", "postrecord"]

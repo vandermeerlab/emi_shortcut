@@ -174,11 +174,10 @@ def plot_swr_stats(info, resting_only, plot_example_swr_rasters, plot_swr_spike_
 
     # Find SWRs for the whole session
     z_thresh = 2.0
-    power_thresh = 3.0
     merge_thresh = 0.02
     min_length = 0.05
-    swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
-                                   power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+    swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, z_thresh=z_thresh,
+                                   merge_thresh=merge_thresh, min_length=min_length)
     print("Total swrs for this session:", str(swrs.n_epochs))
 
     # Restrict SWRs to those with 4 or more participating neurons

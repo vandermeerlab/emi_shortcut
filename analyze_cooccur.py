@@ -66,11 +66,10 @@ def analyze(info, neurons, experiment_time, all_tracks_tc=False):
     sliced_spikes = sliced_spikes.spikes
 
     z_thresh = 3.0
-    power_thresh = 5.0
     merge_thresh = 0.02
     min_length = 0.01
-    swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, thresh=(140.0, 250.0), z_thresh=z_thresh,
-                                  power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+    swrs = nept.detect_swr_hilbert(sliced_lfp, fs=info.fs, z_thresh=z_thresh,
+                                   merge_thresh=merge_thresh, min_length=min_length)
 
     multi_swrs = nept.find_multi_in_epochs(sliced_spikes, swrs, min_involved=4)
 

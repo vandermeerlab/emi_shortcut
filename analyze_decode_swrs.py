@@ -412,7 +412,6 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cac
     # swr params
     merge_thresh = 0.02
     min_length = 0.05
-    swr_thresh = (140.0, 250.0)
 
     task_times = ["prerecord", "pauseA", "pauseB", "postrecord"]
     maze_segments = ["u", "shortcut", "novel", "other"]
@@ -452,8 +451,8 @@ def get_decoded_swr_plots(infos, group, z_thresh=2., power_thresh=3., update_cac
             with open(swrs_path, 'rb') as fileobj:
                 swrs = pickle.load(fileobj)
         else:
-            swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=swr_thresh, z_thresh=z_thresh,
-                                           power_thresh=power_thresh, merge_thresh=merge_thresh, min_length=min_length)
+            swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, z_thresh=z_thresh,
+                                           merge_thresh=merge_thresh, min_length=min_length)
             swrs = nept.find_multi_in_epochs(spikes, swrs, min_involved=4)
 
         rest_epochs = nept.rest_threshold(position, thresh=12., t_smooth=0.8)

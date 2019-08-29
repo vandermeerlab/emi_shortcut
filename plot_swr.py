@@ -17,8 +17,7 @@ for info in infos:
 
     events, position, spikes, lfp, lfp_theta = get_data(info)
 
-    thresh = (140.0, 250.0)
-    swrs = nept.detect_swr_hilbert(lfp, fs=info.fs, thresh=thresh)
+    swrs = nept.detect_swr_hilbert(lfp, fs=info.fs)
 
     filename = info.session_id + '-swr_'
     saveloc = os.path.join(output_filepath, filename)
