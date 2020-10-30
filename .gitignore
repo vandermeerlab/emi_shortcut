@@ -10,5 +10,12 @@ dist
 .ipynb_checkpoints/
 .cache/
 cache/
+data/
 plots/
 None0000000.png
+.doit.db
+*.lprof
+*.bak
+*.dat
+*.dir
+

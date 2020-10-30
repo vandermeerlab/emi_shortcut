@@ -1,0 +1,81 @@
+{
+  "rat_id": "R067_EI",
+  "session_id": "R067d6",
+  "session": "R067-2014-12-05",
+  "species": "rat",
+  "behavior": "shortcut",
+  "target": "dCA1",
+  "experimenter": "Emily Irvine",
+  "lfp_swr_suffix": "CSC07a",
+  "lfp_theta_suffix": "CSC15c",
+  "xedges": [39.58823529411765, 207.58823529411765],
+  "yedges": [-0.117647058823529, 143.88235294117646],
+  "scale_targets": 1.7,
+  "fs": 2000,
+  "path_pts": {
+    "feeder1": [184.7, 18.8],
+    "pt1": [116.2, 14.3],
+    "turn1": [64.5, 19.8],
+    "turn2": [60.1, 101.0],
+    "pt2": [121.0, 113.2],
+    "turn3": [155.0, 111.5],
+    "feeder2": [152.9, 138.8],
+    "shortcut1": [155.2, 16.3],
+    "pt4": "shortcut1",
+    "spt1": [153.4, 76.2],
+    "spt2": [123.6, 80.2],
+    "spt3": [93.0, 83.6],
+    "shortcut2": [89.1, 110.7],
+    "pt5": "shortcut2",
+    "novel1": [60.1, 101.0],
+    "novel2": [57.3, 137.6],
+    "pedestal": [103.6, 45.9],
+    "stable1": [58.4, 60.2]
+  },
+  "problem_path_pts": {
+    "turn1": ["right-up", 10],
+    "turn2": ["down-right", 10],
+    "turn3": ["left-up", 10],
+    "shortcut1": ["right-up", 10],
+    "spt1": ["down-left", 10],
+    "spt3": ["right-up", 10],
+    "shortcut2": ["down-right", 10]
+  },
+  "trajectories": {
+    "u": [
+      "feeder1",
+      "pt4",
+      "pt1",
+      "turn1",
+      "stable1",
+      "turn2",
+      "pt5",
+      "pt2",
+      "turn3",
+      "feeder2"
+    ],
+    "shortcut": ["shortcut1", "spt1", "spt2", "spt3", "shortcut2"],
+    "full_shortcut": [
+      "feeder1",
+      "shortcut1",
+      "spt1",
+      "spt2",
+      "spt3",
+      "shortcut2",
+      "pt2",
+      "turn3",
+      "feeder2"
+    ],
+    "novel": ["novel1", "novel2"]
+  },
+  "full_standard_maze": true,
+  "lfp_z_thresh": 1.5,
+  "trials": {
+    "manual": {
+      "exploratory": [],
+      "u": [19, 22, 54, 119, 207, 209, 213, 216, 217],
+      "novel": [89, 200, 203],
+      "full_shortcut": []
+    }
+  }
+}

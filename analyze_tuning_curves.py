@@ -1,336 +1,1218 @@
-import os
-import numpy as np
-import pickle
-from shapely.geometry import Point, LineString
-
 import nept
+import numpy as np
+import scipy.interpolate
+import scipy.stats
+from shapely.geometry import Point
 
-from loading_data import get_data
-from utils_maze import spikes_by_position
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
-
-
-def expand_line(start_pt, stop_pt, line, expand_by):
-    """Expands shapely Linestring.
-
-    Parameters
-    ----------
-    start_pt : shapely.Point
-    stop_pt : shapely.Point
-    line : shapely.LineString
-    expand_by : float
-        Amount to expand the line.
-
-    Returns
-    -------
-    zone : shapely object
-    """
-    line_expanded = line.buffer(expand_by)
-    zone = start_pt.union(line_expanded).union(stop_pt)
-    return zone
+import meta
+import meta_session
+import paths
+from tasks import task
 
 
-def find_ideal(info, position, expand_by=6):
-    """Finds linear and zones for ideal trajectories.
+def has_field(tuning_curve):
+    # If a neuron has a field near the end of the track, it might not be included
+    # though it would be included if we did this check before clipping the end of
+    # the field. Therefore, we add some a few valid bins to the end of diff to make
+    # sure these are included. meta.consecutive_bins = 5, so we add 4 on either side
 
-        Parameters
-        ----------
-        info : module
-            Contains session-specific information.
-        position : nept.Position
-        expand_by : int or float
-            This is how much you wish to expand the line to fit
-            the animal's actual movements. Default is set to 6.
-
-        Returns
-        -------
-        linear : dict
-            With u, shortcut, novel keys. Each value is a unique
-            shapely.LineString object.
-        zone : dict
-            With 'ushort', 'u', 'novel', 'uped', 'unovel', 'pedestal',
-            'novelped', 'shortcut', 'shortped' keys.
-            Each value is a unique shapely.Polygon object.
-
-        """
-    u_line = LineString(info.u_trajectory)
-    shortcut_line = LineString(info.shortcut_trajectory)
-    novel_line = LineString(info.novel_trajectory)
-
-    u_start = Point(info.u_trajectory[0])
-    u_stop = Point(info.u_trajectory[-1])
-    shortcut_start = Point(info.shortcut_trajectory[0])
-    shortcut_stop = Point(info.shortcut_trajectory[-1])
-    novel_start = Point(info.novel_trajectory[0])
-    novel_stop = Point(info.novel_trajectory[-1])
-    pedestal_center = Point(info.path_pts['pedestal'][0], info.path_pts['pedestal'][1])
-    pedestal = pedestal_center.buffer(expand_by*2.2)
-
-    zone = dict()
-    zone['u'] = expand_line(u_start, u_stop, u_line, expand_by)
-    zone['shortcut'] = expand_line(shortcut_start, shortcut_stop, shortcut_line, expand_by)
-    zone['novel'] = expand_line(novel_start, novel_stop, novel_line, expand_by)
-    zone['ushort'] = zone['u'].intersection(zone['shortcut'])
-    zone['unovel'] = zone['u'].intersection(zone['novel'])
-    zone['uped'] = zone['u'].intersection(pedestal)
-    zone['shortped'] = zone['shortcut'].intersection(pedestal)
-    zone['novelped'] = zone['novel'].intersection(pedestal)
-    zone['pedestal'] = pedestal
-
-    u_idx = []
-    shortcut_idx = []
-    novel_idx = []
-    other_idx = []
-    for pos_idx in range(len(position.time)):
-        point = Point([position.x[pos_idx], position.y[pos_idx]])
-        if zone['u'].contains(point) or zone['ushort'].contains(point) or zone['unovel'].contains(point):
-            u_idx.append(pos_idx)
-        elif zone['shortcut'].contains(point) or zone['shortped'].contains(point):
-            shortcut_idx.append(pos_idx)
-        elif zone['novel'].contains(point) or zone['novelped'].contains(point):
-            novel_idx.append(pos_idx)
-        else:
-            other_idx.append(pos_idx)
-
-    u_pos = position[u_idx]
-    shortcut_pos = position[shortcut_idx]
-    novel_pos = position[novel_idx]
-    other_pos = position[other_idx]
-
-    linear = dict()
-    if len(u_pos.time) > 0:
-        linear['u'] = u_pos.linearize(u_line, zone['u'])
-    else:
-        linear['u'] = None
-    if len(shortcut_pos.time) > 0:
-        linear['shortcut'] = shortcut_pos.linearize(shortcut_line, zone['shortcut'])
-    else:
-        linear['shortcut'] = None
-    if len(novel_pos.time) > 0:
-        linear['novel'] = novel_pos.linearize(novel_line, zone['novel'])
-    else:
-        linear['novel'] = None
-
-    return linear, zone
+    diffs = np.diff(
+        np.hstack(([0, 1, 1, 1, 1], tuning_curve > meta.min_hz, [1, 1, 1, 1, 0]))
+    )
+    field_lengths = np.where(diffs < 0)[0] - np.where(diffs > 0)
+    return (
+        np.any(field_lengths > meta.consecutive_bins)
+        and np.nanmax(tuning_curve) > meta.peak_hz_above
+    )
 
 
-def get_tc_1d(info, position, spikes, pickled_tc, binsize, expand_by=2, sampling_rate=1/30.):
-    """Calls 1D tuning curve.
+def restrict_linear_and_spikes(
+    linear, spikes, maze_times, trials, *, speed_limit, t_smooth
+):
+    # restrict to maze times
+    linear = linear[maze_times]
+    spikes = [
+        spiketrain.time_slice(maze_times.starts, maze_times.stops)
+        for spiketrain in spikes
+    ]
 
-        Parameters
-        ----------
-        info : module
-            Contains session-specific information.
-        position : nept.Position
-        spikes : list
-            Contains nept.SpikeTrain for each neuron.
-        pickled_tc: str
-            Absolute location of where tuning_curve.pkl files are saved.
+    # restrict to trials
+    linear = linear[trials]
+    spikes = [
+        spiketrain.time_slice(trials.starts, trials.stops) for spiketrain in spikes
+    ]
 
-        Returns
-        -------
-        tc : dict (1D)
-            With u, shortcut, novel keys. Each value is a list of list, where
-            each inner array represents an individual neuron's tuning curve.
-    """
-    linear, zone = find_ideal(info, position, expand_by)
-
-    thisdir = os.path.dirname(os.path.realpath(__file__))
-    pickle_filepath = os.path.join(thisdir, 'cache', 'pickled')
-    spike_pos_filename = info.session_id + '_spike_position_phase3.pkl'
-    pickled_spike_pos = os.path.join(pickle_filepath, spike_pos_filename)
-    if os.path.isfile(pickled_spike_pos):
-        with open(pickled_spike_pos, 'rb') as fileobj:
-            spike_position = pickle.load(fileobj)
-    else:
-        spike_position = spikes_by_position(spikes, zone, position)
-        with open(pickled_spike_pos, 'wb') as fileobj:
-            pickle.dump(spike_position, fileobj)
-
-    tuning_curves = dict()
-    if len(linear['u'].x) > 0:
-        tuning_curves['u'] = nept.tuning_curve(linear['u'], spike_position['u'], binsize)
-    else:
-        tuning_curves['u'] = None
-    if len(linear['shortcut'].x) > 0:
-        tuning_curves['shortcut'] = nept.tuning_curve(linear['shortcut'], spike_position['shortcut'], binsize)
-    else:
-        tuning_curves['shortcut'] = None
-    if len(linear['novel'].x) > 0:
-        tuning_curves['novel'] = nept.tuning_curve(linear['novel'], spike_position['novel'], binsize)
-    else:
-        tuning_curves['novel'] = None
-
-    with open(pickled_tc, 'wb') as fileobj:
-        pickle.dump(tuning_curves, fileobj)
-
-    return tuning_curves
+    # speed threshold
+    run_epoch = nept.run_threshold(linear, thresh=speed_limit, t_smooth=t_smooth)
+    linear = linear[run_epoch]
+    spikes = [
+        spiketrain.time_slice(run_epoch.starts, run_epoch.stops)
+        for spiketrain in spikes
+    ]
+    return linear, spikes
 
 
-def get_odd_firing_idx(tuning_curve, max_mean_firing):
-    """Find indices where neuron is firing too much to be considered a place cell
+def filter_and_sort(tuning_curves, spikes):
+    order = [i for i in range(tuning_curves.shape[0])]
 
-    Parameters
-    ----------
-    tuning_curve :
-    max_mean_firing : int or float
-        A neuron with a max mean firing above this level is considered to have odd
-        firing and it's index will be added to the odd_firing_idx.
+    # Remove inactive neurons
+    order = [i for i in order if spikes[i].time.size > meta.min_n_spikes]
 
-    Returns
-    -------
-    odd_firing_idx : list of ints
-        Where each int is an index into the full list of neurons.
+    # Remove neurons without fields
+    order = [i for i in order if has_field(tuning_curves[i])]
 
-        """
-    odd_firing_idx = []
-    for idx in range(len(tuning_curve)):
-        if (np.mean(tuning_curve[idx]) > max_mean_firing):
-            odd_firing_idx.append(idx)
-    return odd_firing_idx
+    # Order by location of max peak
+    maxpeak_loc = [np.argmax(tuning_curves[i]) for i in order]
+    return [order[i] for i in np.argsort(maxpeak_loc)]
 
 
-def get_outputs(infos):
-    outputs = []
-    for info in infos:
-        outputs.append(os.path.join(pickle_filepath, info.session_id + '_tuning-curve.pkl'))
-    return outputs
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_raw_tuning_spikes", "raw_linear_restricted"],
+)
+def cache_full_raw_tuning_spikes(info, *, task_times, raw_linear, spikes, trials):
+    linear = {}
+    tuning_spikes = {}
+    for trajectory in meta.trajectories:
+        linear[trajectory], tuning_spikes[trajectory] = restrict_linear_and_spikes(
+            linear=raw_linear[f"{trajectory}_with_feeders"],
+            spikes=spikes,
+            maze_times=task_times["maze_times"],
+            trials=trials[trajectory],
+            speed_limit=meta.speed_limit,
+            t_smooth=meta.t_smooth,
+        )
+    return {"full_raw_tuning_spikes": tuning_spikes, "raw_linear_restricted": linear}
 
 
-def get_outputs_all(infos):
-    outputs = []
-    for info in infos:
-        outputs.append(os.path.join(pickle_filepath, info.session_id + '_tuning-curve_all-phases.pkl'))
-    return outputs
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_raw_tuning_curves", "raw_occupancy"],
+)
+def cache_full_raw_tuning_curves(
+    info, *, raw_linear_restricted, full_raw_tuning_spikes, lines
+):
+    tcs = {}
+    occ = {}
+    for trajectory in meta.trajectories:
+        linear_max = (
+            lines[f"{trajectory}_with_feeders"].project(
+                Point(*info.path_pts["feeder2"])
+            )
+            + meta.feeder_dist
+        )
+        tcs[trajectory], occ[trajectory] = nept.tuning_curve_1d(
+            raw_linear_restricted[trajectory],
+            full_raw_tuning_spikes[trajectory],
+            edges=nept.get_edges(
+                0,
+                linear_max,
+                binsize=meta.tc_binsize,
+                lastbin=False,
+            ),
+            gaussian_std=meta.gaussian_std,
+            min_occupancy=meta.min_occupancy,
+        )
+    return {"full_raw_tuning_curves": tcs, "raw_occupancy": occ}
 
 
-def get_only_tuning_curves(info, position, spikes, epoch_of_interest):
-    sliced_position = position.time_slice(epoch_of_interest.starts, epoch_of_interest.stops)
-    sliced_spikes = [spiketrain.time_slice(epoch_of_interest.starts, epoch_of_interest.stops) for spiketrain in spikes]
-
-    # Limit position and spikes to only running times
-    run_epoch = nept.run_threshold(sliced_position, thresh=10., t_smooth=0.8)
-    run_position = sliced_position[run_epoch]
-    tuning_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
-
-    tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, info.xedges, info.yedges,
-                                         occupied_thresh=0.5, gaussian_std=0.3)
-
-    return tuning_curves
+@task(infos=meta_session.all_infos, cache_saves="raw_tc_order")
+def cache_raw_tc_order(info, *, full_raw_tuning_curves, full_raw_tuning_spikes):
+    return {
+        trajectory: filter_and_sort(
+            tuning_curves=full_raw_tuning_curves[trajectory],
+            spikes=full_raw_tuning_spikes[trajectory],
+        )
+        for trajectory in meta.trajectories
+    }
 
 
-def get_tuning_curves(info, sliced_position, sliced_spikes, xedges, yedges, speed_limit=10.0, t_smooth=0.8,
-                      min_n_spikes=100, phase_id=None, trial_times=None, trial_number=None, cache=True):
-    """
+@task(infos=meta_session.all_infos, cache_saves="raw_tuning_curves")
+def cache_raw_tuning_curves(info, *, full_raw_tuning_curves, raw_tc_order):
+    return {
+        trajectory: full_raw_tuning_curves[trajectory][raw_tc_order[trajectory]]
+        for trajectory in meta.trajectories
+    }
 
-    Parameters
-    ----------
-    info: module
-    sliced_position: nept.Position
-    speed_limit: float
-    min_n_spikes: int or None
-    phase_id: str
-    trial_times: nept.Epoch or None
-    trial_number: int or None
-    cache: bool
 
-    Returns
-    -------
-    neurons: nept.Neurons
+@task(infos=meta_session.all_infos, cache_saves="raw_tuning_spikes")
+def cache_raw_tuning_spikes(info, *, full_raw_tuning_spikes, raw_tc_order):
+    return {
+        trajectory: [
+            full_raw_tuning_spikes[trajectory][i] for i in raw_tc_order[trajectory]
+        ]
+        for trajectory in meta.trajectories
+    }
 
-    """
-    print('generating tuning curves for', info.session_id)
 
-    if trial_times is not None and trial_times.n_epochs != 1:
-        raise AssertionError("trial_times must only contain one epoch (start, stop)")
+@task(infos=meta_session.all_infos, cache_saves="raw_tc_spikes")
+def cache_raw_tc_spikes(info, *, spikes, raw_tc_order):
+    return {
+        trajectory: [spikes[i] for i in raw_tc_order[trajectory]]
+        for trajectory in meta.trajectories
+    }
 
-    if trial_number is None:
-        trial_number = ""
 
-    if trial_times is None:
-        trial_times = nept.Epoch([], [])
+@task(infos=meta_session.all_infos, cache_saves="raw_test_tuning_spikes")
+def cache_raw_test_tuning_spikes(info, *, task_times, raw_linear, spikes, trials):
+    tuning_spikes = {}
+    for trajectory in meta.trajectories:
+        # Generate a single 3 Hz tuning curve
+        _, tuning_spikes[trajectory] = restrict_linear_and_spikes(
+            linear=raw_linear[f"{trajectory}_with_feeders"],
+            spikes=[
+                nept.SpikeTrain(
+                    time=np.arange(
+                        raw_linear[trajectory].time[0] + jitter,
+                        raw_linear[trajectory].time[-1] + jitter,
+                        step=1 / 3,
+                    ),
+                )
+                for jitter in np.linspace(0, 1 / 3, 200)
+            ],
+            maze_times=task_times["maze_times"],
+            trials=trials[trajectory],
+            speed_limit=meta.speed_limit,
+            t_smooth=meta.t_smooth,
+        )
+    return tuning_spikes
 
-    phase1 = nept.Epoch(info.task_times['phase1'].start, info.task_times['phase1'].stop)
-    phase2 = nept.Epoch(info.task_times['phase2'].start, info.task_times['phase2'].stop)
-    phase3 = nept.Epoch(info.task_times['phase3'].start, info.task_times['phase3'].stop)
 
-    if phase_id is None:
-        track_starts = []
-        track_stops = []
-        for phase in [phase1, phase2, phase3]:
-            if phase.overlaps(trial_times).durations.size > 0:
-                if trial_times.start < phase.start:
-                    phase = nept.Epoch(trial_times.stop, phase.stop)
-                elif trial_times.stop > phase.stop:
-                    phase = nept.Epoch(phase.start, trial_times.start)
-                else:
-                    phase = nept.Epoch([phase.start, trial_times.start], [trial_times.stop, phase.stop]) # TODO check logic
-            track_starts.extend(phase.starts)
-            track_stops.extend(phase.stops)
-        filename = info.session_id + '_neurons_all-phases' + str(trial_number) + '.pkl'
-    else:
-        phase = nept.Epoch(info.task_times[phase_id].start, info.task_times[phase_id].stop)
+@task(infos=meta_session.all_infos, cache_saves="raw_test_tuning_curves")
+def cache_raw_test_tuning_curves(
+    info, *, raw_linear_restricted, raw_test_tuning_spikes, lines
+):
+    tcs = {}
+    for trajectory in meta.trajectories:
+        linear_max = (
+            lines[f"{trajectory}_with_feeders"].project(
+                Point(*info.path_pts["feeder2"])
+            )
+            + meta.feeder_dist
+        )
+        tcs[trajectory], _ = nept.tuning_curve_1d(
+            raw_linear_restricted[trajectory],
+            raw_test_tuning_spikes[trajectory],
+            edges=nept.get_edges(
+                0,
+                linear_max,
+                binsize=meta.tc_binsize,
+                lastbin=False,
+            ),
+            gaussian_std=meta.gaussian_std,
+            min_occupancy=meta.min_occupancy,
+        )
+    return tcs
 
-        track_starts = []
-        track_stops = []
-        if phase.overlaps(trial_times).durations.size > 0:
-            if trial_times.start < phase.start:
-                phase = nept.Epoch(trial_times.stop, phase.stop)
-            elif trial_times.stop > phase.stop:
-                phase = nept.Epoch(phase.start, trial_times.start)
+
+@task(infos=meta_session.all_infos, cache_saves="test_tuning_spikes")
+def cache_test_tuning_spikes(info, *, task_times, tc_linear, spikes, trials):
+    tuning_spikes = {}
+    for trajectory in meta.trajectories:
+        # Generate a single 3 Hz tuning curve
+        _, tuning_spikes[trajectory] = restrict_linear_and_spikes(
+            linear=tc_linear[trajectory],
+            spikes=[
+                nept.SpikeTrain(
+                    time=np.arange(
+                        tc_linear[trajectory].time[0] + jitter,
+                        tc_linear[trajectory].time[-1] + jitter,
+                        step=1 / 3,
+                    ),
+                )
+                for jitter in np.linspace(0, 1 / 3, 200)
+            ],
+            maze_times=task_times["maze_times"],
+            trials=trials[trajectory],
+            speed_limit=meta.std_speed_limit,
+            t_smooth=meta.std_t_smooth,
+        )
+    return tuning_spikes
+
+
+@task(infos=meta_session.all_infos, cache_saves="test_tuning_curves")
+def cache_test_tuning_curves(info, *, tc_linear_restricted, test_tuning_spikes, lines):
+    tcs = {}
+    for trajectory in meta.trajectories:
+        tcs[trajectory], _ = nept.tuning_curve_1d(
+            tc_linear_restricted[trajectory],
+            test_tuning_spikes[trajectory],
+            edges=meta.tc_linear_bin_edges,
+            gaussian_std=meta.std_gaussian_std,
+            min_occupancy=meta.std_min_occupancy,
+        )
+        tcs[trajectory] = tcs[trajectory][
+            :, meta.tc_extra_bins_before : -meta.tc_extra_bins_after
+        ]
+        if not info.full_standard_maze:
+            tcs[trajectory][
+                :, meta.linear_bin_centers < meta.short_standard_points["feeder1"]
+            ] = np.nan
+    return tcs
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_tuning_spikes", "tc_linear_restricted"],
+)
+def cache_full_tuning_spikes(info, *, task_times, tc_linear, spikes, trials):
+    linear = {}
+    tuning_spikes = {}
+    for trajectory in meta.trajectories:
+        linear[trajectory], tuning_spikes[trajectory] = restrict_linear_and_spikes(
+            linear=tc_linear[trajectory],
+            spikes=spikes,
+            maze_times=task_times["maze_times"],
+            trials=trials[trajectory],
+            speed_limit=meta.std_speed_limit,
+            t_smooth=meta.std_t_smooth,
+        )
+    return {"full_tuning_spikes": tuning_spikes, "tc_linear_restricted": linear}
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_tuning_curves", "occupancy"],
+)
+def cache_full_tuning_curves(info, *, tc_linear_restricted, full_tuning_spikes):
+    tcs = {}
+    occ = {}
+    for trajectory in meta.trajectories:
+        tcs[trajectory], occ[trajectory] = nept.tuning_curve_1d(
+            tc_linear_restricted[trajectory],
+            full_tuning_spikes[trajectory],
+            edges=meta.tc_linear_bin_edges,
+            gaussian_std=meta.std_gaussian_std,
+            min_occupancy=meta.std_min_occupancy,
+        )
+        tcs[trajectory] = tcs[trajectory][
+            :, meta.tc_extra_bins_before : -meta.tc_extra_bins_after
+        ]
+        if not info.full_standard_maze:
+            tcs[trajectory][
+                :, meta.linear_bin_centers < meta.short_standard_points["feeder1"]
+            ] = np.nan
+    return {"full_tuning_curves": tcs, "occupancy": occ}
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_order")
+def cache_tc_order(info, *, full_tuning_curves, full_tuning_spikes):
+    return {
+        trajectory: filter_and_sort(
+            tuning_curves=full_tuning_curves[trajectory],
+            spikes=full_tuning_spikes[trajectory],
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tuning_curves")
+def cache_tuning_curves(info, *, full_tuning_curves, tc_order):
+    return {
+        trajectory: full_tuning_curves[trajectory][tc_order[trajectory]]
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tuning_spikes")
+def cache_tuning_spikes(info, *, full_tuning_spikes, tc_order):
+    return {
+        trajectory: [full_tuning_spikes[trajectory][i] for i in tc_order[trajectory]]
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_spikes")
+def cache_tc_spikes(info, *, spikes, tc_order):
+    return {
+        trajectory: [spikes[i] for i in tc_order[trajectory]]
+        for trajectory in meta.trajectories
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_matched_tuning_spikes", "tc_matched_linear_restricted"],
+)
+def cache_full_matched_tuning_spikes(
+    info, *, task_times, lines, tc_matched_linear, spikes, trials
+):
+    linear = {}
+    tuning_spikes = {}
+    for trajectory in meta.trajectories:
+        linear[trajectory], tuning_spikes[trajectory] = restrict_linear_and_spikes(
+            linear=tc_matched_linear[trajectory],
+            spikes=spikes,
+            maze_times=task_times["maze_times"],
+            trials=trials[trajectory],
+            speed_limit=meta.std_speed_limit,
+            t_smooth=meta.std_t_smooth,
+        )
+    return {
+        "full_matched_tuning_spikes": tuning_spikes,
+        "tc_matched_linear_restricted": linear,
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_matched_tuning_curves", "matched_occupancy"],
+)
+def cache_full_matched_tuning_curves(
+    info, *, tc_matched_linear_restricted, full_matched_tuning_spikes
+):
+    tcs = {}
+    occ = {}
+    for trajectory in meta.trajectories:
+        tcs[trajectory], occ[trajectory] = nept.tuning_curve_1d(
+            tc_matched_linear_restricted[trajectory],
+            full_matched_tuning_spikes[trajectory],
+            edges=meta.tc_linear_bin_edges,
+            gaussian_std=meta.std_gaussian_std,
+            min_occupancy=meta.std_min_occupancy,
+        )
+        tcs[trajectory] = tcs[trajectory][
+            :, meta.tc_extra_bins_before : -meta.tc_extra_bins_after
+        ]
+    return {"full_matched_tuning_curves": tcs, "matched_occupancy": occ}
+
+
+@task(infos=meta_session.all_infos, cache_saves="matched_tc_order")
+def cache_matched_tc_order(
+    info, *, full_matched_tuning_curves, full_matched_tuning_spikes
+):
+    return {
+        trajectory: filter_and_sort(
+            tuning_curves=full_matched_tuning_curves[trajectory],
+            spikes=full_matched_tuning_spikes[trajectory],
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="matched_tuning_curves")
+def cache_matched_tuning_curves(info, *, full_matched_tuning_curves, matched_tc_order):
+    return {
+        trajectory: full_matched_tuning_curves[trajectory][matched_tc_order[trajectory]]
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="matched_tuning_spikes")
+def cache_matched_tuning_spikes(info, *, full_matched_tuning_spikes, matched_tc_order):
+    return {
+        trajectory: [
+            full_matched_tuning_spikes[trajectory][i]
+            for i in matched_tc_order[trajectory]
+        ]
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="matched_tc_spikes")
+def cache_matched_tc_spikes(info, *, spikes, matched_tc_order):
+    return {
+        trajectory: [spikes[i] for i in matched_tc_order[trajectory]]
+        for trajectory in meta.trajectories
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_joined_tuning_spikes", "joined_linear_restricted"],
+)
+def cache_full_joined_tuning_spikes(info, *, task_times, joined_linear, spikes, trials):
+    linear, tuning_spikes = restrict_linear_and_spikes(
+        linear=joined_linear,
+        spikes=spikes,
+        maze_times=task_times["maze_times"],
+        trials=trials["u"].join(trials["full_shortcut"]),
+        speed_limit=meta.std_speed_limit * 0.5,
+        t_smooth=meta.std_t_smooth,
+    )
+    return {
+        "full_joined_tuning_spikes": tuning_spikes,
+        "joined_linear_restricted": linear,
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="full_joined_tuning_curves")
+def cache_full_joined_tuning_curves(info, *, full_matched_tuning_curves):
+    n_tcs = full_matched_tuning_curves["u"].shape[0]
+    assert full_matched_tuning_curves["full_shortcut"].shape[0] == n_tcs
+    tcs = np.zeros((n_tcs, 100))
+    tcs[:, :50] = scipy.signal.decimate(full_matched_tuning_curves["u"], 2)
+    tcs[:, 50:] = scipy.signal.decimate(full_matched_tuning_curves["full_shortcut"], 2)
+    return tcs
+
+
+@task(infos=meta_session.all_infos, cache_saves="joined_occupancy")
+def cache_joined_occupancy(info, *, matched_occupancy):
+    occ = np.zeros((100,))
+    nofeeders = slice(meta.tc_extra_bins_before, -meta.tc_extra_bins_after)
+    occ[:50] = scipy.signal.decimate(matched_occupancy["u"][nofeeders], 2)
+    occ[50:] = scipy.signal.decimate(matched_occupancy["full_shortcut"][nofeeders], 2)
+    return occ
+
+
+@task(infos=meta_session.all_infos, cache_saves="joined_tc_order")
+def cache_joined_tc_order(
+    info, *, full_joined_tuning_curves, full_joined_tuning_spikes
+):
+    return filter_and_sort(
+        tuning_curves=full_joined_tuning_curves, spikes=full_joined_tuning_spikes
+    )
+
+
+@task(infos=meta_session.all_infos, cache_saves="joined_tuning_curves")
+def cache_joined_tuning_curves(info, *, full_joined_tuning_curves, joined_tc_order):
+    return full_joined_tuning_curves[joined_tc_order]
+
+
+@task(infos=meta_session.all_infos, cache_saves="joined_tuning_spikes")
+def cache_joined_tuning_spikes(info, *, full_joined_tuning_spikes, joined_tc_order):
+    return [full_joined_tuning_spikes[i] for i in joined_tc_order]
+
+
+@task(infos=meta_session.all_infos, cache_saves="joined_tc_spikes")
+def cache_joined_tc_spikes(info, *, spikes, joined_tc_order):
+    return [spikes[i] for i in joined_tc_order]
+
+
+@task(infos=meta_session.all_infos, cache_saves="tuning_spikes_position")
+def cache_tuning_spikes_position(info, *, position, tuning_spikes):
+    tc_spikes_position = {}
+    for trajectory in meta.trajectories:
+        tc_spikes_position[trajectory] = []
+        for spiketrain in tuning_spikes[trajectory]:
+            f_xy = scipy.interpolate.interp1d(
+                position.time, position.data.T, kind="nearest", fill_value="extrapolate"
+            )
+            tc_spikes_position[trajectory].append(
+                nept.Position(f_xy(spiketrain.time), spiketrain.time)
+            )
+    return tc_spikes_position
+
+
+@task(infos=meta_session.all_infos, cache_saves="tuning_spikes_histogram")
+def cache_tuning_spikes_histogram(info, *, tuning_spikes_position):
+    return {
+        trajectory: [
+            np.histogram2d(pos.y, pos.x, bins=[info.yedges, info.xedges])[0]
+            for pos in tuning_spikes_position[trajectory]
+        ]
+        for trajectory in meta.trajectories
+    }
+
+
+@task(
+    groups=meta_session.analysis_grouped, savepath=("data", "n_neurons_with_fields.tex")
+)
+def save_n_neurons_with_fields(
+    infos, group_name, *, all_tuning_curves, all_spikes, savepath
+):
+    total_n = {trajectory: 0 for trajectory in meta.trajectories}
+    total_withfields = 0
+    total_neurons = 0
+    with open(savepath, "w") as fp:
+        for info, tuning_curves, spikes in zip(infos, all_tuning_curves, all_spikes):
+            total_neurons += len(spikes)
+            print(f"% {info.session_id}", file=fp)
+            for trajectory in meta.trajectories:
+                total_n[trajectory] += len(tuning_curves[trajectory])
+                total_withfields += len(tuning_curves[trajectory])
+                print(
+                    f"% Neurons with field(s) along {trajectory}: "
+                    f"{len(tuning_curves[trajectory])}",
+                    file=fp,
+                )
+            print("% ---------", file=fp)
+        print("% Combined", file=fp)
+        for trajectory in meta.trajectories:
+            traj = trajectory.replace("_", "")
+            print(
+                fr"\def \n{traj}withfields/{{{total_n[trajectory]}}}",
+                file=fp,
+            )
+            print(
+                fr"\def \proportion{traj}withfields/{{{total_n[trajectory]/total_neurons * 100:.1f}}}",
+                file=fp,
+            )
+        print(
+            fr"\def \ntotalneurons/{{{total_neurons}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \ntotalwithfields/{{{total_withfields}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \proportiontotalwithfields/{{{total_withfields/total_neurons * 100:.1f}}}",
+            file=fp,
+        )
+
+
+@task(
+    groups=meta_session.all_grouped,
+    savepath=("data", "n_neurons.table"),
+)
+def save_n_neurons(infos, group_name, *, all_spikes, savepath):
+    with open(savepath, "w") as fp:
+        print(
+            r"""
+\begin{tabular}{c c c c c c c c c}
+\toprule
+\textbf{Rat~ID} & \textbf{Day~1} & \textbf{Day~2} & \textbf{Day~3} & \textbf{Day~4} &
+\textbf{Day~5} & \textbf{Day~6} & \textbf{Day~7} & \textbf{Day~8} \\ [0.5ex]
+\midrule
+        """.strip(),
+            file=fp,
+        )
+
+        day_totals = [[0, 0] for _ in range(8)]
+        for rat in ["63", "66", "67", "68"]:
+            days = [None for _ in range(8)]
+            for info, spikes in zip(infos, all_spikes):
+                if rat not in info.rat_id:
+                    continue
+
+                spikepath = paths.recording_dir(info)
+                spikes4 = nept.load_spikes(spikepath, load_questionable=False)
+                spikes5 = nept.load_spikes(spikepath, load_questionable=True)
+
+                day = int(info.session_id[-1]) - 1
+                days[day] = (len(spikes5), len(spikes4))
+                day_totals[day][0] += len(spikes5)
+                day_totals[day][1] += len(spikes4)
+
+            days = ["-" if day is None else rf"{day[0]}" for day in days]
+
+            space = " [1ex]" if rat == "68" else ""
+            print(
+                rf"\textbf{{R0{rat}}} & {' & '.join(days)} \\{space}",
+                file=fp,
+            )
+
+        day_totals = [rf"{day[0]}" for day in day_totals]
+        print(r"\bottomrule", file=fp)
+        print(
+            rf"\textbf{{Total}} & {' & '.join(day_totals)} \\ [1ex]",
+            file=fp,
+        )
+        print(r"\bottomrule", file=fp)
+        print(r"\end{tabular}", file=fp)
+
+
+@task(infos=meta_session.all_infos, cache_saves="raw_tc_mean")
+def cache_raw_tc_mean(info, *, raw_tuning_curves):
+    return {
+        trajectory: np.nanmean(
+            np.vstack(
+                raw_tuning_curves[trajectory]
+                if raw_tuning_curves[trajectory].shape[0] > 0
+                else np.ones(100) * np.nan
+            ),
+            axis=0,
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="raw_test_tc_mean")
+def cache_raw_test_tc_mean(info, *, raw_test_tuning_curves):
+    return {
+        trajectory: np.nanmean(
+            np.vstack(
+                raw_test_tuning_curves[trajectory]
+                if raw_test_tuning_curves[trajectory].shape[0] > 0
+                else np.ones(100) * np.nan
+            ),
+            axis=0,
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="test_tc_mean")
+def cache_test_tc_mean(info, *, test_tuning_curves):
+    return {
+        trajectory: np.nanmean(np.vstack(test_tuning_curves[trajectory]), axis=0)
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_mean")
+def cache_tc_mean(info, *, tuning_curves):
+    return {
+        trajectory: np.nanmean(np.vstack(tuning_curves[trajectory]), axis=0)
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="matched_tc_mean")
+def cache_matched_tc_mean(info, *, matched_tuning_curves):
+    return {
+        trajectory: np.nanmean(np.vstack(matched_tuning_curves[trajectory]), axis=0)
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="joined_tc_mean")
+def cache_joined_tc_mean(info, *, joined_tuning_curves):
+    return np.nanmean(np.vstack(joined_tuning_curves), axis=0)
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_mean_normalized")
+def cache_tc_mean_normalized(info, *, tuning_curves):
+    return {
+        trajectory: np.nanmean(
+            np.vstack([tc / np.nansum(tc) for tc in tuning_curves[trajectory]]),
+            axis=0,
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="tc_mean")
+def cache_combined_tc_mean(infos, group_name, *, all_tc_mean):
+    return {
+        trajectory: np.nanmean(
+            np.vstack([tc_mean[trajectory] for tc_mean in all_tc_mean]), axis=0
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="matched_tc_mean")
+def cache_combined_matched_tc_mean(infos, group_name, *, all_matched_tc_mean):
+    return {
+        trajectory: np.nanmean(
+            np.vstack([tc_mean[trajectory] for tc_mean in all_matched_tc_mean]), axis=0
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="joined_tc_mean")
+def cache_combined_joined_tc_mean(infos, group_name, *, all_joined_tc_mean):
+    return np.nanmean(np.vstack([tc_mean for tc_mean in all_joined_tc_mean]), axis=0)
+
+
+@task(groups=meta_session.groups, cache_saves="tc_mean_normalized")
+def cache_combined_tc_mean_normalized(infos, group_name, *, all_tc_mean_normalized):
+    return {
+        trajectory: np.nanmean(
+            [tc_mean[trajectory] for tc_mean in all_tc_mean_normalized],
+            axis=0,
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["u_tcs_byphase", "u_tcs_with_fields_byphase"],
+)
+def cache_u_tcs_byphase(info, *, tc_linear, task_times, trials, spikes):
+    rng = np.random.RandomState(seed=meta.seed)
+    u_tcs_byphase = {}
+    min_n_trials = min(
+        trials["u"].time_slice(task_times[phase].start, task_times[phase].stop).n_epochs
+        for phase in meta.run_times
+    )
+    with_fields = {}
+
+    for phase in meta.run_times:
+        phase_trials = trials["u"].time_slice(
+            task_times[phase].start, task_times[phase].stop
+        )
+        # Only use a random min_n_trials trials in that phase
+        phase_trials = phase_trials[
+            rng.choice(
+                np.arange(phase_trials.n_epochs, dtype=int),
+                size=min_n_trials,
+                replace=False,
+            )
+        ]
+        assert phase_trials.n_epochs == min_n_trials
+
+        phase_linear, phase_tuning_spikes = restrict_linear_and_spikes(
+            linear=tc_linear["u"],
+            spikes=spikes,
+            maze_times=task_times[phase],
+            trials=phase_trials,
+            speed_limit=meta.std_speed_limit,
+            t_smooth=meta.std_t_smooth,
+        )
+
+        # get tuning curve
+        tuning_curves, _ = nept.tuning_curve_1d(
+            phase_linear,
+            phase_tuning_spikes,
+            meta.tc_linear_bin_edges,
+            gaussian_std=meta.std_gaussian_std,
+            min_occupancy=meta.std_min_occupancy,
+        )
+        tuning_curves = tuning_curves[
+            :, meta.tc_extra_bins_before : -meta.tc_extra_bins_after
+        ]
+        if not info.full_standard_maze:
+            tuning_curves[
+                :, meta.linear_bin_centers < meta.short_standard_points["feeder1"]
+            ] = np.nan
+
+        u_tcs_byphase[phase] = tuning_curves
+        with_fields[phase] = np.array(
+            [has_field(tc) for tc in u_tcs_byphase[phase]], dtype=bool
+        )
+
+    with_field_anyphase = np.array(
+        [
+            any(with_fields[phase][i] for phase in meta.run_times)
+            for i in range(tuning_curves.shape[0])
+        ],
+        dtype=bool,
+    )
+    u_tcs_byphase = {
+        phase: u_tcs[with_field_anyphase] for phase, u_tcs in u_tcs_byphase.items()
+    }
+    with_fields = {
+        phase: with_fields[phase][with_field_anyphase] for phase in meta.run_times
+    }
+    return {"u_tcs_byphase": u_tcs_byphase, "u_tcs_with_fields_byphase": with_fields}
+
+
+@task(infos=meta_session.analysis_infos, cache_saves="u_tcs_byphase_mean")
+def cache_u_tcs_byphase_mean(info, *, u_tcs_byphase):
+    return {phase: np.nanmean(u_tcs_byphase[phase], axis=0) for phase in meta.run_times}
+
+
+@task(infos=meta_session.analysis_infos, cache_saves="u_tcs_byphase_mean_normalized")
+def cache_u_tcs_byphase_mean_normalized(info, *, u_tcs_byphase):
+    return {
+        phase: np.nanmean(
+            np.vstack([tc / np.nansum(tc) for tc in u_tcs_byphase[phase]]), axis=0
+        )
+        for phase in meta.run_times
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="u_tcs_byphase_mean")
+def cache_combined_u_tcs_byphase_mean(infos, group_name, *, all_u_tcs_byphase):
+    return {
+        phase: np.nanmean(
+            np.vstack([u_tcs_byphase[phase] for u_tcs_byphase in all_u_tcs_byphase]),
+            axis=0,
+        )
+        for phase in meta.run_times
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="u_tcs_byphase_mean_normalized")
+def cache_combined_u_tcs_byphase_mean_normalized(
+    infos, group_name, *, all_u_tcs_byphase
+):
+    return {
+        phase: np.nanmean(
+            np.vstack(
+                [
+                    np.vstack([tc / np.nansum(tc) for tc in u_tcs_byphase[phase]])
+                    for u_tcs_byphase in all_u_tcs_byphase
+                ]
+            ),
+            axis=0,
+        )
+        for phase in meta.run_times
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_correlations")
+def cache_tc_correlations(info, *, u_tcs_byphase):
+    tc_correlations = {phases: [] for phases in meta.phases_corr}
+
+    for left, right in [("1", "2"), ("1", "3"), ("2", "3")]:
+        for neuron_left, neuron_right in zip(
+            u_tcs_byphase[f"phase{left}"], u_tcs_byphase[f"phase{right}"]
+        ):
+            valid = (~np.isnan(neuron_left)) & (~np.isnan(neuron_right))
+            neuron_left = neuron_left[valid]
+            neuron_right = neuron_right[valid]
+            correlation, _ = scipy.stats.pearsonr(neuron_left, neuron_right)
+            tc_correlations[f"phases{left}{right}"].append(
+                0 if np.isnan(correlation) else correlation
+            )
+
+    return {phases: np.array(tc_correlations[phases]) for phases in meta.phases_corr}
+
+
+@task(groups=meta_session.groups, cache_saves="tc_correlations")
+def cache_combined_tc_correlations(infos, group_name, *, all_tc_correlations):
+    return {
+        phases: np.hstack(
+            [tc_correlations[phases] for tc_correlations in all_tc_correlations]
+        )
+        for phases in meta.phases_corr
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_correlations_bybin")
+def cache_tc_correlations_bybin(info, *, u_tcs_byphase):
+    tc_correlations_bybin = {phases: [] for phases in meta.phases_corr}
+    n_bins = u_tcs_byphase["phase1"].shape[1]
+
+    for left, right in [("1", "2"), ("1", "3"), ("2", "3")]:
+        for i in range(n_bins):
+            left_bin = u_tcs_byphase[f"phase{left}"][:, i]
+            right_bin = u_tcs_byphase[f"phase{right}"][:, i]
+            valid = (~np.isnan(left_bin)) & (~np.isnan(right_bin))
+            if np.sum(valid) < 2:
+                correlation = 0
             else:
-                phase = nept.Epoch([phase.start, trial_times.start], [trial_times.stop, phase.stop])  # TODO check logic
+                correlation, _ = scipy.stats.pearsonr(left_bin[valid], right_bin[valid])
+            tc_correlations_bybin[f"phases{left}{right}"].append(correlation)
 
-            track_starts.extend(phase.starts)
-            track_stops.extend(phase.stops)
-        filename = info.session_id + '_neurons' + str(trial_number) + '.pkl'
-
-    # limit position to only times when the subject is moving faster than a certain threshold
-    run_epoch = nept.run_threshold(sliced_position, thresh=speed_limit, t_smooth=t_smooth)
-    run_position = sliced_position[run_epoch]
-
-    track_spikes = [spiketrain.time_slice(run_epoch.starts, run_epoch.stops) for spiketrain in sliced_spikes]
-
-    filtered_spikes = []
-    tuning_spikes = []
-    if min_n_spikes is not None:
-        for neuron, neuron_all in zip(track_spikes, sliced_spikes):
-            if len(neuron.time) > min_n_spikes:
-                tuning_spikes.append(neuron)
-                filtered_spikes.append(neuron_all)
-    else:
-        tuning_spikes = track_spikes
-        filtered_spikes = sliced_spikes
-
-    tuning_curves = nept.tuning_curve_2d(run_position, tuning_spikes, xedges, yedges,
-                                         occupied_thresh=0.5, gaussian_std=0.3)
-
-    tuning_curves[np.isnan(tuning_curves)] = 0.
-
-    neurons = nept.Neurons(np.array(filtered_spikes), tuning_curves)
-
-    if cache:
-        pickled_tc = os.path.join(pickle_filepath, filename)
-
-        with open(pickled_tc, 'wb') as fileobj:
-            pickle.dump(neurons, fileobj)
-
-    return neurons
+    return {
+        phases: np.array(tc_correlations_bybin[phases]) for phases in meta.phases_corr
+    }
 
 
-if __name__ == "__main__":
-    from run import analysis_infos, info
-    infos = analysis_infos
-    # infos = [info.r066d1]
+@task(groups=meta_session.groups, cache_saves="tc_correlations_bybin")
+def cache_combined_tc_correlations_bybin(infos, group_name, *, all_u_tcs_byphase):
+    tc_correlations_bybin = {phases: [] for phases in meta.phases_corr}
+    n_bins = all_u_tcs_byphase[0]["phase1"].shape[1]
 
-    if 1:
-        for info in infos:
-            events, position, spikes, lfp, lfp_theta = get_data(info)
-            xedges, yedges = nept.get_xyedges(position, binsize=8)
-            get_tuning_curves(info, position, spikes, xedges, yedges,
-                              min_n_spikes=None, trial_times=None, trial_number=None, cache=True)
-    if 0:
-        for info in infos:
-            get_tuning_curves(info, use_all_tracks=True)
+    for left, right in [("1", "2"), ("1", "3"), ("2", "3")]:
+        left_tcs = np.vstack(
+            tcs_byphase[f"phase{left}"] for tcs_byphase in all_u_tcs_byphase
+        )
+        right_tcs = np.vstack(
+            tcs_byphase[f"phase{right}"] for tcs_byphase in all_u_tcs_byphase
+        )
+        for i in range(n_bins):
+            valid = (~np.isnan(left_tcs[:, i])) & (~np.isnan(right_tcs[:, i]))
+            if np.sum(valid) < 2:
+                correlation = 0
+            else:
+                correlation, _ = scipy.stats.pearsonr(
+                    left_tcs[:, i][valid], right_tcs[:, i][valid]
+                )
+
+            tc_correlations_bybin[f"phases{left}{right}"].append(correlation)
+
+    return {
+        phases: np.array(tc_correlations_bybin[phases]) for phases in meta.phases_corr
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_fields_appear")
+def cache_tc_fields_appear(info, *, u_tcs_with_fields_byphase):
+    appear = {}
+    for left, right in [("1", "2"), ("1", "3"), ("2", "3")]:
+        appear[f"phases{left}{right}"] = (
+            ~u_tcs_with_fields_byphase[f"phase{left}"]
+            & u_tcs_with_fields_byphase[f"phase{right}"]
+        )
+    return appear
+
+
+@task(groups=meta_session.groups, cache_saves="tc_fields_appear")
+def cache_combined_tc_fields_appear(infos, group_name, *, all_tc_fields_appear):
+    return {
+        phases: np.hstack(appear[phases] for appear in all_tc_fields_appear)
+        for phases in meta.phases_corr
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_fields_disappear")
+def cache_tc_fields_disappear(info, *, u_tcs_with_fields_byphase):
+    disappear = {}
+    for left, right in [("1", "2"), ("1", "3"), ("2", "3")]:
+        disappear[f"phases{left}{right}"] = (
+            u_tcs_with_fields_byphase[f"phase{left}"]
+            & ~u_tcs_with_fields_byphase[f"phase{right}"]
+        )
+    return disappear
+
+
+@task(groups=meta_session.groups, cache_saves="tc_fields_disappear")
+def cache_combined_tc_fields_disappear(infos, group_name, *, all_tc_fields_disappear):
+    return {
+        phases: np.hstack(disappear[phases] for disappear in all_tc_fields_disappear)
+        for phases in meta.phases_corr
+    }
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("tcs", "tc_n_remapping.tex"),
+)
+def save_n_remapping(
+    infos,
+    group_name,
+    *,
+    tc_fields_appear,
+    tc_fields_disappear,
+    savepath,
+):
+    with open(savepath, "w") as fp:
+        print("% Number of remapping neurons", file=fp)
+        n_appear = {
+            phases: np.sum(tc_fields_appear[phases]) for phases in meta.phases_corr
+        }
+        n_disappear = {
+            phases: np.sum(tc_fields_disappear[phases]) for phases in meta.phases_corr
+        }
+        n_appear2 = n_appear["phases12"]
+        n_appear3 = n_appear["phases23"]
+        n_disappear2 = n_disappear["phases12"]
+        n_disappear3 = n_disappear["phases23"]
+        n_total2 = n_appear2 + n_disappear2
+        n_total3 = n_appear3 + n_disappear3
+        print(
+            fr"\def \nappeartwo/{{{n_appear2}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \nappearthree/{{{n_appear3}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \ndisappeartwo/{{{n_disappear2}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \ndisappearthree/{{{n_disappear3}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \nremappingtwo/{{{n_total2}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \nremappingthree/{{{n_total3}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_appear_mean")
+def cache_tc_appear_mean(info, *, tc_fields_appear, u_tcs_byphase):
+    return {
+        phases: np.nanmean(
+            u_tcs_byphase[f"phase{phases[-1]}"][tc_fields_appear[phases]], axis=0
+        )
+        for phases in meta.phases_corr
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_appear_maxpeaks")
+def cache_tc_appear_maxpeaks(info, *, tc_fields_appear, u_tcs_byphase):
+    return {
+        phases: np.histogram(
+            np.nanargmax(
+                u_tcs_byphase[f"phase{phases[-1]}"][tc_fields_appear[phases]], axis=1
+            ),
+            bins=meta.linear_bin_edges,
+        )[0]
+        if np.sum(tc_fields_appear[phases]) > 0
+        else np.zeros(100)
+        for phases in meta.phases_corr
+    }
+
+
+@task(groups=meta_session.analysis_grouped, cache_saves="tc_appear_maxpeaks")
+def cache_combined_tc_appear_maxpeaks(infos, group_name, *, all_tc_appear_maxpeaks):
+    return {
+        phases: np.sum(maxpeaks[phases] for maxpeaks in all_tc_appear_maxpeaks)
+        for phases in meta.phases_corr
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_appear_mean_normalized")
+def cache_tc_appear_mean_normalized(info, *, tc_fields_appear, u_tcs_byphase):
+    return {
+        phases: np.nanmean(
+            np.vstack(
+                [
+                    tc / np.nansum(tc)
+                    for tc in u_tcs_byphase[f"phase{phases[-1]}"][
+                        tc_fields_appear[phases]
+                    ]
+                ]
+            )
+            if np.sum(tc_fields_appear[phases]) > 0
+            else [],
+            axis=0,
+        )
+        for phases in meta.phases_corr
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="tc_appear_mean")
+def cache_combined_tc_appear_mean(
+    infos, group_name, *, all_tc_fields_appear, all_u_tcs_byphase
+):
+    tcs = {phases: [] for phases in meta.phases_corr}
+    for u_tcs_byphase, appear in zip(all_u_tcs_byphase, all_tc_fields_appear):
+        for phases in meta.phases_corr:
+            tcs[phases].append(u_tcs_byphase[f"phase{phases[-1]}"][appear[phases]])
+    return {
+        phases: np.nanmean(np.vstack(tc_list), axis=0)
+        for phases, tc_list in tcs.items()
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="tc_appear_mean_normalized")
+def cache_combined_tc_appear_mean_normalized(
+    infos, group_name, *, all_tc_fields_appear, all_u_tcs_byphase
+):
+    tcs = {phases: [] for phases in meta.phases_corr}
+    for u_tcs_byphase, appear in zip(all_u_tcs_byphase, all_tc_fields_appear):
+        for phases in meta.phases_corr:
+            tcs[phases].append(
+                [
+                    tc / np.nansum(tc)
+                    for tc in u_tcs_byphase[f"phase{phases[-1]}"][appear[phases]]
+                ]
+            )
+    return {
+        phases: np.nanmean(np.vstack([tc for tc in tc_list if len(tc) > 0]), axis=0)
+        for phases, tc_list in tcs.items()
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_disappear_mean")
+def cache_tc_disappear_mean(info, *, tc_fields_disappear, u_tcs_byphase):
+    return {
+        phases: np.nanmean(
+            u_tcs_byphase[f"phase{phases[-2]}"][tc_fields_disappear[phases]], axis=0
+        )
+        for phases in meta.phases_corr
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_disappear_maxpeaks")
+def cache_tc_disappear_maxpeaks(info, *, tc_fields_disappear, u_tcs_byphase):
+    return {
+        phases: np.histogram(
+            np.nanargmax(
+                u_tcs_byphase[f"phase{phases[-1]}"][tc_fields_disappear[phases]], axis=1
+            ),
+            bins=meta.linear_bin_edges,
+        )[0]
+        if np.sum(tc_fields_disappear[phases]) > 0
+        else np.zeros(100)
+        for phases in meta.phases_corr
+    }
+
+
+@task(groups=meta_session.analysis_grouped, cache_saves="tc_disappear_maxpeaks")
+def cache_combined_tc_disappear_maxpeaks(
+    infos, group_name, *, all_tc_disappear_maxpeaks
+):
+    return {
+        phases: np.sum(maxpeaks[phases] for maxpeaks in all_tc_disappear_maxpeaks)
+        for phases in meta.phases_corr
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_disappear_mean_normalized")
+def cache_tc_disappear_mean_normalized(info, *, tc_fields_disappear, u_tcs_byphase):
+    return {
+        phases: np.nanmean(
+            np.vstack(
+                [
+                    tc / np.nansum(tc)
+                    for tc in u_tcs_byphase[f"phase{phases[-2]}"][
+                        tc_fields_disappear[phases]
+                    ]
+                ]
+            )
+            if np.sum(tc_fields_disappear[phases]) > 0
+            else [],
+            axis=0,
+        )
+        for phases in meta.phases_corr
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="tc_disappear_mean")
+def cache_combined_tc_disappear_mean(
+    infos, group_name, *, all_tc_fields_disappear, all_u_tcs_byphase
+):
+    tcs = {phases: [] for phases in meta.phases_corr}
+    for u_tcs_byphase, disappear in zip(all_u_tcs_byphase, all_tc_fields_disappear):
+        for phases in meta.phases_corr:
+            tcs[phases].append(u_tcs_byphase[f"phase{phases[-2]}"][disappear[phases]])
+    return {
+        phases: np.nanmean(np.vstack([tc for tc in tc_list if len(tc) > 0]), axis=0)
+        for phases, tc_list in tcs.items()
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="tc_disappear_mean_normalized")
+def cache_combined_tc_disappear_mean_normalized(
+    infos, group_name, *, all_tc_fields_disappear, all_u_tcs_byphase
+):
+    tcs = {phases: [] for phases in meta.phases_corr}
+    for u_tcs_byphase, disappear in zip(all_u_tcs_byphase, all_tc_fields_disappear):
+        for phases in meta.phases_corr:
+            tcs[phases].append(
+                [
+                    tc / np.nansum(tc)
+                    for tc in u_tcs_byphase[f"phase{phases[-2]}"][disappear[phases]]
+                ]
+            )
+    return {
+        phases: np.nanmean(np.vstack([tc for tc in tc_list if len(tc) > 0]), axis=0)
+        for phases, tc_list in tcs.items()
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_correlations_within_phase")
+def cache_tc_correlations_within_phase(info, *, u_tcs_byphase):
+    correlations = {
+        phase: np.zeros((meta.linear_bin_centers.size, meta.linear_bin_centers.size))
+        for phase in meta.run_times
+    }
+    for phase in meta.run_times:
+        for i in range(meta.linear_bin_centers.size):
+            for j in range(meta.linear_bin_centers.size):
+                if not info.full_standard_maze and (i < 20 or j < 20):
+                    correlations[phase][i, j] = np.nan
+                else:
+                    left = u_tcs_byphase[phase][:, i]
+                    right = u_tcs_byphase[phase][:, j]
+                    valid = (~np.isnan(left)) & (~np.isnan(right))
+                    if np.sum(valid) >= 2:
+                        correlations[phase][i, j], _ = scipy.stats.pearsonr(
+                            left[valid], right[valid]
+                        )
+    return correlations
+
+
+@task(groups=meta_session.groups, cache_saves="tc_correlations_within_phase")
+def cache_combined_tc_correlations_within_phase(
+    infos, group_name, *, all_u_tcs_byphase
+):
+    correlations = {
+        phase: np.zeros((meta.linear_bin_centers.size, meta.linear_bin_centers.size))
+        for phase in meta.run_times
+    }
+
+    for phase in meta.run_times:
+        tcs_byphase = np.vstack(tcs[phase] for tcs in all_u_tcs_byphase)
+        for i in range(meta.linear_bin_centers.size):
+            for j in range(meta.linear_bin_centers.size):
+                short = ["short_standard", "day2", "day3", "day4"]
+                if group_name in short and (i < 20 or j < 20):
+                    correlations[phase][i, j] = np.nan
+                else:
+                    left = tcs_byphase[:, i]
+                    right = tcs_byphase[:, j]
+                    valid = (~np.isnan(left)) & (~np.isnan(right))
+                    if np.sum(valid) >= 2:
+                        corr, _ = scipy.stats.pearsonr(left[valid], right[valid])
+                        correlations[phase][i, j] = 0 if np.isnan(corr) else corr
+
+    return correlations

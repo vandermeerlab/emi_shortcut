@@ -1,0 +1,85 @@
+{
+  "rat_id": "R067_EI",
+  "session_id": "R067d7",
+  "session": "R067-2014-12-06",
+  "species": "rat",
+  "behavior": "shortcut",
+  "target": "dCA1",
+  "experimenter": "Emily Irvine",
+  "lfp_swr_suffix": "CSC07a",
+  "lfp_theta_suffix": "CSC15d",
+  "xedges": [47.32258064516129, 227.32258064516128],
+  "yedges": [11.702416810187803, 155.7024168101878],
+  "scale_targets": 1.55,
+  "fs": 2000,
+  "path_pts": {
+    "feeder1": [202.5, 25.8],
+    "pt1": [157.2, 24.0],
+    "turn1": [69.5, 28.2],
+    "pt2": [63.1, 70.0],
+    "turn2": [63.9, 111.6],
+    "turn3": [170.2, 121.1],
+    "feeder2": [169.7, 152.3],
+    "shortcut1": [103.7, 23.6],
+    "pt3": "shortcut1",
+    "spt1": [100.0, 46.3],
+    "spt2": [105.8, 75.1],
+    "spt3": [98.6, 101.2],
+    "shortcut2": [100.8, 122.8],
+    "pt4": "shortcut2",
+    "novel1": [169.0, 24.0],
+    "npt1": [168.8, 51.3],
+    "npt2": [134.7, 55.8],
+    "novel2": [131.6, 86.7],
+    "pedestal": [197.0, 89.5],
+    "pedestal1": [155.3, 78.5],
+    "stable1": [141.6, 121.5]
+  },
+  "problem_path_pts": {
+    "turn1": ["right-up", 10],
+    "turn2": ["down-right", 10],
+    "turn3": ["left-up", 10],
+    "shortcut1": ["right-up", 10],
+    "shortcut2": ["down-right", 10]
+  },
+  "trajectories": {
+    "u": [
+      "feeder1",
+      "novel1",
+      "pt1",
+      "pt3",
+      "turn1",
+      "pt2",
+      "turn2",
+      "pt4",
+      "stable1",
+      "turn3",
+      "feeder2"
+    ],
+    "shortcut": ["shortcut1", "spt1", "spt2", "spt3", "shortcut2"],
+    "full_shortcut": [
+      "feeder1",
+      "novel1",
+      "pt1",
+      "shortcut1",
+      "spt1",
+      "spt2",
+      "spt3",
+      "shortcut2",
+      "stable1",
+      "turn3",
+      "feeder2"
+    ],
+    "novel": ["novel1", "npt1", "npt2", "novel2"]
+  },
+  "full_standard_maze": true,
+  "lfp_z_thresh": 1.5,
+  "trials": {
+    "manual": {
+      "exploratory": [],
+      "u": [1, 7, 34, 40],
+      "novel": [73, 79, 89],
+      "full_shortcut": [77, 91, 131, 185, 203]
+    }
+  }
+}

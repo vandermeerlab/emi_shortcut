@@ -1,0 +1,90 @@
+{
+  "rat_id": "R066_EI",
+  "session_id": "R066d7",
+  "session": "R066-2014-12-04",
+  "species": "rat",
+  "behavior": "shortcut",
+  "target": "dCA1",
+  "experimenter": "Emily Irvine",
+  "lfp_swr_suffix": "CSC02a",
+  "lfp_theta_suffix": "CSC07c",
+  "xedges": [59.484469639179764, 227.48446963917976],
+  "yedges": [11.390716236029345, 155.39071623602933],
+  "scale_targets": 1.55,
+  "fs": 2000,
+  "path_pts": {
+    "feeder1": [202.6, 25.2],
+    "turn1": [63.0, 28.0],
+    "pt1": [63.0, 78.0],
+    "turn2": [63.0, 115.0],
+    "pt2": "shortcut1",
+    "turn3": [169.2, 121.0],
+    "feeder2": [169.0, 150.3],
+    "shortcut1": [102.7, 24.2],
+    "spt1": [103.6, 50.4],
+    "spt2": [106.0, 73.8],
+    "spt3": [100.0, 98.5],
+    "shortcut2": [103.1, 122.2],
+    "pt3": "shortcut2",
+    "novel1": [171.0, 23.0],
+    "npt1": [168.7, 50.4],
+    "npt2": [137.9, 56.9],
+    "novel2": [134.4, 86.3],
+    "pedestal": [194.3, 85.6],
+    "stable1": [139.4, 122.6],
+    "error": [
+      [35.0, 10.0],
+      [135.0, -12.0]
+    ]
+  },
+  "problem_positions": [
+    [6199.592711, 6513.185586, 6855.730149],
+    [6279.716461, 6557.480055, 6893.134649]
+  ],
+  "position_problem_location": [85.0, 20.0],
+  "problem_path_pts": {
+    "turn1": ["right-up", 10],
+    "turn2": ["down-right", 10],
+    "turn3": ["left-up", 10],
+    "shortcut1": ["right-up", 10],
+    "shortcut2": ["down-right", 10]
+  },
+  "trajectories": {
+    "u": [
+      "feeder1",
+      "novel1",
+      "pt2",
+      "turn1",
+      "pt1",
+      "turn2",
+      "pt3",
+      "stable1",
+      "turn3",
+      "feeder2"
+    ],
+    "shortcut": ["shortcut1", "spt1", "spt2", "spt3", "shortcut2"],
+    "full_shortcut": [
+      "feeder1",
+      "novel1",
+      "shortcut1",
+      "spt1",
+      "spt2",
+      "spt3",
+      "shortcut2",
+      "stable1",
+      "turn3",
+      "feeder2"
+    ],
+    "novel": ["novel1", "npt1", "npt2", "novel2"]
+  },
+  "full_standard_maze": true,
+  "lfp_z_thresh": 1.5,
+  "trials": {
+    "manual": {
+      "exploratory": [42],
+      "u": [26, 28, 38, 39, 41, 52],
+      "novel": [],
+      "full_shortcut": [57, 73]
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "rat_id": "R063_EI",
+  "session_id": "R063d6",
+  "session": "R063-2015-03-25",
+  "species": "rat",
+  "behavior": "shortcut",
+  "target": "dCA1",
+  "experimenter": "Emily Irvine",
+  "lfp_swr_suffix": "CSC04a",
+  "lfp_theta_suffix": "CSC13c",
+  "xedges": [21.81818181818182, 213.8181818181818],
+  "yedges": [4.242424242424242, 148.24242424242425],
+  "scale_targets": 1.65,
+  "fs": 2000,
+  "path_pts": {
+    "feeder1": [197.0, 17.0],
+    "turn1": [73.6, 18.0],
+    "pt1": [69.0, 47.1],
+    "pt2": [66.3, 80.4],
+    "turn2": [68.5, 110.0],
+    "pt3": [131.5, 118.0],
+    "turn3": [165.4, 117.2],
+    "feeder2": [166.2, 143.0],
+    "shortcut1": [169.7, 14.9],
+    "pt4": "shortcut1",
+    "spt1": [170.0, 52.3],
+    "spt2": [168.1, 80.0],
+    "spt3": [135.0, 82.1],
+    "spt4": [100.0, 84.0],
+    "shortcut2": [98.6, 117.8],
+    "pt5": "shortcut2",
+    "novel1": [68.5, 107.4],
+    "npt1": [66.0, 140.0],
+    "novel2": [29.0, 142.2],
+    "pedestal": [115.5, 46.6],
+    "stable1": [115.9, 13.8]
+  },
+  "problem_path_pts": {
+    "turn1": ["right-up", 10],
+    "turn2": ["down-right", 10],
+    "turn3": ["left-up", 10],
+    "shortcut1": ["right-up", 10],
+    "spt2": ["down-left", 10],
+    "spt4": ["right-up", 10],
+    "shortcut2": ["down-right", 10]
+  },
+  "trajectories": {
+    "u": [
+      "feeder1",
+      "pt4",
+      "stable1",
+      "turn1",
+      "pt1",
+      "pt2",
+      "turn2",
+      "pt5",
+      "pt3",
+      "turn3",
+      "feeder2"
+    ],
+    "shortcut": ["shortcut1", "spt1", "spt2", "spt3", "spt4", "shortcut2"],
+    "full_shortcut": [
+      "feeder1",
+      "shortcut1",
+      "spt1",
+      "spt2",
+      "spt3",
+      "spt4",
+      "shortcut2",
+      "pt3",
+      "turn3",
+      "feeder2"
+    ],
+    "novel": ["novel1", "npt1", "novel2"]
+  },
+  "full_standard_maze": true,
+  "lfp_z_thresh": 1.5,
+  "trials": {
+    "manual": {
+      "exploratory": [95],
+      "u": [5, 26, 28, 33, 47, 66, 69, 88, 108],
+      "novel": [],
+      "full_shortcut": []
+    }
+  }
+}
