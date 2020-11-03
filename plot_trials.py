@@ -13,8 +13,7 @@ from plots import plot_aligned_position_and_spikes
 from tasks import task
 
 
-@task(groups=meta_session.groups, savepath=("behavior", "behavior_choice.svg"))
-def plot_trial_proportions(infos, group_name, *, trial_proportions, savepath):
+def _plot_trial_proportions(infos, group_name, trial_proportions, savepath):
     x = np.arange(len(trial_proportions))
     y = [np.mean(trial_proportions[trajectory]) for trajectory in meta.trial_types]
     sem = [
@@ -66,6 +65,24 @@ def plot_trial_proportions(infos, group_name, *, trial_proportions, savepath):
 
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)
+
+
+@task(groups=meta_session.groups, savepath=("behavior", "behavior_choice.svg"))
+def plot_trial_proportions(infos, group_name, *, trial_proportions, savepath):
+    _plot_trial_proportions(infos, group_name, trial_proportions, savepath)
+
+
+@task(
+    groups=meta_session.groups, savepath=("behavior", "behavior_choice_firsttrial.svg")
+)
+def plot_firsttrial_proportions(
+    infos, group_name, *, trial_proportions_bytrial, savepath
+):
+    firsttrial_proportions = {
+        trajectory: [trial_proportions_bytrial[trajectory][0]]
+        for trajectory in trial_proportions_bytrial.keys()
+    }
+    _plot_trial_proportions(infos, group_name, firsttrial_proportions, savepath)
 
 
 @task(groups=meta_session.groups, savepath=("behavior", "behavior_duration.svg"))

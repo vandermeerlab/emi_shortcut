@@ -280,9 +280,23 @@ day4_infos = [
     r068d4,
 ]
 
+day4_infos_beh = [
+    r063d4,
+    r066d4,
+    r067d4,
+    r068d4,
+]
+
 day5_infos = [
     r063d5,
     r066d5,
+    r068d5,
+]
+
+day5_infos_beh = [
+    r063d5,
+    r066d5,
+    r067d5,
     r068d5,
 ]
 
@@ -292,9 +306,23 @@ day6_infos = [
     r068d6,
 ]
 
+day6_infos_beh = [
+    r063d6,
+    r066d6,
+    r067d6,
+    r068d6,
+]
+
 day7_infos = [
+    r063d6,
+    r066d6,
+    r068d6,
+]
+
+day7_infos_beh = [
     r063d7,
     r066d7,
+    r067d7,
     r068d7,
 ]
 
@@ -381,6 +409,10 @@ days_grouped = {
     "day5": day5_infos,
     "day6": day6_infos,
     "day7": day7_infos,
+    "day4_beh": day4_infos_beh,
+    "day5_beh": day5_infos_beh,
+    "day6_beh": day6_infos_beh,
+    "day7_beh": day7_infos_beh,
     "day8": day8_infos,
 }
 rats_grouped = {

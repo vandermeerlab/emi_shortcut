@@ -435,7 +435,7 @@ def plot_group_zscored_logodds_byphase(
         full_shuffle=full_shuffle,
         axhline=0.0,
         ylim=(-1.5, 2.1) if group_name not in ["all", "combined"] else (-1.0, 1.0),
-        title=meta.title_labels[group_name]
+        title=meta.title_labels[group_name] + f"\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath,

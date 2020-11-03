@@ -139,6 +139,102 @@ def day_rat_details(panels, savepath):
     savefig(fig, savepath)
 
 
+def day_details(panels, savepath):
+    padding = 50
+    full_width = 2500 + padding
+    full_height = 1000 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            None,
+            panels["day1"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            None,
+            panels["day2"],
+            630 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(None, panels["day3"], 1240 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["day4"], 1850 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["day5"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            None,
+            panels["day6"],
+            630 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            None,
+            panels["day7"],
+            1240 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            None,
+            panels["day8"],
+            1850 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+def rat_details(panels, savepath):
+    padding = 50
+    full_width = 1200 + padding
+    full_height = 900 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            None,
+            panels["rat1"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            None,
+            panels["rat2"],
+            600 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(None, panels["rat3"], 20 + padding, 450 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["rat4"], 600 + padding, 450 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
 @task(
     panels={
         "A": ("grp-all", "mazes", "std_distortion_u.svg"),
@@ -208,8 +304,8 @@ def fig_behavior(panels, savepath):
 @task(
     panels={
         "A": ("grp-all", "behavior", "behavior_barriers.svg"),
-        "B": ("grp-day7", "behavior", "behavior_barriers.svg"),
-        "C": ("grp-all", "behavior", "behavior_choice.svg"),
+        "B": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
+        "C": ("grp-all", "behavior", "behavior_choice_firsttrial.svg"),
         "D": ("grp-all", "behavior", "behavior_firsttrial.svg"),
     },
     savepath=("figures", "behavior_supplemental.svg"),
@@ -241,10 +337,10 @@ def fig_behavior_supplemental(panels, savepath):
         "day1": ("grp-day1", "behavior", "behavior_choice.svg"),
         "day2": ("grp-day2", "behavior", "behavior_choice.svg"),
         "day3": ("grp-day3", "behavior", "behavior_choice.svg"),
-        "day4": ("grp-day4", "behavior", "behavior_choice.svg"),
-        "day5": ("grp-day5", "behavior", "behavior_choice.svg"),
-        "day6": ("grp-day6", "behavior", "behavior_choice.svg"),
-        "day7": ("grp-day7", "behavior", "behavior_choice.svg"),
+        "day4": ("grp-day4_beh", "behavior", "behavior_choice.svg"),
+        "day5": ("grp-day5_beh", "behavior", "behavior_choice.svg"),
+        "day6": ("grp-day6_beh", "behavior", "behavior_choice.svg"),
+        "day7": ("grp-day7_beh", "behavior", "behavior_choice.svg"),
         "day8": ("grp-day8", "behavior", "behavior_choice.svg"),
         "rat1": ("grp-r063", "behavior", "behavior_choice.svg"),
         "rat2": ("grp-r066", "behavior", "behavior_choice.svg"),
@@ -260,13 +356,45 @@ def fig_beh_proportions_details(panels, savepath):
 
 @task(
     panels={
+        "day1": ("grp-day1", "behavior", "behavior_choice.svg"),
+        "day2": ("grp-day2", "behavior", "behavior_choice.svg"),
+        "day3": ("grp-day3", "behavior", "behavior_choice.svg"),
+        "day4": ("grp-day4_beh", "behavior", "behavior_choice.svg"),
+        "day5": ("grp-day5_beh", "behavior", "behavior_choice.svg"),
+        "day6": ("grp-day6_beh", "behavior", "behavior_choice.svg"),
+        "day7": ("grp-day7_beh", "behavior", "behavior_choice.svg"),
+        "day8": ("grp-day8", "behavior", "behavior_choice.svg"),
+    },
+    savepath=("figures", "behavior_prop_day_details.svg"),
+    copy_to="behavior_prop_day_details.pdf",
+)
+def fig_beh_proportions_day_details(panels, savepath):
+    day_details(panels, savepath)
+
+
+@task(
+    panels={
+        "rat1": ("grp-r063", "behavior", "behavior_choice.svg"),
+        "rat2": ("grp-r066", "behavior", "behavior_choice.svg"),
+        "rat3": ("grp-r067beh", "behavior", "behavior_choice.svg"),
+        "rat4": ("grp-r068", "behavior", "behavior_choice.svg"),
+    },
+    savepath=("figures", "behavior_prop_rat_details.svg"),
+    copy_to="behavior_prop_rat_details.pdf",
+)
+def fig_beh_proportions_rat_details(panels, savepath):
+    rat_details(panels, savepath)
+
+
+@task(
+    panels={
         "day1": ("grp-day1", "behavior", "behavior_bytrial_first_n.svg"),
         "day2": ("grp-day2", "behavior", "behavior_bytrial_first_n.svg"),
         "day3": ("grp-day3", "behavior", "behavior_bytrial_first_n.svg"),
-        "day4": ("grp-day4", "behavior", "behavior_bytrial_first_n.svg"),
-        "day5": ("grp-day5", "behavior", "behavior_bytrial_first_n.svg"),
-        "day6": ("grp-day6", "behavior", "behavior_bytrial_first_n.svg"),
-        "day7": ("grp-day7", "behavior", "behavior_bytrial_first_n.svg"),
+        "day4": ("grp-day4_beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "day5": ("grp-day5_beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "day6": ("grp-day6_beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "day7": ("grp-day7_beh", "behavior", "behavior_bytrial_first_n.svg"),
         "day8": ("grp-day8", "behavior", "behavior_bytrial_first_n.svg"),
         "rat1": ("grp-r063", "behavior", "behavior_bytrial_first_n.svg"),
         "rat2": ("grp-r066", "behavior", "behavior_bytrial_first_n.svg"),
@@ -278,6 +406,38 @@ def fig_beh_proportions_details(panels, savepath):
 )
 def fig_beh_bytrial_details(panels, savepath):
     day_rat_details(panels, savepath)
+
+
+@task(
+    panels={
+        "day1": ("grp-day1", "behavior", "behavior_bytrial_first_n.svg"),
+        "day2": ("grp-day2", "behavior", "behavior_bytrial_first_n.svg"),
+        "day3": ("grp-day3", "behavior", "behavior_bytrial_first_n.svg"),
+        "day4": ("grp-day4_beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "day5": ("grp-day5_beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "day6": ("grp-day6_beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "day7": ("grp-day7_beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "day8": ("grp-day8", "behavior", "behavior_bytrial_first_n.svg"),
+    },
+    savepath=("figures", "behavior_bytrial_day_details.svg"),
+    copy_to="behavior_bytrial_day_details.pdf",
+)
+def fig_beh_bytrial_day_details(panels, savepath):
+    day_details(panels, savepath)
+
+
+@task(
+    panels={
+        "rat1": ("grp-r063", "behavior", "behavior_bytrial_first_n.svg"),
+        "rat2": ("grp-r066", "behavior", "behavior_bytrial_first_n.svg"),
+        "rat3": ("grp-r067beh", "behavior", "behavior_bytrial_first_n.svg"),
+        "rat4": ("grp-r068", "behavior", "behavior_bytrial_first_n.svg"),
+    },
+    savepath=("figures", "behavior_bytrial_rat_details.svg"),
+    copy_to="behavior_bytrial_rat_details.pdf",
+)
+def fig_beh_bytrial_rat_details(panels, savepath):
+    rat_details(panels, savepath)
 
 
 @task(
@@ -352,6 +512,57 @@ def fig_tuning_curves_supplemental(panels, savepath):
 
 @task(
     panels={
+        "A": ("grp-combined", "tcs", "tc_correlations_proportion.svg"),
+        "B": ("grp-combined", "tcs", "tc_field_remapping.svg"),
+        "C": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase2.svg"),
+        "D": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase3.svg"),
+        "E": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase1.svg"),
+        "F": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase2.svg"),
+    },
+    savepath=("figures", "tuning_curves_supplemental_ppt.svg"),
+    copy_to="tuning_curves_supplemental_ppt.pdf",
+)
+def fig_tuning_curves_supplemental_ppt(panels, savepath):
+    padding = 20
+    full_width = 1600 + padding
+    full_height = 1400 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("E", panels["A"], 180 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("F", panels["B"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            "G",
+            panels["C"],
+            630 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(None, panels["D"], 1100 + padding, 500 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            "H",
+            panels["E"],
+            630 + padding,
+            950 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(None, panels["F"], 1100 + padding, 950 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "A": ("ind-R066d1", "swrs", "swrs_in_position.svg"),
         "B": ("ind-R068d1", "swrs", "swrs_overtime.svg"),
         "C": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
@@ -397,8 +608,8 @@ def fig_swr(panels, savepath):
 
 @task(
     panels={
-        "A": ("ind-R068d1", "replays", "replays_overtime-full_shortcut.svg"),
-        "B": ("ind-R068d1", "replays", "replays_overtime-u.svg"),
+        "A": ("ind-R068d1", "replays", "replays_overtime-u.svg"),
+        "B": ("ind-R068d1", "replays", "replays_overtime-full_shortcut.svg"),
         "C": ("grp-combined", "swrs", "correlation_hist-u.svg"),
         "D": ("grp-combined", "swrs", "correlation_hist-full_shortcut.svg"),
     },
@@ -434,6 +645,59 @@ def fig_replay(panels, savepath):
     )
     fig.append(
         el("C", panels["D"], 660 + padding, 700 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
+        "B": ("ind-R068d1", "replays", "replays_overtime-u.svg"),
+        "C": ("ind-R068d1", "replays", "replays_overtime-full_shortcut.svg"),
+        "D": ("grp-combined", "swrs", "correlation_hist-u.svg"),
+        "E": ("grp-combined", "swrs", "correlation_hist-full_shortcut.svg"),
+    },
+    savepath=("figures", "replay_ppt.svg"),
+    copy_to="replay_ppt.pdf",
+)
+def fig_replay_ppt(panels, savepath):
+    padding = 50
+    full_width = 1500 + padding
+    full_height = 1100 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            0 + padding,
+            100 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            600 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            None,
+            panels["C"],
+            600 + padding,
+            320 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el("D", panels["D"], 140 + padding, 650 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("E", panels["E"], 750 + padding, 650 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -507,6 +771,128 @@ def fig_replay_summary(panels, savepath):
 
 @task(
     panels={
+        "A": ("grp-combined", "replays", "overlapping_replay_proportions_byphase.svg"),
+        "B": ("grp-combined", "replays", "contrast_replay_proportions_byphase.svg"),
+        "C": (
+            "grp-combined",
+            "replays",
+            "exclusive_replay_proportions_normalized_byphase_u.svg",
+        ),
+        "D": (
+            "grp-combined",
+            "replays",
+            "exclusive_replay_proportions_normalized_byphase_full_shortcut.svg",
+        ),
+    },
+    savepath=("figures", "replay_summary_byphase.svg"),
+    copy_to="replay_summary_byphase.pdf",
+)
+def fig_replay_summary_byphase(panels, savepath):
+    padding = 50
+    full_width = 1300 + padding
+    full_height = 900 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            650 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el("C", panels["C"], 20 + padding, 480 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("D", panels["D"], 650 + padding, 480 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": (
+            "grp-combined",
+            "replays",
+            "overlapping_replay_proportions_byexperience.svg",
+        ),
+        "B": (
+            "grp-combined",
+            "replays",
+            "contrast_replay_proportions_byexperience.svg",
+        ),
+        "C": (
+            "grp-combined",
+            "replays",
+            "overlapping_replay_proportions_byexperience_feederonly.svg",
+        ),
+        "D": (
+            "grp-combined",
+            "replays",
+            "contrast_replay_proportions_byexperience_feederonly.svg",
+        ),
+    },
+    savepath=("figures", "replay_summary_byexperience.svg"),
+    copy_to="replay_summary_byexperience.pdf",
+)
+def fig_replay_summary_byexperience(panels, savepath):
+    padding = 50
+    full_width = 1300 + padding
+    full_height = 900 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            650 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "C",
+            panels["C"],
+            20 + padding,
+            450 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "D",
+            panels["D"],
+            650 + padding,
+            450 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "day1": ("grp-day1", "replays", "exclusive_replay_proportions_byphase.svg"),
         "day2": ("grp-day2", "replays", "exclusive_replay_proportions_byphase.svg"),
         "day3": ("grp-day3", "replays", "exclusive_replay_proportions_byphase.svg"),
@@ -525,6 +911,38 @@ def fig_replay_summary(panels, savepath):
 )
 def fig_replay_details(panels, savepath):
     day_rat_details(panels, savepath)
+
+
+@task(
+    panels={
+        "day1": ("grp-day1", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day2": ("grp-day2", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day3": ("grp-day3", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day4": ("grp-day4", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day5": ("grp-day5", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day6": ("grp-day6", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day7": ("grp-day7", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day8": ("grp-day8", "replays", "exclusive_replay_proportions_byphase.svg"),
+    },
+    savepath=("figures", "replay_day_details.svg"),
+    copy_to="replay_day_details.pdf",
+)
+def fig_replay_day_details(panels, savepath):
+    day_details(panels, savepath)
+
+
+@task(
+    panels={
+        "rat1": ("grp-r063", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "rat2": ("grp-r066", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "rat3": ("grp-r067", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "rat4": ("grp-r068", "replays", "exclusive_replay_proportions_byphase.svg"),
+    },
+    savepath=("figures", "replay_rat_details.svg"),
+    copy_to="replay_rat_details.pdf",
+)
+def fig_replay_rat_details(panels, savepath):
+    rat_details(panels, savepath)
 
 
 @task(
@@ -592,6 +1010,108 @@ def fig_decoding(panels, savepath):
 
 @task(
     panels={
+        "A": ("grp-combined", "decoding", "std_error.svg"),
+        "B": ("grp-combined", "decoding", "std_error_bybin.svg"),
+        "C": (
+            "grp-combined",
+            "decoding",
+            "replay_likelihood_bybin.svg",
+        ),
+    },
+    savepath=("figures", "decoding_ppt.svg"),
+    copy_to="decoding_ppt.pdf",
+)
+def fig_decoding_ppt(panels, savepath):
+    padding = 50
+    full_width = 1500 + padding
+    full_height = 950 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding / 2,
+            20 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            600 + padding / 2,
+            20 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "C",
+            panels["C"],
+            600 + padding / 2,
+            500 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("ind-R066d8", "mazes", "maze_matched.svg"),
+        "B": (
+            "grp-combined",
+            "decoding",
+            "joined_replay_likelihood_bybin.svg",
+        ),
+        "C": (
+            "grp-combined",
+            "decoding",
+            "zscored_logodds_byphase.svg",
+        ),
+    },
+    savepath=("figures", "decoding_logodds_ppt.svg"),
+    copy_to="decoding_logodds_ppt.pdf",
+)
+def fig_decoding_logodds_ppt(panels, savepath):
+    padding = 50
+    full_width = 1500 + padding
+    full_height = 450 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding / 2,
+            20 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            470 + padding / 2,
+            20 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "C",
+            panels["C"],
+            950 + padding / 2,
+            20 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "day1": ("grp-day1", "decoding", "zscored_logodds_byphase.svg"),
         "day2": ("grp-day2", "decoding", "zscored_logodds_byphase.svg"),
         "day3": ("grp-day3", "decoding", "zscored_logodds_byphase.svg"),
@@ -610,6 +1130,38 @@ def fig_decoding(panels, savepath):
 )
 def fig_decoding_details(panels, savepath):
     day_rat_details(panels, savepath)
+
+
+@task(
+    panels={
+        "day1": ("grp-day1", "decoding", "zscored_logodds_byphase.svg"),
+        "day2": ("grp-day2", "decoding", "zscored_logodds_byphase.svg"),
+        "day3": ("grp-day3", "decoding", "zscored_logodds_byphase.svg"),
+        "day4": ("grp-day4", "decoding", "zscored_logodds_byphase.svg"),
+        "day5": ("grp-day5", "decoding", "zscored_logodds_byphase.svg"),
+        "day6": ("grp-day6", "decoding", "zscored_logodds_byphase.svg"),
+        "day7": ("grp-day7", "decoding", "zscored_logodds_byphase.svg"),
+        "day8": ("grp-day8", "decoding", "zscored_logodds_byphase.svg"),
+    },
+    savepath=("figures", "decoding_day_details.svg"),
+    copy_to="decoding_day_details.pdf",
+)
+def fig_decoding_day_details(panels, savepath):
+    day_details(panels, savepath)
+
+
+@task(
+    panels={
+        "rat1": ("grp-r063", "decoding", "zscored_logodds_byphase.svg"),
+        "rat2": ("grp-r066", "decoding", "zscored_logodds_byphase.svg"),
+        "rat3": ("grp-r067", "decoding", "zscored_logodds_byphase.svg"),
+        "rat4": ("grp-r068", "decoding", "zscored_logodds_byphase.svg"),
+    },
+    savepath=("figures", "decoding_rat_details.svg"),
+    copy_to="decoding_rat_details.pdf",
+)
+def fig_decoding_rat_details(panels, savepath):
+    rat_details(panels, savepath)
 
 
 @task(
@@ -954,6 +1506,77 @@ def fig_example_swrs(panels, savepath):
 
 @task(
     panels={
+        "r063": (
+            "ind-R063d7",
+            "ind-replays-without-tc",
+            "R063d7-swr-u-87-pauseA-without-tc.svg",
+        ),
+        "r066": (
+            "ind-R066d5",
+            "ind-replays-without-tc",
+            "R066d5-swr-full_shortcut-195-pauseB-without-tc.svg",
+        ),
+        "r067": (
+            "ind-R067d1",
+            "ind-replays-without-tc",
+            "R067d1-swr-full_shortcut-539-phase3-without-tc.svg",
+        ),
+        "r068": (
+            "ind-R068d8",
+            "ind-replays-without-tc",
+            "R068d8-swr-full_shortcut-380-pauseB-without-tc.svg",
+        ),
+    },
+    savepath=("figures", "example_swrs_ppt.svg"),
+    copy_to="example_swrs_ppt.pdf",
+)
+def fig_example_swrs_ppt(panels, savepath):
+    padding = 50
+    full_width = 1000 + padding
+    full_height = 900 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "R063",
+            panels["r063"],
+            0 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "R066",
+            panels["r066"],
+            500 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "R067",
+            panels["r067"],
+            0 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "R068",
+            panels["r068"],
+            500 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "A": (
             "ind-R066d5",
             "ind-replays-without-tc",
@@ -1039,10 +1662,13 @@ def task_copy_figures():
             )
         return rf'"C:\Program Files\Inkscape\inkscape.com" --export-pdf="{pdf}" "{svg}"'
 
-    for svg, pdf in figure_files:
+    def svg_to_png(svg, png):
+        return rf'"C:\Program Files\Inkscape\inkscape.com" --export-png="{png}" "{svg}"'
+
+    for svg, pdf, png in figure_files:
         yield {
             "name": os.path.basename(svg)[:-4],
-            "actions": [svg_to_pdf(svg, pdf)],
+            "actions": [svg_to_pdf(svg, pdf), svg_to_png(svg, png)],
             "file_dep": [svg],
-            "targets": [pdf],
+            "targets": [pdf, png],
         }

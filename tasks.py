@@ -285,7 +285,13 @@ class FigureTask(Task):
     def create_doit_tasks(self):
         target = self._format_savepath()
         assert isinstance(target, str)
-        FigureTask.figure_files.append((target, paths.thesis_image(self.copy_to)))
+        FigureTask.figure_files.append(
+            (
+                target,
+                paths.thesis_image(self.copy_to),
+                paths.thesis_image(f"{self.copy_to[:-4]}.png"),
+            )
+        )
 
         return {
             "basename": self.function.__name__,

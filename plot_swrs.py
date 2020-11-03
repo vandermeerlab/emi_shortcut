@@ -667,7 +667,7 @@ def plot_group_replay_proportions_byphase(
         ["u", "full_shortcut"],
         ylabel="Proportion of SWRs\nthat are replays",
         pval=replay_proportions_byphase_pval,
-        title=f"{meta.title_labels[group_name]}"
+        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["overlapping"],
@@ -678,7 +678,7 @@ def plot_group_replay_proportions_byphase(
         ylabel="Proportion of SWRs\nthat are replays",
         pval=replay_proportions_byphase_pval,
         ylim=0.225 if group_name not in ["all", "combined"] else None,
-        title=f"{meta.title_labels[group_name]}"
+        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["exclusive"],
@@ -689,7 +689,7 @@ def plot_group_replay_proportions_byphase(
         ylabel="Replay proportion for shortcut - familiar",
         pval=replay_proportions_byphase_pval,
         color_byvalue=True,
-        title=f"{meta.title_labels[group_name]}"
+        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["difference"],
@@ -700,7 +700,7 @@ def plot_group_replay_proportions_byphase(
         ylabel="Replay proportion contrast\nfor shortcut vs familiar",
         pval=replay_proportions_byphase_pval,
         color_byvalue=True,
-        title=f"{meta.title_labels[group_name]}"
+        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["contrast"],
@@ -885,6 +885,65 @@ def plot_group_replay_proportions_byexperience(
         ["contrast"],
         ylabel="Replay proportion contrast\nfor shortcut vs familiar",
         pval=replay_proportions_byexperience_pval,
+        color_byvalue=True,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["contrast"],
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath={
+        key: ("replays", f"{key}_replay_proportions_byexperience_feederonly.svg")
+        for key in ["overlapping", "exclusive", "difference", "contrast"]
+    },
+)
+def plot_group_replay_proportions_byexperience_feederonly(
+    infos,
+    group_name,
+    *,
+    replay_proportions_byexperience_feederonly,
+    replay_proportions_byexperience_feederonly_pval,
+    savepath,
+):
+    plot_replay_metric(
+        replay_proportions_byexperience_feederonly,
+        ["u", "full_shortcut"],
+        ylabel="Proportion of feeder SWRs\nthat are replays",
+        pval=replay_proportions_byexperience_feederonly_pval,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["overlapping"],
+    )
+    plot_replay_metric(
+        replay_proportions_byexperience_feederonly,
+        ["only_u", "only_full_shortcut"],
+        ylabel="Proportion of feeder SWRs\nthat are replays",
+        pval=replay_proportions_byexperience_feederonly_pval,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["exclusive"],
+    )
+    plot_replay_metric(
+        replay_proportions_byexperience_feederonly,
+        ["difference"],
+        ylabel="Feeder replay proportion for shortcut - familiar",
+        pval=replay_proportions_byexperience_feederonly_pval,
+        color_byvalue=True,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["difference"],
+    )
+    plot_replay_metric(
+        replay_proportions_byexperience_feederonly,
+        ["contrast"],
+        ylabel="Feeder replay proportion contrast\nfor shortcut vs familiar",
+        pval=replay_proportions_byexperience_feederonly_pval,
         color_byvalue=True,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]

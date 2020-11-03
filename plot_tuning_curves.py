@@ -365,7 +365,7 @@ def plot_raw_test_tc(info, *, lines, raw_test_tuning_curves, savepath):
             xlabel="Position bins",
             ylabel="Firing rate (Hz)",
             color=meta.colors[trajectory],
-            title=meta.trajectory_labels[trajectory],
+            title=meta.trajectories_labels[trajectory],
             savepath=savepath[trajectory],
         )
 

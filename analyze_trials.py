@@ -176,7 +176,7 @@ def cache_trial_proportions_df(infos, group_name, *, all_trial_proportions):
 
 
 @task(
-    groups=meta_session.analysis_grouped,
+    groups=meta_session.all_grouped,
     savepath=("behavior", "stats_trial_proportions.tex"),
 )
 def save_trial_proportion_stats(infos, group_name, *, trial_proportions_df, savepath):
@@ -227,7 +227,7 @@ def cache_trial_durations_df(infos, group_name, *, all_trial_durations):
 
 
 @task(
-    groups=meta_session.analysis_grouped,
+    groups=meta_session.all_grouped,
     savepath=("behavior", "stats_trial_durations.tex"),
 )
 def save_trial_durations_stats(infos, group_name, *, trial_durations_df, savepath):
@@ -314,7 +314,7 @@ def cache_trial_proportions_bytrial_df(infos, group_name, *, trial_proportions_b
 
 
 @task(
-    groups=meta_session.analysis_grouped,
+    groups=meta_session.all_grouped,
     savepath=("behavior", "stats_trial_proportions_bytrial.tex"),
 )
 def save_trial_proportions_bytrial_statsmodel(
