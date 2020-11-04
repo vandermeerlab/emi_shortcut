@@ -163,9 +163,13 @@ tex_ids = {
     "day2": "daytwo",
     "day3": "daythree",
     "day4": "dayfour",
+    "day4_beh": "dayfourbeh",
     "day5": "dayfive",
+    "day5_beh": "dayfivebeh",
     "day6": "daysix",
+    "day6_beh": "daysixbeh",
     "day7": "dayseven",
+    "day7_beh": "daysevenbeh",
     "day8": "dayeight",
     "prerecord": "prerecord",
     "phase1": "phaseone",
@@ -253,6 +257,7 @@ first_n_trials = 20
 
 # behavior_mostly_shortcut
 mostly_thresh = 0.7
+mostly_n_trials = 5
 
 # 2D tc plot
 n_bins = 100

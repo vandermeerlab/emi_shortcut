@@ -4,9 +4,6 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from scipy import stats
 
-# import pymer4
-from scipy.ndimage import median_filter
-
 import meta
 import meta_session
 from tasks import task
@@ -250,87 +247,43 @@ def cache_combined_trial_durations(infos, group_name, *, all_trial_durations):
     return combined
 
 
-@task(groups=meta_session.groups, cache_saves="trial_proportions_bytrial")
-def cache_trial_proportions_bytrial(infos, group_name, *, all_task_times, all_trials):
-    min_n_trials = 1000
-    for task_times, trials in zip(all_task_times, all_trials):
-        ph3 = task_times["phase3"]
-        n_trials = sum(
-            trials[trajectory].time_slice(ph3.start, ph3.stop).n_epochs
-            for trajectory in meta.trial_types
-        )
-        min_n_trials = min(min_n_trials, n_trials)
-
-    trial_type = [[] for _ in range(min_n_trials)]
-    for task_times, trials in zip(all_task_times, all_trials):
-        ph3 = task_times["phase3"]
-        this_trial_type = [
-            (t_start, trajectory)
-            for trajectory in meta.trial_types
-            for t_start in trials[trajectory].time_slice(ph3.start, ph3.stop).starts
-        ]
-        this_trial_type.sort()
-        for i in range(min_n_trials):
-            trial_type[i].append(this_trial_type[i][1])
-    trial_type = np.array([np.array(tt) for tt in trial_type])
+@task(infos=meta_session.all_infos, cache_saves="trial_proportions_bytrial")
+def cache_trial_proportions_bytrial(info, *, task_times, trials):
+    ph3 = task_times["phase3"]
+    trial_type = [
+        (t_start, trajectory)
+        for trajectory in meta.trial_types
+        for t_start in trials[trajectory].time_slice(ph3.start, ph3.stop).starts
+    ]
+    trial_type.sort()
+    trial_type = np.array([trajectory for _, trajectory in trial_type])
 
     return {
-        trajectory: median_filter(
-            np.sum(trial_type == trajectory, axis=1) / len(infos),
-            size=(3,),
-            mode="nearest",
-        )
+        trajectory: np.array(trial_type == trajectory, dtype=float)
         for trajectory in meta.trial_types
     }
 
 
-@task(groups=meta_session.analysis_grouped, cache_saves="trial_proportions_bytrial_df")
-def cache_trial_proportions_bytrial_df(infos, group_name, *, trial_proportions_bytrial):
-    proportions_bytrial_df = []
-    for trajectory in meta.trial_types:
-        proportions_bytrial_df.extend(
-            {
-                "proportions": trial_proportions_bytrial[trajectory][idx],
-                "trial": idx,
-                "trajectory": trajectory,
-            }
-            for idx in range(trial_proportions_bytrial[trajectory].size)
-        )
-    return pd.DataFrame.from_dict(proportions_bytrial_df)
-
-
-# @task(
-#     groups=meta_session.analysis_grouped,
-#     savepath=("behavior", "stats_trial_proportions_bytrial_pymer4.txt"),
-# )
-# def save_trial_proportions_bytrial_stats(
-#     infos, group_name, *, trial_proportions_bytrial_df, savepath
-# ):
-#     model = pymer4.Lmer(
-#         "proportions ~ trajectory + (1|trial)", data=trial_proportions_bytrial_df
-#     )
-#     model.fit()
-#     save_lmer_model(model, savepath)
-
-
-@task(
-    groups=meta_session.all_grouped,
-    savepath=("behavior", "stats_trial_proportions_bytrial.tex"),
-)
-def save_trial_proportions_bytrial_statsmodel(
-    infos, group_name, *, trial_proportions_bytrial_df, savepath
+@task(groups=meta_session.groups, cache_saves="trial_proportions_bytrial")
+def cache_combined_trial_proportions_bytrial(
+    infos, group_name, *, all_trial_proportions_bytrial
 ):
-    model = smf.mixedlm(
-        "proportions ~ trial",
-        trial_proportions_bytrial_df,
-        groups=trial_proportions_bytrial_df["trajectory"],
-    )
-    modelfit = model.fit()
-    summary = str(modelfit.summary()).split("\n")
-    with open(savepath, "w") as fp:
-        print("% Stats bytrial proportion\n", file=fp)
-        for output in summary:
-            print(f"% {output}", file=fp)
+    return {
+        trajectory: [
+            [
+                trial_type[trajectory][i]
+                for trial_type in all_trial_proportions_bytrial
+                if trial_type[trajectory].size > i
+            ]
+            for i in range(
+                max(
+                    trial_type[trajectory].size
+                    for trial_type in all_trial_proportions_bytrial
+                )
+            )
+        ]
+        for trajectory in meta.trial_types
+    }
 
 
 def get_directional_trials(info, position, trials, task_times):
@@ -516,8 +469,9 @@ def save_firsttrial_proportions(
         print("% First trial choices", file=fp)
         for trajectory in meta.trial_types:
             traj = trajectory.replace("_", "")
+            props = trial_proportions_bytrial[trajectory][0]
             print(
-                fr"\def \percent{traj}firsttrials/{{{trial_proportions_bytrial[trajectory][0] * 100:.1f}}}",
+                fr"\def \percent{traj}firsttrials/{{{np.mean(props) * 100:.1f}}}",
                 file=fp,
             )
         print("% ---------", file=fp)
@@ -578,12 +532,20 @@ def save_behavior_durations(infos, group_name, *, all_trial_durations, savepath)
 
 @task(groups=meta_session.groups, cache_saves="mostly_shortcut_idx")
 def cache_mostly_shortcut_idx(infos, group_name, *, trial_proportions_bytrial):
-    below_thresh = trial_proportions_bytrial["full_shortcut"][:-5] < meta.mostly_thresh
-    if np.sum(below_thresh) == 0:
-        return 0
-    last_below = np.where(below_thresh)[0][-1]
-    if last_below < below_thresh.size - 1:
-        return last_below + 1
+    above_thresh = np.asarray(
+        np.array(
+            [np.mean(trial) for trial in trial_proportions_bytrial["full_shortcut"]]
+        )
+        >= meta.mostly_thresh,
+        dtype=int,
+    )
+    for ix, val in enumerate(above_thresh):
+        if val == 1 and ix > 0 and above_thresh[ix - 1] > 0:
+            above_thresh[ix] += above_thresh[ix - 1]
+
+    long_enough = np.where(above_thresh > meta.mostly_n_trials)[0]
+    if long_enough.size > 0:
+        return long_enough[0] - meta.mostly_n_trials
     return np.nan
 
 
@@ -596,12 +558,14 @@ def save_mostly_shortcut_idx(infos, group_name, *, mostly_shortcut_idx, savepath
         if np.isnan(mostly_shortcut_idx):
             print("% Last trial is below threshold", file=fp)
         else:
+            tex_id = meta.tex_ids[group_name]
+
             print(
-                fr"\def \mostlyshortcutpercent{meta.tex_ids[group_name]}/{{{meta.mostly_thresh * 100:.0f}}}",
+                fr"\def \mostlyshortcutpercent{tex_id}/{{{meta.mostly_thresh * 100:.0f}}}",
                 file=fp,
             )
             print(
-                fr"\def \mostlyshortcuttrial{meta.tex_ids[group_name]}/{{{mostly_shortcut_idx + 1}}}",
+                fr"\def \mostlyshortcuttrial{tex_id}/{{{mostly_shortcut_idx + 1}}}",
                 file=fp,
             )
             print(

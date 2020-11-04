@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import nept
 import numpy as np
 import scipy.stats
+from scipy.ndimage import median_filter
 from shapely.geometry import Point
 
 import meta
@@ -79,8 +80,8 @@ def plot_firsttrial_proportions(
     infos, group_name, *, trial_proportions_bytrial, savepath
 ):
     firsttrial_proportions = {
-        trajectory: [trial_proportions_bytrial[trajectory][0]]
-        for trajectory in trial_proportions_bytrial.keys()
+        trajectory: trial_proportions_bytrial[trajectory][0]
+        for trajectory in meta.trial_types
     }
     _plot_trial_proportions(infos, group_name, firsttrial_proportions, savepath)
 
@@ -201,11 +202,9 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
         savepath=savepath["all"],
     )
     _plot_behavior_bytrial(
-        {
-            trajectory: trial_proportions_bytrial[trajectory][: meta.first_n_trials]
-            for trajectory in meta.trial_types
-        },
+        trial_proportions_bytrial,
         len(infos),
+        n_trials=meta.first_n_trials,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else None,
@@ -222,6 +221,7 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
 def _plot_behavior_bytrial(
     trial_proportions_bytrial,
     n_sessions,
+    n_trials=None,
     title=None,
     legend_loc=None,
     show_legend=False,
@@ -230,29 +230,47 @@ def _plot_behavior_bytrial(
     assert savepath is not None
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    n_trials = np.arange(trial_proportions_bytrial["u"].size) + 1
+    trial_n = (
+        np.arange(len([t for t in trial_proportions_bytrial["u"] if len(t) > 1])) + 1
+    )
+    if n_trials is not None:
+        trial_n = trial_n[:n_trials]
 
     labels = [meta.trajectories_labels[trajectory] for trajectory in meta.trial_types]
     for i, trajectory in enumerate(meta.trial_types):
         this_proportions = trial_proportions_bytrial[trajectory]
+        mean = median_filter(
+            [np.mean(trial) for trial in this_proportions if len(trial) > 1],
+            size=(3,),
+            mode="nearest",
+        )
+        sem = median_filter(
+            [scipy.stats.sem(trial) for trial in this_proportions if len(trial) > 1],
+            size=(3,),
+            mode="nearest",
+        )
+        if n_trials is not None:
+            mean = mean[:n_trials]
+            sem = sem[:n_trials]
+
         plt.plot(
-            n_trials,
-            this_proportions,
+            trial_n,
+            mean,
             color=meta.colors[trajectory],
             marker="o",
             lw=2,
             label=labels[i],
         )
         ax.fill_between(
-            n_trials,
-            this_proportions - np.std(this_proportions),
-            this_proportions + np.std(this_proportions),
+            trial_n,
+            mean - sem,
+            mean + sem,
             color=meta.colors[trajectory],
             interpolate=True,
             alpha=0.3,
         )
 
-    plt.xticks(np.hstack([1, np.arange(5, n_trials[-1] + 1, 5)]))
+    # plt.xticks(np.hstack([1, np.arange(5, trial_n[-1] + 1, 5)]))
     plt.ylabel("Proportion of trials", fontsize=meta.fontsize)
     plt.xlabel("Trial", fontsize=meta.fontsize)
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
