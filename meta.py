@@ -55,9 +55,11 @@ colors = dict(
     u="#0072b2",
     light_u="#16abff",
     only_u="#0072b2",
+    matched_u="#0072b2",
     shortcut="#78c679",
     full_shortcut="#009e73",
     only_full_shortcut="#009e73",
+    matched_full_shortcut="#009e73",
     joined="#d7301f",
     exploratory="#525252",
     difference="#525252",
@@ -70,6 +72,8 @@ colors = dict(
     full_shortcut_feeder2="#fcc5c0",
     pedestal="#ffeda0",
     other="#ece2f0",
+    rest="#bdbdbd",
+    run="#737373",
 )
 fontsize = 20
 fontsize_small = 16
@@ -78,6 +82,7 @@ barriers = {"shortcut1": "shortcut", "shortcut2": "shortcut", "novel1": "novel"}
 barrier_trajectories = ["shortcut", "novel", "baseline"]
 trajectories = ["u", "full_shortcut"]
 exclusive_trajectories = ["only_u", "only_full_shortcut", "both"]
+matched_trajectories = ["matched_u", "matched_full_shortcut"]
 trajectories_labels = {
     "u": "Familiar",
     "shortcut": "Shortcut",
@@ -256,7 +261,7 @@ decoding_window = 0.05  # 0.1
 first_n_trials = 20
 
 # behavior_mostly_shortcut
-mostly_thresh = 0.7
+mostly_thresh = 0.6
 mostly_n_trials = 5
 
 # 2D tc plot
@@ -273,6 +278,7 @@ std_axvlines = {
     "only_full_shortcut": [0, 20, 80, 100],
     "only_u": [0, 20, 40, 60, 80, 100],
 }
+ticks = [0, 20, 40, 60, 80, 100]
 
 xtickrotation = 45
 

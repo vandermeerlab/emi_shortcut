@@ -156,7 +156,7 @@ def cache_trial_proportions(info, *, task_times, trials):
     }
 
 
-@task(groups=meta_session.analysis_grouped, cache_saves="trial_proportions_df")
+@task(groups=meta_session.all_grouped, cache_saves="trial_proportions_df")
 def cache_trial_proportions_df(infos, group_name, *, all_trial_proportions):
     trial_proportions_df = []
     for info, trial_proportion in zip(infos, all_trial_proportions):
@@ -204,7 +204,7 @@ def cache_trial_durations(info, *, task_times, trials):
     return durations
 
 
-@task(groups=meta_session.analysis_grouped, cache_saves="trial_durations_df")
+@task(groups=meta_session.all_grouped, cache_saves="trial_durations_df")
 def cache_trial_durations_df(infos, group_name, *, all_trial_durations):
     trial_durations_df = []
     for info, trial_durations in zip(infos, all_trial_durations):

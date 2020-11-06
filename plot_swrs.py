@@ -606,8 +606,10 @@ def plot_swrs_in_position(info, *, task_times, swr_in_position, position, savepa
     position = position[task_times["maze_times"]]
 
     fig, ax = plt.subplots(figsize=(5, 4))
-    ax.plot(position.x, position.y, ".", color="#bdbdbd", ms=1, rasterized=True)
-    ax.plot(swr_in_position.x, swr_in_position.y, "ro", ms=6, rasterized=True)
+    ax.plot(
+        position.x, position.y, ".", color=meta.colors["rest"], ms=1, rasterized=True
+    )
+    ax.plot(swr_in_position.x, swr_in_position.y, "ko", ms=6, rasterized=True)
 
     plt.xlabel("example session")
 
@@ -944,6 +946,65 @@ def plot_group_replay_proportions_byexperience_feederonly(
         ["contrast"],
         ylabel="Feeder replay proportion contrast\nfor shortcut vs familiar",
         pval=replay_proportions_byexperience_feederonly_pval,
+        color_byvalue=True,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["contrast"],
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath={
+        key: ("replays", f"{key}_replay_proportions_byexperience_nofeeder.svg")
+        for key in ["overlapping", "exclusive", "difference", "contrast"]
+    },
+)
+def plot_group_replay_proportions_byexperience_nofeeder(
+    infos,
+    group_name,
+    *,
+    replay_proportions_byexperience_nofeeder,
+    replay_proportions_byexperience_nofeeder_pval,
+    savepath,
+):
+    plot_replay_metric(
+        replay_proportions_byexperience_nofeeder,
+        ["u", "full_shortcut"],
+        ylabel="Proportion of path SWRs\nthat are replays",
+        pval=replay_proportions_byexperience_nofeeder_pval,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["overlapping"],
+    )
+    plot_replay_metric(
+        replay_proportions_byexperience_nofeeder,
+        ["only_u", "only_full_shortcut"],
+        ylabel="Proportion of path SWRs\nthat are replays",
+        pval=replay_proportions_byexperience_nofeeder_pval,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["exclusive"],
+    )
+    plot_replay_metric(
+        replay_proportions_byexperience_nofeeder,
+        ["difference"],
+        ylabel="Path replay proportion for shortcut - familiar",
+        pval=replay_proportions_byexperience_nofeeder_pval,
+        color_byvalue=True,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        savepath=savepath["difference"],
+    )
+    plot_replay_metric(
+        replay_proportions_byexperience_nofeeder,
+        ["contrast"],
+        ylabel="Path replay proportion contrast\nfor shortcut vs familiar",
+        pval=replay_proportions_byexperience_nofeeder_pval,
         color_byvalue=True,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]

@@ -1,6 +1,7 @@
 import os
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import nept
 import numpy as np
 import scipy.stats
@@ -14,7 +15,7 @@ from plots import plot_aligned_position_and_spikes
 from tasks import task
 
 
-def _plot_trial_proportions(infos, group_name, trial_proportions, savepath):
+def _plot_trial_proportions(infos, group_name, trial_proportions, ylabel, savepath):
     x = np.arange(len(trial_proportions))
     y = [np.mean(trial_proportions[trajectory]) for trajectory in meta.trial_types]
     sem = [
@@ -29,7 +30,7 @@ def _plot_trial_proportions(infos, group_name, trial_proportions, savepath):
         [meta.trajectories_labels[trajectory] for trajectory in meta.trial_types],
         fontsize=meta.fontsize,
     )
-    plt.ylabel("Proportion of trials chosen", fontsize=meta.fontsize)
+    plt.ylabel(ylabel, fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
     plt.ylim(0, 1.05)
 
@@ -70,7 +71,13 @@ def _plot_trial_proportions(infos, group_name, trial_proportions, savepath):
 
 @task(groups=meta_session.groups, savepath=("behavior", "behavior_choice.svg"))
 def plot_trial_proportions(infos, group_name, *, trial_proportions, savepath):
-    _plot_trial_proportions(infos, group_name, trial_proportions, savepath)
+    _plot_trial_proportions(
+        infos,
+        group_name,
+        trial_proportions,
+        ylabel="Proportion of trials chosen",
+        savepath=savepath,
+    )
 
 
 @task(
@@ -83,7 +90,13 @@ def plot_firsttrial_proportions(
         trajectory: trial_proportions_bytrial[trajectory][0]
         for trajectory in meta.trial_types
     }
-    _plot_trial_proportions(infos, group_name, firsttrial_proportions, savepath)
+    _plot_trial_proportions(
+        infos,
+        group_name,
+        firsttrial_proportions,
+        ylabel="Proportion of first trial chosen",
+        savepath=savepath,
+    )
 
 
 @task(groups=meta_session.groups, savepath=("behavior", "behavior_duration.svg"))
@@ -179,45 +192,6 @@ def _plot_boxplot(y, n_sessions, ylabel, savepath):
     plt.close(fig)
 
 
-@task(
-    groups=meta_session.groups,
-    savepath={
-        "all": ("behavior", "behavior_bytrial_all.svg"),
-        "first_n": ("behavior", "behavior_bytrial_first_n.svg"),
-    },
-)
-def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savepath):
-    _plot_behavior_bytrial(
-        trial_proportions_bytrial,
-        len(infos),
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        legend_loc="upper left"
-        if group_name in ["all", "combined", "r063", "day1"]
-        else "best",
-        show_legend=True
-        if group_name in ["all", "combined", "r063", "day1"]
-        else False,
-        savepath=savepath["all"],
-    )
-    _plot_behavior_bytrial(
-        trial_proportions_bytrial,
-        len(infos),
-        n_trials=meta.first_n_trials,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        legend_loc="upper left"
-        if group_name in ["all", "combined", "r063", "day1"]
-        else "best",
-        show_legend=True
-        if group_name in ["all", "combined", "r063", "day1"]
-        else False,
-        savepath=savepath["first_n"],
-    )
-
-
 def _plot_behavior_bytrial(
     trial_proportions_bytrial,
     n_sessions,
@@ -270,11 +244,11 @@ def _plot_behavior_bytrial(
             alpha=0.3,
         )
 
-    # plt.xticks(np.hstack([1, np.arange(5, trial_n[-1] + 1, 5)]))
     plt.ylabel("Proportion of trials", fontsize=meta.fontsize)
     plt.xlabel("Trial", fontsize=meta.fontsize)
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     plt.ylim(0, 1.05)
 
@@ -311,6 +285,45 @@ def _plot_behavior_bytrial(
 
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)
+
+
+@task(
+    groups=meta_session.groups,
+    savepath={
+        "all": ("behavior", "behavior_bytrial_all.svg"),
+        "first_n": ("behavior", "behavior_bytrial_first_n.svg"),
+    },
+)
+def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savepath):
+    _plot_behavior_bytrial(
+        trial_proportions_bytrial,
+        len(infos),
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        legend_loc="upper left"
+        if group_name in ["all", "combined", "r063", "day1"]
+        else "best",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        savepath=savepath["all"],
+    )
+    _plot_behavior_bytrial(
+        trial_proportions_bytrial,
+        len(infos),
+        n_trials=meta.first_n_trials,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        legend_loc="upper left"
+        if group_name in ["all", "combined", "r063", "day1"]
+        else "best",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        savepath=savepath["first_n"],
+    )
 
 
 @task(infos=meta_session.analysis_infos)
@@ -393,3 +406,37 @@ def plot_trials(
             n_epochs=n_trials,
             savepath=savepath,
         )
+
+
+@task(infos=meta_session.all_infos, savepath=("mazes", "maze_first_trials.svg"))
+def plot_first_trials(info, *, position, task_times, trials, savepath):
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    maze_times = nept.Epoch([], [])
+    for run_time in meta.run_times:
+        maze_times = maze_times.join(task_times[run_time])
+    maze_position = position[maze_times]
+    plt.plot(
+        maze_position.x,
+        maze_position.y,
+        ".",
+        color=meta.colors["rest"],
+        ms=1.0,
+        rasterized=True,
+    )
+
+    for trajectory in reversed(meta.behavioral_trajectories):
+        if trials[trajectory].n_epochs > 0:
+            plt.plot(
+                maze_position[trials[trajectory][0]].x,
+                maze_position[trials[trajectory][0]].y,
+                ".",
+                color=meta.colors[trajectory],
+                ms=10.0,
+            )
+
+    plt.axis("off")
+    plt.tight_layout(h_pad=0.003)
+
+    plt.savefig(savepath, bbox_inches="tight", transparent=True, dpi=meta.rasterize_dpi)
+    plt.close(fig)

@@ -1269,8 +1269,7 @@ def cache_replay_proportions_normalized_byphase(
     return normalized
 
 
-@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience")
-def cache_swr_n_byexperience(info, *, trials, swrs_byphase):
+def get_swrs_byexperience(trials, swrs):
     first_shortcut_trial = trials["full_shortcut"][0]
     shortcut_trials = trials["full_shortcut"][1:]
     familiar_trials = trials["u"].time_slice(
@@ -1278,15 +1277,16 @@ def cache_swr_n_byexperience(info, *, trials, swrs_byphase):
     )
 
     return {
-        "familiar_phase12": (
-            swrs_byphase["phase1"].n_epochs + swrs_byphase["phase2"].n_epochs
-        ),
-        "first_shortcut": (
-            swrs_byphase["phase3"].intersect(first_shortcut_trial).n_epochs
-        ),
-        "shortcut_phase3": (swrs_byphase["phase3"].intersect(shortcut_trials).n_epochs),
-        "familiar_phase3": (swrs_byphase["phase3"].intersect(familiar_trials).n_epochs),
+        "familiar_phase12": (swrs["phase1"].n_epochs + swrs["phase2"].n_epochs),
+        "first_shortcut": (swrs["phase3"].intersect(first_shortcut_trial).n_epochs),
+        "shortcut_phase3": (swrs["phase3"].intersect(shortcut_trials).n_epochs),
+        "familiar_phase3": (swrs["phase3"].intersect(familiar_trials).n_epochs),
     }
+
+
+@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience")
+def cache_swr_n_byexperience(info, *, trials, swrs_byphase):
+    return get_swrs_byexperience(trials, swrs_byphase)
 
 
 @task(groups=meta_session.groups, cache_saves="swr_n_byexperience")
@@ -1470,27 +1470,7 @@ def cache_swrs_byphase_feederonly(info, *, task_times, position_byzone, swrs_byp
 
 @task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_feederonly")
 def cache_swr_n_byexperience_feederonly(info, *, trials, swrs_byphase_feederonly):
-    first_shortcut_trial = trials["full_shortcut"][0]
-    shortcut_trials = trials["full_shortcut"][1:]
-    familiar_trials = trials["u"].time_slice(
-        first_shortcut_trial.stop, trials["u"].stop
-    )
-
-    return {
-        "familiar_phase12": (
-            swrs_byphase_feederonly["phase1"].n_epochs
-            + swrs_byphase_feederonly["phase2"].n_epochs
-        ),
-        "first_shortcut": (
-            swrs_byphase_feederonly["phase3"].intersect(first_shortcut_trial).n_epochs
-        ),
-        "shortcut_phase3": (
-            swrs_byphase_feederonly["phase3"].intersect(shortcut_trials).n_epochs
-        ),
-        "familiar_phase3": (
-            swrs_byphase_feederonly["phase3"].intersect(familiar_trials).n_epochs
-        ),
-    }
+    return get_swrs_byexperience(trials, swrs_byphase_feederonly)
 
 
 @task(groups=meta_session.groups, cache_saves="swr_n_byexperience_feederonly")
@@ -1507,9 +1487,7 @@ def cache_combined_swr_n_byexperience_feederonly(
 
 
 @task(infos=meta_session.all_infos, cache_saves="replays_byphase_feederonly")
-def cache_replays_byphase_feederonly(
-    info, *, task_times, position_byzone, replays_byphase
-):
+def cache_replays_byphase_feederonly(info, *, position_byzone, replays_byphase):
     replays_infeeders = {
         trajectory: {phase: [] for phase in meta.run_times}
         for trajectory in replays_byphase.keys()
@@ -1530,9 +1508,7 @@ def cache_replays_byphase_feederonly(
                         if np.allclose(
                             replay.centers,
                             feeder_time[
-                                nept.find_nearest_idx(
-                                    position_byzone[feeder].time, replay.centers
-                                )
+                                nept.find_nearest_idx(feeder_time, replay.centers)
                             ],
                         ):
                             starts.append(replay.start)
@@ -1544,8 +1520,7 @@ def cache_replays_byphase_feederonly(
     return replays_infeeders
 
 
-@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience_feederonly")
-def cache_replay_n_byexperience_feederonly(info, *, trials, replays_byphase_feederonly):
+def get_replays_byexperience(trials, replays):
     first_shortcut_trial = trials["full_shortcut"][0]
     shortcut_trials = trials["full_shortcut"][1:]
     familiar_trials = trials["u"].time_slice(
@@ -1555,27 +1530,26 @@ def cache_replay_n_byexperience_feederonly(info, *, trials, replays_byphase_feed
     return {
         trajectory: {
             "familiar_phase12": (
-                replays_byphase_feederonly[trajectory]["phase1"].n_epochs
-                + replays_byphase_feederonly[trajectory]["phase2"].n_epochs
+                replays[trajectory]["phase1"].n_epochs
+                + replays[trajectory]["phase2"].n_epochs
             ),
             "first_shortcut": (
-                replays_byphase_feederonly[trajectory]["phase3"]
-                .intersect(first_shortcut_trial)
-                .n_epochs
+                replays[trajectory]["phase3"].intersect(first_shortcut_trial).n_epochs
             ),
             "shortcut_phase3": (
-                replays_byphase_feederonly[trajectory]["phase3"]
-                .intersect(shortcut_trials)
-                .n_epochs
+                replays[trajectory]["phase3"].intersect(shortcut_trials).n_epochs
             ),
             "familiar_phase3": (
-                replays_byphase_feederonly[trajectory]["phase3"]
-                .intersect(familiar_trials)
-                .n_epochs
+                replays[trajectory]["phase3"].intersect(familiar_trials).n_epochs
             ),
         }
-        for trajectory in replays_byphase_feederonly
+        for trajectory in replays
     }
+
+
+@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience_feederonly")
+def cache_replay_n_byexperience_feederonly(info, *, trials, replays_byphase_feederonly):
+    return get_replays_byexperience(trials, replays_byphase_feederonly)
 
 
 @task(groups=meta_session.groups, cache_saves="replay_n_byexperience_feederonly")
@@ -1596,7 +1570,7 @@ def cache_combined_replay_n_byexperience_feederonly(
 
 @task(
     infos=meta_session.all_infos,
-    cache_saves="replay_proportions_byexperience_feederonly",
+    cache_saves="replay_proportions_byexperience_feederonly_feederonly",
 )
 def cache_replay_proportions_byexperience_feederonly(
     info, *, replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
@@ -1646,4 +1620,161 @@ def cache_combined_replay_proportions_byexperience_feederonly_pval(
 ):
     return get_replay_proportions_byexperience_pval(
         replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
+    )
+
+
+@task(infos=meta_session.all_infos, cache_saves="swrs_byphase_nofeeder")
+def cache_swrs_byphase_nofeeder(info, *, task_times, position_byzone, swrs_byphase):
+    swrs_nofeeders = {phase: [] for phase in meta.run_times}
+    for phase in meta.run_times:
+        starts = []
+        stops = []
+        for swr in swrs_byphase[phase]:
+            for zone in [
+                "u",
+                "full_shortcut",
+                "novel",
+                "exploratory",
+            ]:
+                zone_time = position_byzone[zone].time
+                if swr.starts not in starts:
+                    if np.allclose(
+                        swr.centers,
+                        zone_time[nept.find_nearest_idx(zone_time, swr.centers)],
+                    ):
+                        starts.append(swr.start)
+                        stops.append(swr.stop)
+        if len(starts) > 0:
+            swrs_nofeeders[phase] = nept.Epoch(starts, stops)
+        else:
+            swrs_nofeeders[phase] = nept.Epoch([], [])
+    return swrs_nofeeders
+
+
+@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_nofeeder")
+def cache_swr_n_byexperience_nofeeder(info, *, trials, swrs_byphase_nofeeder):
+    return get_swrs_byexperience(trials, swrs_byphase_nofeeder)
+
+
+@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_nofeeder")
+def cache_combined_swr_n_byexperience_nofeeder(
+    infos, group_name, *, all_swr_n_byexperience_nofeeder
+):
+    return {
+        experience: sum(
+            swr_n_byexperience[experience]
+            for swr_n_byexperience in all_swr_n_byexperience_nofeeder
+        )
+        for experience in meta.experiences
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="replays_byphase_nofeeder")
+def cache_replays_byphase_nofeeder(info, *, position_byzone, replays_byphase):
+    replays_nofeeders = {
+        trajectory: {phase: [] for phase in meta.run_times}
+        for trajectory in replays_byphase.keys()
+    }
+    for trajectory in replays_byphase.keys():
+        for phase in meta.run_times:
+            starts = []
+            stops = []
+            for replay in replays_byphase[trajectory][phase]:
+                for zone in [
+                    "u",
+                    "full_shortcut",
+                    "novel",
+                    "exploratory",
+                ]:
+                    zone_time = position_byzone[zone].time
+                    if zone_time.size > 0:
+                        if replay.starts not in starts:
+                            if np.allclose(
+                                replay.centers,
+                                zone_time[
+                                    nept.find_nearest_idx(zone_time, replay.centers)
+                                ],
+                            ):
+                                starts.append(replay.start)
+                                stops.append(replay.stop)
+            if len(starts) > 0:
+                replays_nofeeders[trajectory][phase] = nept.Epoch(starts, stops)
+            else:
+                replays_nofeeders[trajectory][phase] = nept.Epoch([], [])
+    return replays_nofeeders
+
+
+@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience_nofeeder")
+def cache_replay_n_byexperience_nofeeder(info, *, trials, replays_byphase_nofeeder):
+    return get_replays_byexperience(trials, replays_byphase_nofeeder)
+
+
+@task(groups=meta_session.groups, cache_saves="replay_n_byexperience_nofeeder")
+def cache_combined_replay_n_byexperience_nofeeder(
+    infos, group_name, *, all_replay_n_byexperience_nofeeder
+):
+    return {
+        trajectory: {
+            experience: sum(
+                replay_n_byexperience[trajectory][experience]
+                for replay_n_byexperience in all_replay_n_byexperience_nofeeder
+            )
+            for experience in meta.experiences
+        }
+        for trajectory in all_replay_n_byexperience_nofeeder[0]
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_nofeeder",
+)
+def cache_replay_proportions_byexperience_nofeederonly(
+    info, *, replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
+):
+    return get_replay_proportions_byexperience(
+        replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
+    )
+
+
+@task(
+    groups=meta_session.groups, cache_saves="replay_proportions_byexperience_nofeeder"
+)
+def cache_combined_replay_proportions_byexperience_nofeeder(
+    infos,
+    group_name,
+    *,
+    replay_n_byexperience_nofeeder,
+    swr_n_byexperience_nofeeder,
+):
+    return get_replay_proportions_byexperience(
+        replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
+    )
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_nofeeder_pval",
+)
+def cache_replay_proportions_byexperience_nofeeder_pval(
+    info, *, replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
+):
+    return get_replay_proportions_byexperience_pval(
+        replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_nofeeder_pval",
+)
+def cache_combined_replay_proportions_byexperience_nofeeder_pval(
+    infos,
+    group_name,
+    *,
+    replay_n_byexperience_nofeeder,
+    swr_n_byexperience_nofeeder,
+):
+    return get_replay_proportions_byexperience_pval(
+        replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
     )

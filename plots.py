@@ -200,7 +200,6 @@ def plot_raster(
 
 
 def plot_bar_mean_byphase(y_byphase, ylabel, n_byphase=None, savepath=None):
-    colors = {"rest": "#bdbdbd", "run": "#737373"}
     n_phases = len(meta.task_times)
     x = np.arange(n_phases)
 
@@ -210,7 +209,8 @@ def plot_bar_mean_byphase(y_byphase, ylabel, n_byphase=None, savepath=None):
         [np.mean(y_byphase[phase]) for phase in meta.task_times],
         width=0.65,
         color=[
-            colors["rest"] if i % 2 == 0 else colors["run"] for i in range(n_phases)
+            meta.colors["rest"] if i % 2 == 0 else meta.colors["run"]
+            for i in range(n_phases)
         ],
         yerr=[scipy.stats.sem(y_byphase[phase]) for phase in meta.task_times],
         ecolor="k",
@@ -349,6 +349,7 @@ def plot_by_standard_position(
     ylim=None,
     ax=None,
     title=None,
+    std_xticks=True,
     savepath=None,
 ):
     if ax is None:
@@ -367,6 +368,8 @@ def plot_by_standard_position(
         ax.axvline(axvline, linestyle="dashed", color="k")
     ax.tick_params(axis="both", which="major", labelsize=meta.fontsize)
     ax.set_xlabel("Linearized position bins", fontsize=meta.fontsize)
+    if std_xticks:
+        ax.set_xticks(meta.ticks)
     plt.locator_params(axis="y", nbins=6)
     if ylabel is not None:
         ax.set_ylabel(ylabel, fontsize=meta.fontsize)
@@ -551,6 +554,7 @@ def plot_replay_metric(
                     height=max(
                         replay_metric[trajectories[0]][xlabel],
                         replay_metric[trajectories[1]][xlabel],
+                        0,
                     )
                     + h_adjust,
                     pval=pval[key][xlabel],
@@ -558,11 +562,7 @@ def plot_replay_metric(
         if len(trajectories) == 1 and trajectories[0] in ["difference", "contrast"]:
             key = "exclusive" if trajectories[0].startswith("only_") else "overlapping"
             for i, xlabel in enumerate(orig_xlabels):
-                height = replay_metric[trajectories[0]][xlabel]
-                if height > 0:
-                    height += h_adjust
-                else:
-                    height -= h_adjust
+                height = max(replay_metric[trajectories[0]][xlabel], 0) + h_adjust
                 significance_text(
                     x=i,
                     height=height,
@@ -576,7 +576,8 @@ def plot_replay_metric(
                     start=start,
                     end=end,
                     height=max(
-                        list(replay_metric[trajectories[0]].values())[start : end + 1]
+                        list(replay_metric[trajectories[0]].values())[start : end + 1],
+                        0,
                     )
                     + h_adjust,
                     pval=pp,

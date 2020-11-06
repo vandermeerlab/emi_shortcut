@@ -201,7 +201,8 @@ def plot_joined_replay_likelihood_bybin_byphase(
             color=meta.colors["both"],
             ylabel="Mean posterior during replays",
             axvlines=[50],
-            title="Familiar | Shortcut",
+            title="Familiar             Shortcut",
+            std_xticks=False,
             savepath=savepath[task_time],
         )
 
@@ -223,7 +224,8 @@ def plot_group_joined_replay_likelihood_bybin_byphase(
             ylabel="Mean posterior during replays",
             axvlines=[50],
             ylim=[0, 0.085],
-            title=meta.task_times_labels[task_time] + "\nFamiliar | Shortcut",
+            title=meta.task_times_labels[task_time] + "\nFamiliar             Shortcut",
+            std_xticks=False,
             savepath=savepath[task_time],
         )
 
@@ -240,7 +242,8 @@ def plot_joined_replay_likelihood_bybin(
         ylabel="Mean posterior during replays",
         color="k",
         axvlines=[50],
-        title="Familiar | Shortcut",
+        title="Familiar             Shortcut",
+        std_xticks=False,
         savepath=savepath,
     )
 

@@ -503,3 +503,36 @@ def cache_lines_zones(info):
         meta.expand_by * meta.pedestal_scale
     )
     return {"lines": lines, "zones": zones}
+
+
+@task(infos=meta_session.all_infos, cache_saves="lines_matched")
+def cache_lines_matched(info, *, lines, raw_matched_linear):
+    for trajectory in meta.trajectories:
+        linear = raw_matched_linear[trajectory]
+        start = lines[trajectory].interpolate(np.min(linear.x))
+        end = lines[trajectory].interpolate(np.max(linear.x))
+        line = LineString(info.trajectories[trajectory])
+
+        traj_coords = list(line.coords)
+        start_coords = list(start.coords)
+        traj_start = lines[trajectory].project(start)
+        while lines[trajectory].project(Point(*traj_coords[0])) < traj_start:
+            start_coords.append(traj_coords.pop(0))
+        start_coords.append(list(start.coords)[0])
+        traj_coords.insert(0, list(start.coords)[0])
+        matched_without_start = LineString(traj_coords)
+
+        end_coords = list(end.coords)
+        traj_coords = list(matched_without_start.coords)
+
+        traj_stop = lines[trajectory].project(end)
+        for i in range(len(traj_coords) - 1, 0, -1):
+            if lines[trajectory].project(Point(*traj_coords[i])) > traj_stop:
+                end_coords.insert(0, traj_coords.pop(i))
+            else:
+                break
+        end_coords.insert(0, list(end.coords)[0])
+        traj_coords.append(list(end.coords)[0])
+
+        lines[f"matched_{trajectory}"] = LineString(traj_coords)
+    return lines

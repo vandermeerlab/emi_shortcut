@@ -530,6 +530,7 @@ def plot_group_tc_mean(infos, group_name, *, tc_mean, savepath):
             ylabel="Mean firing rate (Hz)",
             color=meta.colors[trajectory],
             title=meta.trajectories_labels[trajectory],
+            ylim=2.8 if group_name in ["all", "combined"] else None,
             savepath=savepath[trajectory],
         )
 
@@ -585,6 +586,7 @@ def _plot_tc_mean(
     color=None,
     title=None,
     txt=None,
+    ylim=None,
     savepath=None,
 ):
     assert savepath is not None
@@ -611,6 +613,9 @@ def _plot_tc_mean(
     else:
         for vline in axvlines:
             plt.axvline(vline, c="k", lw=1)
+
+    if ylim is not None:
+        plt.ylim(0, ylim)
 
     if title is not None:
         plt.title(title, fontsize=meta.fontsize)
@@ -1119,7 +1124,8 @@ def _plot_tc_correlations_within_phase(tc_correlations_within_phase, savepath):
                 arrowprops=dict(arrowstyle="->", lw=2, connectionstyle="angle"),
             )
         ax.tick_params(labelsize=meta.fontsize)
-        # ax.set_aspect("auto")
+        ax.set_xticks(meta.ticks)
+        ax.set_yticks(meta.ticks)
 
     ax1.set_ylabel("Linearized position bins", fontsize=meta.fontsize)
 

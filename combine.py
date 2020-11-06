@@ -608,6 +608,43 @@ def fig_swr(panels, savepath):
 
 @task(
     panels={
+        "A": ("ind-R066d1", "swrs", "swrs_in_position.svg"),
+        "B": ("ind-R066d2", "swrs", "swrs_in_position.svg"),
+        "C": ("ind-R066d3", "swrs", "swrs_in_position.svg"),
+        "D": ("ind-R066d7", "swrs", "swrs_in_position.svg"),
+    },
+    savepath=("figures", "swrs_in_position.svg"),
+    copy_to="swrs_in_position.pdf",
+)
+def fig_swrs_in_position(panels, savepath):
+    padding = 50
+    full_width = 720 + padding
+    full_height = 600 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            None,
+            panels["A"],
+            10 + padding / 2,
+            30 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(None, panels["B"], 330 + padding, 0 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["C"], 0 + padding, 280 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["D"], 380 + padding, 280 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "A": ("ind-R068d1", "replays", "replays_overtime-u.svg"),
         "B": ("ind-R068d1", "replays", "replays_overtime-full_shortcut.svg"),
         "C": ("grp-combined", "swrs", "correlation_hist-u.svg"),
@@ -842,6 +879,16 @@ def fig_replay_summary_byphase(panels, savepath):
             "replays",
             "contrast_replay_proportions_byexperience_feederonly.svg",
         ),
+        "E": (
+            "grp-combined",
+            "replays",
+            "overlapping_replay_proportions_byexperience_nofeeder.svg",
+        ),
+        "F": (
+            "grp-combined",
+            "replays",
+            "contrast_replay_proportions_byexperience_nofeeder.svg",
+        ),
     },
     savepath=("figures", "replay_summary_byexperience.svg"),
     copy_to="replay_summary_byexperience.pdf",
@@ -849,7 +896,7 @@ def fig_replay_summary_byphase(panels, savepath):
 def fig_replay_summary_byexperience(panels, savepath):
     padding = 50
     full_width = 1300 + padding
-    full_height = 900 + padding
+    full_height = 1350 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -885,6 +932,24 @@ def fig_replay_summary_byexperience(panels, savepath):
             panels["D"],
             650 + padding,
             450 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "E",
+            panels["E"],
+            20 + padding,
+            900 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "F",
+            panels["F"],
+            650 + padding,
+            900 + padding,
             offset=(-padding / 3, 0),
         )
     )
@@ -1590,6 +1655,35 @@ def fig_example_swr(panels, savepath):
     padding = 50
     full_width = 500 + padding
     full_height = 350 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            None,
+            panels["A"],
+            0 + padding,
+            0 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": (
+            "ind-R066d1",
+            "mazes",
+            "maze_first_trials.svg",
+        ),
+    },
+    savepath=("figures", "example_maze_trials.svg"),
+    copy_to="example_maze_trials.pdf",
+)
+def fig_example_maze_trials(panels, savepath):
+    padding = 50
+    full_width = 600 + padding
+    full_height = 450 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
