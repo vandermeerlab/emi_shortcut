@@ -397,9 +397,32 @@ example_plots = {
             "{info.session_id}-swr-{trajectory}-{i}-{task_time}-without-tc.svg",
         ),
         plots={
+            "R063d3": [
+                ("full_shortcut", 734, "phase3", "replays-without-tc"),  # decent
+            ],
+            "R063d5": [
+                ("full_shortcut", 572, "pauseB", "replays-without-tc"),  # decent
+                ("full_shortcut", 705, "phase3", "replays-without-tc"),  # decent
+            ],
+            "R063d6": [
+                ("full_shortcut", 180, "phase3", "replays-without-tc"),  # decent
+            ],
             "R063d7": [
                 ("u", 686, "pauseB", "replays-without-tc"),
                 ("u", 87, "pauseA", "replays-without-tc"),
+            ],
+            "R063d8": [
+                ("full_shortcut", 589, "phase3", "replays-without-tc"),
+                ("full_shortcut", 1110, "phase3", "replays-without-tc"),
+                ("full_shortcut", 1182, "phase3", "replays-without-tc"),
+            ],
+            "R066d1": [
+                ("full_shortcut", 183, "phase2", "replays-without-tc"),
+            ],
+            "R066d2": [
+                ("full_shortcut", 329, "phase3", "replays-without-tc"),
+                ("full_shortcut", 355, "phase3", "replays-without-tc"),  # decent
+                ("full_shortcut", 418, "phase3", "replays-without-tc"),  # decent
             ],
             "R066d5": [
                 ("u", 339, "pauseB", "replays-without-tc"),
@@ -408,6 +431,12 @@ example_plots = {
             ],
             "R067d1": [
                 ("full_shortcut", 539, "phase3", "replays-without-tc"),
+            ],
+            "R068d1": [
+                ("full_shortcut", 450, "pauseB", "replays-without-tc"),
+                ("full_shortcut", 760, "pauseB", "replays-without-tc"),  # decent
+                ("full_shortcut", 940, "phase3", "replays-without-tc"),  # decent
+                ("full_shortcut", 1024, "phase3", "replays-without-tc"),
             ],
             "R068d8": [
                 ("u", 601, "phase3", "replays-without-tc"),

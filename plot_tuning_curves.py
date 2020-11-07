@@ -662,11 +662,12 @@ def _plot_tc_correlations_histogram(tc_correlations, savepath):
         ax.set_title(f"Phases {phases[-2]}-{phases[-1]}", fontsize=meta.fontsize)
 
         plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
+        ax.set_xlim(-0.6, 1.0)
         ax.set_xlabel("Correlation value", fontsize=meta.fontsize)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position("bottom")
-        plt.locator_params(axis="x", nbins=6)
+        ax.locator_params(axis="x", nbins=6)
         if ax is axs[0]:
             ax.text(
                 0.05,

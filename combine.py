@@ -303,10 +303,10 @@ def fig_behavior(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-all", "behavior", "behavior_barriers.svg"),
-        "B": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
-        "C": ("grp-all", "behavior", "behavior_choice_firsttrial.svg"),
-        "D": ("grp-all", "behavior", "behavior_firsttrial.svg"),
+        "A": ("grp-all", "behavior", "behavior_choice_firsttrial.svg"),
+        "B": ("grp-all", "behavior", "behavior_firsttrial.svg"),
+        "C": ("grp-all", "behavior", "behavior_barriers.svg"),
+        "D": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
     },
     savepath=("figures", "behavior_supplemental.svg"),
     copy_to="behavior_supplemental.pdf",
@@ -463,12 +463,51 @@ def fig_tuning_curves(panels, savepath):
         el("B", panels["B"], 20 + padding, 350 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("C", panels["C"], 550 + padding, 350 + padding, offset=(-padding / 3, 0))
+        el(None, panels["C"], 550 + padding, 350 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("D", panels["D"], 20 + padding, 800 + padding, offset=(-padding / 3, 0))
+        el("C", panels["D"], 20 + padding, 800 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
+
+
+# @task(
+#     panels={
+#         "A": ("grp-combined", "tcs", "tc_correlations_proportion.svg"),
+#         "B": ("grp-combined", "tcs", "tc_field_remapping.svg"),
+#         "C": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase2.svg"),
+#         "D": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase3.svg"),
+#         "E": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase1.svg"),
+#         "F": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase2.svg"),
+#     },
+#     savepath=("figures", "tuning_curves_supplemental.svg"),
+#     copy_to="tuning_curves_supplemental.pdf",
+# )
+# def fig_tuning_curves_supplemental(panels, savepath):
+#     padding = 20
+#     full_width = 2050 + padding
+#     full_height = 1000 + padding
+#
+#     fig = svgfig(full_width, full_height)
+#     fig.append(
+#         el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+#     )
+#     fig.append(
+#         el("B", panels["B"], 1400 + padding, 30 + padding, offset=(-padding / 3, 0))
+#     )
+#     fig.append(
+#         el("C", panels["C"], 120 + padding, 550 + padding, offset=(-padding / 3, 0))
+#     )
+#     fig.append(
+#         el(None, panels["D"], 550 + padding, 550 + padding, offset=(-padding / 3, 0))
+#     )
+#     fig.append(
+#         el("D", panels["E"], 1050 + padding, 550 + padding, offset=(-padding / 3, 0))
+#     )
+#     fig.append(
+#         el(None, panels["F"], 1510 + padding, 550 + padding, offset=(-padding / 3, 0))
+#     )
+#     savefig(fig, savepath)
 
 
 @task(
@@ -485,27 +524,39 @@ def fig_tuning_curves(panels, savepath):
 )
 def fig_tuning_curves_supplemental(panels, savepath):
     padding = 20
-    full_width = 2050 + padding
-    full_height = 1000 + padding
+    full_width = 1500 + padding
+    full_height = 1500 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
-        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+        el("A", panels["A"], 100 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("B", panels["B"], 1400 + padding, 30 + padding, offset=(-padding / 3, 0))
+        el("B", panels["B"], 20 + padding, 700 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("C", panels["C"], 120 + padding, 550 + padding, offset=(-padding / 3, 0))
+        el(
+            "C",
+            panels["C"],
+            600 + padding,
+            550 + padding,
+            offset=(-padding / 3, 0),
+        )
     )
     fig.append(
-        el(None, panels["D"], 550 + padding, 550 + padding, offset=(-padding / 3, 0))
+        el(None, panels["D"], 1070 + padding, 550 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("D", panels["E"], 1050 + padding, 550 + padding, offset=(-padding / 3, 0))
+        el(
+            "D",
+            panels["E"],
+            600 + padding,
+            1000 + padding,
+            offset=(-padding / 3, 0),
+        )
     )
     fig.append(
-        el(None, panels["F"], 1510 + padding, 550 + padding, offset=(-padding / 3, 0))
+        el(None, panels["F"], 1070 + padding, 1000 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -1501,14 +1552,14 @@ def fig_joined_likelihood_bybin_details(panels, savepath):
 @task(
     panels={
         "r063": (
-            "ind-R063d7",
+            "ind-R063d3",
             "ind-replays-without-tc",
-            "R063d7-swr-u-87-pauseA-without-tc.svg",
+            "R063d3-swr-full_shortcut-734-phase3-without-tc.svg",
         ),
         "r066": (
-            "ind-R066d5",
+            "ind-R066d2",
             "ind-replays-without-tc",
-            "R066d5-swr-full_shortcut-195-pauseB-without-tc.svg",
+            "R066d2-swr-full_shortcut-418-phase3-without-tc.svg",
         ),
         "r067": (
             "ind-R067d1",
@@ -1516,9 +1567,9 @@ def fig_joined_likelihood_bybin_details(panels, savepath):
             "R067d1-swr-full_shortcut-539-phase3-without-tc.svg",
         ),
         "r068": (
-            "ind-R068d8",
+            "ind-R068d1",
             "ind-replays-without-tc",
-            "R068d8-swr-full_shortcut-380-pauseB-without-tc.svg",
+            "R068d1-swr-full_shortcut-760-pauseB-without-tc.svg",
         ),
     },
     savepath=("figures", "example_swrs.svg"),
@@ -1572,14 +1623,14 @@ def fig_example_swrs(panels, savepath):
 @task(
     panels={
         "r063": (
-            "ind-R063d7",
+            "ind-R063d3",
             "ind-replays-without-tc",
-            "R063d7-swr-u-87-pauseA-without-tc.svg",
+            "R063d3-swr-full_shortcut-734-phase3-without-tc.svg",
         ),
         "r066": (
-            "ind-R066d5",
+            "ind-R066d2",
             "ind-replays-without-tc",
-            "R066d5-swr-full_shortcut-195-pauseB-without-tc.svg",
+            "R066d2-swr-full_shortcut-418-phase3-without-tc.svg",
         ),
         "r067": (
             "ind-R067d1",
@@ -1587,9 +1638,9 @@ def fig_example_swrs(panels, savepath):
             "R067d1-swr-full_shortcut-539-phase3-without-tc.svg",
         ),
         "r068": (
-            "ind-R068d8",
+            "ind-R068d1",
             "ind-replays-without-tc",
-            "R068d8-swr-full_shortcut-380-pauseB-without-tc.svg",
+            "R068d1-swr-full_shortcut-760-pauseB-without-tc.svg",
         ),
     },
     savepath=("figures", "example_swrs_ppt.svg"),
@@ -1643,9 +1694,9 @@ def fig_example_swrs_ppt(panels, savepath):
 @task(
     panels={
         "A": (
-            "ind-R066d5",
+            "ind-R066d2",
             "ind-replays-without-tc",
-            "R066d5-swr-full_shortcut-584-phase3-without-tc.svg",
+            "R066d2-swr-full_shortcut-355-phase3-without-tc.svg",
         ),
     },
     savepath=("figures", "example_swr.svg"),
