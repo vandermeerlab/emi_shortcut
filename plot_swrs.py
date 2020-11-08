@@ -409,7 +409,14 @@ def plot_swr_rate_bybin(
 )
 def plot_replays_bybin(infos, group_name, *, replays_bybin, savepath):
     plot_both_by_standard_position(
-        replays_bybin, ylabel="Replay counts", savepath=savepath["overlapping"]
+        replays_bybin,
+        ylabel="Replay counts",
+        std_axvlines=True,
+        title={
+            trajectory: meta.trajectories_labels[trajectory]
+            for trajectory in meta.trajectories
+        },
+        savepath=savepath["overlapping"],
     )
     plot_both_by_standard_position(
         replays_bybin,
@@ -418,6 +425,10 @@ def plot_replays_bybin(infos, group_name, *, replays_bybin, savepath):
         std_axvlines=True,
         left="only_u",
         right="only_full_shortcut",
+        title={
+            trajectory: meta.trajectories_labels[trajectory]
+            for trajectory in meta.trajectories
+        },
         savepath=savepath["exclusive"],
     )
 
@@ -431,7 +442,14 @@ def plot_replays_bybin(infos, group_name, *, replays_bybin, savepath):
 )
 def plot_matched_replays_bybin(infos, group_name, *, matched_replays_bybin, savepath):
     plot_both_by_standard_position(
-        matched_replays_bybin, ylabel="Replay counts", savepath=savepath["overlapping"]
+        matched_replays_bybin,
+        ylabel="Replay counts",
+        std_axvlines=True,
+        title={
+            trajectory: meta.trajectories_labels[trajectory]
+            for trajectory in meta.trajectories
+        },
+        savepath=savepath["overlapping"],
     )
     plot_both_by_standard_position(
         matched_replays_bybin,
@@ -439,6 +457,10 @@ def plot_matched_replays_bybin(infos, group_name, *, matched_replays_bybin, save
         # ylim=150,
         left="only_u",
         right="only_full_shortcut",
+        title={
+            trajectory: meta.trajectories_labels[trajectory]
+            for trajectory in meta.trajectories
+        },
         savepath=savepath["exclusive"],
     )
 

@@ -1065,24 +1065,14 @@ def fig_replay_rat_details(panels, savepath):
     panels={
         "A": ("grp-combined", "decoding", "std_error.svg"),
         "B": ("grp-combined", "decoding", "std_error_bybin.svg"),
-        "C": (
-            "grp-combined",
-            "decoding",
-            "replay_likelihood_bybin.svg",
-        ),
-        "D": (
-            "grp-combined",
-            "decoding",
-            "zscored_logodds_byphase.svg",
-        ),
     },
-    savepath=("figures", "decoding.svg"),
-    copy_to="decoding.pdf",
+    savepath=("figures", "decoding_errors.svg"),
+    copy_to="decoding_errors.pdf",
 )
-def fig_decoding(panels, savepath):
+def fig_decoding_errors(panels, savepath):
     padding = 50
     full_width = 1500 + padding
-    full_height = 950 + padding
+    full_height = 450 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -1100,24 +1090,6 @@ def fig_decoding(panels, savepath):
             panels["B"],
             600 + padding / 2,
             20 + padding / 2,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "C",
-            panels["C"],
-            20 + padding / 2,
-            500 + padding / 2,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "D",
-            panels["D"],
-            920 + padding / 2,
-            500 + padding / 2,
             offset=(-padding / 3, 0),
         )
     )
@@ -1291,17 +1263,27 @@ def fig_decoding_rat_details(panels, savepath):
         ),
         "D": (
             "grp-combined",
+            "decoding",
+            "replay_likelihood_bybin.svg",
+        ),
+        "E": (
+            "grp-combined",
+            "decoding",
+            "zscored_logodds_byphase.svg",
+        ),
+        "F": (
+            "grp-combined",
             "replays",
-            "exclusive_matched_replays_bybin.svg",
+            "exclusive_replays_bybin.svg",
         ),
     },
-    savepath=("figures", "decoding_supplemental.svg"),
-    copy_to="decoding_supplemental.pdf",
+    savepath=("figures", "decoding.svg"),
+    copy_to="decoding.pdf",
 )
-def fig_decoding_supplemental(panels, savepath):
+def fig_decoding(panels, savepath):
     padding = 50
     full_width = 1400 + padding
-    full_height = 950 + padding
+    full_height = 1400 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -1337,6 +1319,24 @@ def fig_decoding_supplemental(panels, savepath):
             panels["D"],
             500 + padding / 2,
             500 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "E",
+            panels["E"],
+            20 + padding / 2,
+            950 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "F",
+            panels["F"],
+            500 + padding / 2,
+            950 + padding / 2,
             offset=(-padding / 3, 0),
         )
     )
@@ -1779,7 +1779,7 @@ def task_copy_tex():
         (("grp-all", "data", "n_neurons.table"), "n_neurons.tex"),
         (("grp-all", "behavior", "n_trials.table"), "n_trials.tex"),
         (("grp-all", "behavior", "n_trials_phase3.table"), "n_trials_phase3.tex"),
-        (("grp-all", "swrs", "n_swrs_byphase.table"), "n_swrs_byphase.tex"),
+        (("grp-combined", "swrs", "n_swrs_byphase.table"), "n_swrs_byphase.tex"),
         (("grp-combined", "replays", "n_replays.table"), "n_replays.tex"),
         (("grp-combined", "replays", "percent_replays.table"), "percent_replays.tex"),
     ]

@@ -92,7 +92,7 @@ def plot_group_mean_error_bybin(infos, group_name, *, mean_error_bybin, savepath
         mean_error_bybin,
         ylabel="Mean decoding error (std unit)",
         std_axvlines=True,
-        ylim=25,
+        ylim=15,
         savepath=savepath,
     )
 
@@ -106,6 +106,10 @@ def plot_group_replay_decoding_bybin(
         std_axvlines=True,
         ylim=600,
         ylabel="Decoded counts during replays",
+        title={
+            trajectory: meta.trajectories_labels[trajectory]
+            for trajectory in meta.trajectories
+        },
         savepath=savepath,
     )
 
@@ -348,10 +352,17 @@ def plot_joined_decoded_replay(
 
 
 def _plot_decoding_preference(
-    preference, ylabel, full_shuffle, axhline=None, ylim=None, title=None, savepath=None
+    preference,
+    ylabel,
+    full_shuffle,
+    axhline=None,
+    ylim=None,
+    title=None,
+    figsize=(8, 6),
+    savepath=None,
 ):
     assert savepath is not None
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=figsize)
     x = np.arange(len(meta.task_times))
     mean_preference = [np.nanmean(preference[phase]) for phase in meta.task_times]
     if axhline is not None:
@@ -441,6 +452,7 @@ def plot_group_zscored_logodds_byphase(
         title=meta.title_labels[group_name] + f"\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
+        figsize=(6, 6) if group_name in ["all", "combined"] else (8, 6),
         savepath=savepath,
     )
 

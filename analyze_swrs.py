@@ -358,7 +358,7 @@ def cache_replays_byphase_df(infos, group_name, *, all_replays_byphase):
     return pd.DataFrame.from_dict(replays_df)
 
 
-@task(groups=meta_session.all_grouped, savepath=("swrs", "n_swrs_byphase.table"))
+@task(groups=meta_session.analysis_grouped, savepath=("swrs", "n_swrs_byphase.table"))
 def save_n_swrs_byphase(infos, group_name, *, all_swrs_byphase, savepath):
     with open(savepath, "w") as fp:
         print(

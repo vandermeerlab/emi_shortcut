@@ -217,23 +217,19 @@ def get_aligned_position(linear, decoded):
 
 
 @task(infos=meta_session.all_infos, cache_saves="aligned_position")
-def cache_aligned_position(info, *, matched_linear, decoded):
+def cache_aligned_position(info, *, linear, decoded):
     return {
-        trajectory: get_aligned_position(
-            matched_linear[trajectory], decoded[trajectory]
-        )
+        trajectory: get_aligned_position(linear[trajectory], decoded[trajectory])
         for trajectory in meta.trajectories
     }
 
 
 @task(infos=meta_session.all_infos, cache_saves="decoding_error")
-def cache_decoding_error(
-    info, *, task_times, matched_linear, decoded, aligned_position
-):
+def cache_decoding_error(info, *, task_times, linear, decoded, aligned_position):
     error = {}
     for trajectory in meta.trajectories:
         run_epoch = nept.run_threshold(
-            matched_linear[trajectory][task_times["maze_times"]],
+            linear[trajectory][task_times["maze_times"]],
             thresh=meta.std_speed_limit,
             t_smooth=meta.std_t_smooth,
         )
