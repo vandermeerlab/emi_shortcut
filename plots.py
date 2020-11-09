@@ -576,8 +576,8 @@ def plot_replay_metric(
                     start=start,
                     end=end,
                     height=max(
-                        list(replay_metric[trajectories[0]].values())[start : end + 1],
-                        0,
+                        list(replay_metric[trajectories[0]].values())[start : end + 1]
+                        + [0],
                     )
                     + h_adjust,
                     pval=pp,

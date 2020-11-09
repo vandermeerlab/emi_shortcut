@@ -199,6 +199,7 @@ def _plot_behavior_bytrial(
     title=None,
     legend_loc=None,
     show_legend=False,
+    axvline=None,
     savepath=None,
 ):
     assert savepath is not None
@@ -249,6 +250,10 @@ def _plot_behavior_bytrial(
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    if n_trials == 80:
+        plt.xticks([1, 10, 20, 30, 40, 50, 60, 70, 80])
+    else:
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune="lower"))
 
     plt.ylim(0, 1.05)
 
@@ -269,6 +274,9 @@ def _plot_behavior_bytrial(
             transform=ax.transAxes,
             fontsize=meta.fontsize_small,
         )
+
+    if axvline is not None:
+        ax.axvline(axvline, linestyle="dashed", color="k")
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -292,6 +300,7 @@ def _plot_behavior_bytrial(
     savepath={
         "all": ("behavior", "behavior_bytrial_all.svg"),
         "first_n": ("behavior", "behavior_bytrial_first_n.svg"),
+        "first_consecutive": ("behavior", "behavior_bytrial_first_consecutive.svg"),
     },
 )
 def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savepath):
@@ -323,6 +332,31 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
         if group_name in ["all", "combined", "r063", "day1"]
         else False,
         savepath=savepath["first_n"],
+    )
+
+
+@task(
+    groups=meta_session.all_grouped,
+    savepath=("behavior", "behavior_bytrial_consecutive.svg"),
+)
+def plot_behavior_bytrial_consecutive(
+    infos, group_name, *, trial_proportions_bytrial, mostly_shortcut_idx, savepath
+):
+    _plot_behavior_bytrial(
+        trial_proportions_bytrial,
+        len(infos),
+        n_trials=meta.first_n_trials_consecutive,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        legend_loc="center right"
+        if group_name in ["all", "combined", "r063", "day1"]
+        else "best",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        axvline=mostly_shortcut_idx + 1,
+        savepath=savepath,
     )
 
 

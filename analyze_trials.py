@@ -530,6 +530,25 @@ def save_behavior_durations(infos, group_name, *, all_trial_durations, savepath)
         print("% ---------", file=fp)
 
 
+@task(infos=meta_session.all_infos, cache_saves="mostly_shortcut_idx")
+def cache_mostly_shortcut_idx(info, *, trial_proportions_bytrial):
+    above_thresh = np.asarray(
+        np.array(
+            [np.mean(trial) for trial in trial_proportions_bytrial["full_shortcut"]]
+        )
+        >= meta.mostly_thresh,
+        dtype=int,
+    )
+    for ix, val in enumerate(above_thresh):
+        if val == 1 and ix > 0 and above_thresh[ix - 1] > 0:
+            above_thresh[ix] += above_thresh[ix - 1]
+
+    long_enough = np.where(above_thresh > meta.mostly_n_trials)[0]
+    if long_enough.size > 0:
+        return long_enough[0] - meta.mostly_n_trials
+    return np.nan
+
+
 @task(groups=meta_session.groups, cache_saves="mostly_shortcut_idx")
 def cache_mostly_shortcut_idx(infos, group_name, *, trial_proportions_bytrial):
     above_thresh = np.asarray(

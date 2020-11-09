@@ -427,7 +427,7 @@ def plot_replays_bybin(infos, group_name, *, replays_bybin, savepath):
         right="only_full_shortcut",
         title={
             trajectory: meta.trajectories_labels[trajectory]
-            for trajectory in meta.trajectories
+            for trajectory in ["only_u", "only_full_shortcut"]
         },
         savepath=savepath["exclusive"],
     )
@@ -459,7 +459,7 @@ def plot_matched_replays_bybin(infos, group_name, *, matched_replays_bybin, save
         right="only_full_shortcut",
         title={
             trajectory: meta.trajectories_labels[trajectory]
-            for trajectory in meta.trajectories
+            for trajectory in ["only_u", "only_full_shortcut"]
         },
         savepath=savepath["exclusive"],
     )

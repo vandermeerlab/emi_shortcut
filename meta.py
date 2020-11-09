@@ -76,7 +76,7 @@ colors = dict(
     run="#737373",
 )
 fontsize = 20
-fontsize_small = 16
+fontsize_small = 15
 behavioral_trajectories = ["u", "full_shortcut", "novel"]
 barriers = {"shortcut1": "shortcut", "shortcut2": "shortcut", "novel1": "novel"}
 barrier_trajectories = ["shortcut", "novel", "baseline"]
@@ -85,8 +85,10 @@ exclusive_trajectories = ["only_u", "only_full_shortcut", "both"]
 matched_trajectories = ["matched_u", "matched_full_shortcut"]
 trajectories_labels = {
     "u": "Familiar",
+    "only_u": "Familiar",
     "shortcut": "Shortcut",
     "full_shortcut": "Shortcut",
+    "only_full_shortcut": "Shortcut",
     "novel": "Dead-end",
     "exploratory": "Other",
 }
@@ -259,6 +261,7 @@ decoding_window = 0.05  # 0.1
 
 # behavior_bytrial
 first_n_trials = 20
+first_n_trials_consecutive = 80
 
 # behavior_mostly_shortcut
 mostly_thresh = 0.6

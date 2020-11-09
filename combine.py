@@ -303,8 +303,8 @@ def fig_behavior(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-all", "behavior", "behavior_choice_firsttrial.svg"),
-        "B": ("grp-all", "behavior", "behavior_firsttrial.svg"),
+        "A": ("grp-all", "behavior", "behavior_firsttrial.svg"),
+        "B": ("grp-all", "behavior", "behavior_bytrial_consecutive.svg"),
         "C": ("grp-all", "behavior", "behavior_barriers.svg"),
         "D": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
     },

@@ -93,6 +93,10 @@ def plot_group_mean_error_bybin(infos, group_name, *, mean_error_bybin, savepath
         ylabel="Mean decoding error (std unit)",
         std_axvlines=True,
         ylim=15,
+        title={
+            trajectory: meta.trajectories_labels[trajectory]
+            for trajectory in meta.trajectories
+        },
         savepath=savepath,
     )
 
