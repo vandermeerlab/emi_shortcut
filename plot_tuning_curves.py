@@ -691,6 +691,57 @@ def _plot_tc_correlations_histogram(tc_correlations, savepath):
     plt.close(fig)
 
 
+def _plot_tc_correlations_histogram_without13(tc_correlations, savepath):
+    fig, axs = plt.subplots(ncols=2, sharey=True, figsize=(13, 6.5))
+
+    n_neurons = tc_correlations["phases12"].shape[0]
+
+    for ax, phases in zip(axs, ["phases12", "phases23"]):
+        if "proportion" in savepath:
+            weights = np.ones_like(tc_correlations[phases]) / n_neurons
+            ylabel = "Proportion of neurons"
+        else:
+            weights = None
+            ylabel = "Number of neurons"
+        x, bins, p = ax.hist(
+            np.array(tc_correlations[phases]),
+            bins=20,
+            weights=weights,
+            color=meta.colors["u"],
+        )
+
+        ax.set_title(f"Phases {phases[-2]}-{phases[-1]}", fontsize=meta.fontsize)
+
+        plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
+        ax.set_xlim(-0.6, 1.0)
+        ax.set_xlabel("Correlation value", fontsize=meta.fontsize)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position("bottom")
+        ax.locator_params(axis="x", nbins=6)
+        if ax is axs[0]:
+            ax.text(
+                0.05,
+                0.95,
+                f"Total n={n_neurons}",
+                transform=ax.transAxes,
+                horizontalalignment="left",
+                verticalalignment="top",
+                fontsize=meta.fontsize,
+            )
+            ax.set_ylabel(ylabel, fontsize=meta.fontsize)
+            plt.locator_params(axis="y", nbins=6)
+            plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+            ax.yaxis.set_ticks_position("left")
+        else:
+            ax.tick_params(labelleft=False)
+
+    plt.tight_layout(h_pad=0.003)
+
+    plt.savefig(savepath, bbox_inches="tight", transparent=True)
+    plt.close(fig)
+
+
 @task(
     infos=meta_session.analysis_infos,
     savepath={
@@ -716,6 +767,23 @@ def plot_group_tc_correlations_histogram(
 ):
     for key in savepath:
         _plot_tc_correlations_histogram(
+            tc_correlations,
+            savepath=savepath[key],
+        )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath={
+        key: ("tcs", f"tc_correlations_without13_{key}.svg")
+        for key in ["count", "proportion"]
+    },
+)
+def plot_group_tc_correlations_histogram_without13(
+    infos, group_name, *, tc_correlations, savepath
+):
+    for key in savepath:
+        _plot_tc_correlations_histogram_without13(
             tc_correlations,
             savepath=savepath[key],
         )

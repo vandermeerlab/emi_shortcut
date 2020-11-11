@@ -37,6 +37,16 @@ experiences_labels = {
     "shortcut_phase3": "Shortcut Phase 3",
     "familiar_phase3": "Familiar Phase 3",
 }
+on_task = [
+    "familiar_phase12",
+    "first_shortcut",
+    "phase3_after",
+]
+on_task_labels = {
+    "familiar_phase12": "Phases 1 + 2",
+    "first_shortcut": "First Shortcut",
+    "phase3_after": "Phase 3 After",
+}
 event_labels = {
     "led1": "TTL Output on AcqSystem1_0 board 0 port 2 value (0x0001).",
     "led2": "TTL Output on AcqSystem1_0 board 0 port 2 value (0x0002).",

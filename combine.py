@@ -303,6 +303,69 @@ def fig_behavior(panels, savepath):
 
 @task(
     panels={
+        "A": ("grp-all", "behavior", "behavior_choice.svg"),
+        "B": ("grp-all", "behavior", "behavior_duration.svg"),
+        "C": ("grp-all", "behavior", "behavior_bytrial_first_n.svg"),
+        "D": ("grp-all", "behavior", "behavior_firsttrial.svg"),
+        "E": ("grp-all", "behavior", "behavior_barriers.svg"),
+        "F": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
+    },
+    savepath=("figures", "behavior_ppt.svg"),
+    copy_to="behavior_ppt.pdf",
+)
+def fig_behavior_ppt(panels, savepath):
+    padding = 50
+    full_width = 1850 + padding
+    full_height = 900 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding / 2,
+            20 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el("B", panels["B"], 610 + padding, 20 + padding / 2, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            "C",
+            panels["C"],
+            1240 + padding / 2,
+            10 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "D",
+            panels["D"],
+            20 + padding / 2,
+            500 + padding / 2,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el("E", panels["E"], 610 + padding, 500 + padding / 2, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            "F",
+            panels["F"],
+            1240 + padding / 2,
+            480 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "A": ("grp-all", "behavior", "behavior_firsttrial.svg"),
         "B": ("grp-all", "behavior", "behavior_bytrial_consecutive.svg"),
         "C": ("grp-all", "behavior", "behavior_barriers.svg"),
@@ -471,43 +534,27 @@ def fig_tuning_curves(panels, savepath):
     savefig(fig, savepath)
 
 
-# @task(
-#     panels={
-#         "A": ("grp-combined", "tcs", "tc_correlations_proportion.svg"),
-#         "B": ("grp-combined", "tcs", "tc_field_remapping.svg"),
-#         "C": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase2.svg"),
-#         "D": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase3.svg"),
-#         "E": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase1.svg"),
-#         "F": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase2.svg"),
-#     },
-#     savepath=("figures", "tuning_curves_supplemental.svg"),
-#     copy_to="tuning_curves_supplemental.pdf",
-# )
-# def fig_tuning_curves_supplemental(panels, savepath):
-#     padding = 20
-#     full_width = 2050 + padding
-#     full_height = 1000 + padding
-#
-#     fig = svgfig(full_width, full_height)
-#     fig.append(
-#         el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
-#     )
-#     fig.append(
-#         el("B", panels["B"], 1400 + padding, 30 + padding, offset=(-padding / 3, 0))
-#     )
-#     fig.append(
-#         el("C", panels["C"], 120 + padding, 550 + padding, offset=(-padding / 3, 0))
-#     )
-#     fig.append(
-#         el(None, panels["D"], 550 + padding, 550 + padding, offset=(-padding / 3, 0))
-#     )
-#     fig.append(
-#         el("D", panels["E"], 1050 + padding, 550 + padding, offset=(-padding / 3, 0))
-#     )
-#     fig.append(
-#         el(None, panels["F"], 1510 + padding, 550 + padding, offset=(-padding / 3, 0))
-#     )
-#     savefig(fig, savepath)
+@task(
+    panels={
+        "A": ("ind-R066d5", "ind-tcs", "tc_full_shortcut_18.svg"),
+        "B": ("grp-combined", "tcs", "tc_correlations_within_phase.svg"),
+    },
+    savepath=("figures", "tuning_curves_ppt.svg"),
+    copy_to="tuning_curves_ppt.pdf",
+)
+def fig_tuning_curves_ppt(panels, savepath):
+    padding = 20
+    full_width = 1200 + padding
+    full_height = 750 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 180 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("B", panels["B"], 20 + padding, 350 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
 
 
 @task(
@@ -563,7 +610,7 @@ def fig_tuning_curves_supplemental(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-combined", "tcs", "tc_correlations_proportion.svg"),
+        "A": ("grp-combined", "tcs", "tc_correlations_without13_proportion.svg"),
         "B": ("grp-combined", "tcs", "tc_field_remapping.svg"),
         "C": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase2.svg"),
         "D": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase3.svg"),
@@ -575,39 +622,39 @@ def fig_tuning_curves_supplemental(panels, savepath):
 )
 def fig_tuning_curves_supplemental_ppt(panels, savepath):
     padding = 20
-    full_width = 1600 + padding
-    full_height = 1400 + padding
+    full_width = 1900 + padding
+    full_height = 950 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
-        el("E", panels["A"], 180 + padding, 20 + padding, offset=(-padding / 3, 0))
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("F", panels["B"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
+        el("B", panels["B"], 1000 + padding, 30 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el(
-            "G",
+            "C",
             panels["C"],
-            630 + padding,
+            20 + padding,
             500 + padding,
             offset=(-padding / 3, 0),
         )
     )
     fig.append(
-        el(None, panels["D"], 1100 + padding, 500 + padding, offset=(-padding / 3, 0))
+        el(None, panels["D"], 490 + padding, 500 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el(
-            "H",
+            "D",
             panels["E"],
-            630 + padding,
-            950 + padding,
+            960 + padding,
+            500 + padding,
             offset=(-padding / 3, 0),
         )
     )
     fig.append(
-        el(None, panels["F"], 1100 + padding, 950 + padding, offset=(-padding / 3, 0))
+        el(None, panels["F"], 1430 + padding, 500 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -659,37 +706,25 @@ def fig_swr(panels, savepath):
 
 @task(
     panels={
-        "A": ("ind-R066d1", "swrs", "swrs_in_position.svg"),
-        "B": ("ind-R066d2", "swrs", "swrs_in_position.svg"),
-        "C": ("ind-R066d3", "swrs", "swrs_in_position.svg"),
-        "D": ("ind-R066d7", "swrs", "swrs_in_position.svg"),
+        "A": ("ind-R066d3", "swrs", "swrs_in_position.svg"),
     },
     savepath=("figures", "swrs_in_position.svg"),
     copy_to="swrs_in_position.pdf",
 )
 def fig_swrs_in_position(panels, savepath):
     padding = 50
-    full_width = 720 + padding
-    full_height = 600 + padding
+    full_width = 320 + padding
+    full_height = 300 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
         el(
             None,
             panels["A"],
-            10 + padding / 2,
-            30 + padding / 2,
+            0 + padding / 2,
+            0 + padding / 2,
             offset=(-padding / 3, 0),
         )
-    )
-    fig.append(
-        el(None, panels["B"], 330 + padding, 0 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
-        el(None, panels["C"], 0 + padding, 280 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
-        el(None, panels["D"], 380 + padding, 280 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -742,16 +777,14 @@ def fig_replay(panels, savepath):
         "A": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
         "B": ("ind-R068d1", "replays", "replays_overtime-u.svg"),
         "C": ("ind-R068d1", "replays", "replays_overtime-full_shortcut.svg"),
-        "D": ("grp-combined", "swrs", "correlation_hist-u.svg"),
-        "E": ("grp-combined", "swrs", "correlation_hist-full_shortcut.svg"),
     },
-    savepath=("figures", "replay_ppt.svg"),
-    copy_to="replay_ppt.pdf",
+    savepath=("figures", "swr_ppt.svg"),
+    copy_to="swr_ppt.pdf",
 )
-def fig_replay_ppt(panels, savepath):
+def fig_swr_ppt(panels, savepath):
     padding = 50
     full_width = 1500 + padding
-    full_height = 1100 + padding
+    full_height = 650 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -781,11 +814,40 @@ def fig_replay_ppt(panels, savepath):
             offset=(-padding / 3, 0),
         )
     )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-combined", "swrs", "correlation_hist-u.svg"),
+        "B": ("grp-combined", "swrs", "correlation_hist-full_shortcut.svg"),
+        "C": ("grp-combined", "replays", "replay_durations_histogram_u.svg"),
+        "D": (
+            "grp-combined",
+            "replays",
+            "replay_durations_histogram_full_shortcut.svg",
+        ),
+    },
+    savepath=("figures", "replay_ppt.svg"),
+    copy_to="replay_ppt.pdf",
+)
+def fig_replay_ppt(panels, savepath):
+    padding = 50
+    full_width = 1250 + padding
+    full_height = 1000 + padding
+
+    fig = svgfig(full_width, full_height)
     fig.append(
-        el("D", panels["D"], 140 + padding, 650 + padding, offset=(-padding / 3, 0))
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("E", panels["E"], 750 + padding, 650 + padding, offset=(-padding / 3, 0))
+        el("B", panels["B"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("C", panels["C"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("D", panels["D"], 630 + padding, 500 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -807,12 +869,12 @@ def fig_replay_ppt(panels, savepath):
         "E": (
             "grp-combined",
             "replays",
-            "overlapping_replay_proportions_byexperience.svg",
+            "overlapping_replay_proportions_byexperience_bytrial.svg",
         ),
         "F": (
             "grp-combined",
             "replays",
-            "contrast_replay_proportions_byexperience.svg",
+            "contrast_replay_proportions_byexperience_bytrial.svg",
         ),
     },
     savepath=("figures", "replay_summary.svg"),
@@ -910,35 +972,74 @@ def fig_replay_summary_byphase(panels, savepath):
 
 @task(
     panels={
+        "A": ("grp-combined", "replays", "overlapping_replay_proportions_byphase.svg"),
+        "B": (
+            "grp-combined",
+            "replays",
+            "overlapping_replay_proportions_byexperience_bytrial.svg",
+        ),
+    },
+    savepath=("figures", "replay_summary_byphase_ppt.svg"),
+    copy_to="replay_summary_byphase_ppt.pdf",
+)
+def fig_replay_summary_byphase_ppt(panels, savepath):
+    padding = 50
+    full_width = 1300 + padding
+    full_height = 500 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            650 + padding,
+            70 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "A": (
             "grp-combined",
             "replays",
-            "overlapping_replay_proportions_byexperience.svg",
+            "overlapping_replay_proportions_byexperience_bytrial.svg",
         ),
         "B": (
             "grp-combined",
             "replays",
-            "contrast_replay_proportions_byexperience.svg",
+            "contrast_replay_proportions_byexperience_bytrial.svg",
         ),
         "C": (
             "grp-combined",
             "replays",
-            "overlapping_replay_proportions_byexperience_feederonly.svg",
+            "overlapping_replay_proportions_byexperience_feederonly_bytrial.svg",
         ),
         "D": (
             "grp-combined",
             "replays",
-            "contrast_replay_proportions_byexperience_feederonly.svg",
+            "contrast_replay_proportions_byexperience_feederonly_bytrial.svg",
         ),
         "E": (
             "grp-combined",
             "replays",
-            "overlapping_replay_proportions_byexperience_nofeeder.svg",
+            "overlapping_replay_proportions_byexperience_nofeeder_bytrial.svg",
         ),
         "F": (
             "grp-combined",
             "replays",
-            "contrast_replay_proportions_byexperience_nofeeder.svg",
+            "contrast_replay_proportions_byexperience_nofeeder_bytrial.svg",
         ),
     },
     savepath=("figures", "replay_summary_byexperience.svg"),
@@ -1001,6 +1102,63 @@ def fig_replay_summary_byexperience(panels, savepath):
             panels["F"],
             650 + padding,
             900 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": (
+            "grp-combined",
+            "replays",
+            "exclusive_replay_proportions_byexperience_feederonly_bytrial.svg",
+        ),
+        "B": (
+            "grp-combined",
+            "replays",
+            "exclusive_replay_proportions_byexperience_nofeeder_bytrial.svg",
+        ),
+        "C": (
+            "grp-combined",
+            "replays",
+            "exclusive_replay_proportions_byexperience_feederonly.svg",
+        ),
+    },
+    savepath=("figures", "replay_summary_byexperience_ppt.svg"),
+    copy_to="replay_summary_byexperience_ppt.pdf",
+)
+def fig_replay_summary_byexperience_ppt(panels, savepath):
+    padding = 50
+    full_width = 1900 + padding
+    full_height = 500 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            650 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "C",
+            panels["C"],
+            1260 + padding,
+            20 + padding,
             offset=(-padding / 3, 0),
         )
     )
@@ -1098,9 +1256,8 @@ def fig_decoding_errors(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-combined", "decoding", "std_error.svg"),
-        "B": ("grp-combined", "decoding", "std_error_bybin.svg"),
-        "C": (
+        "A": ("grp-combined", "decoding", "std_error_bybin.svg"),
+        "B": (
             "grp-combined",
             "decoding",
             "replay_likelihood_bybin.svg",
@@ -1111,7 +1268,7 @@ def fig_decoding_errors(panels, savepath):
 )
 def fig_decoding_ppt(panels, savepath):
     padding = 50
-    full_width = 1500 + padding
+    full_width = 950 + padding
     full_height = 950 + padding
 
     fig = svgfig(full_width, full_height)
@@ -1128,16 +1285,7 @@ def fig_decoding_ppt(panels, savepath):
         el(
             "B",
             panels["B"],
-            600 + padding / 2,
             20 + padding / 2,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "C",
-            panels["C"],
-            600 + padding / 2,
             500 + padding / 2,
             offset=(-padding / 3, 0),
         )
@@ -1743,6 +1891,101 @@ def fig_example_maze_trials(panels, savepath):
             panels["A"],
             0 + padding,
             0 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": (
+            "grp-all",
+            "behavior",
+            "behavior_bytrial_consecutive.svg",
+        ),
+    },
+    savepath=("figures", "behavior_bytrial_consecutive.svg"),
+    copy_to="behavior_bytrial_consecutive.pdf",
+)
+def fig_behavior_bytrial_consecutive(panels, savepath):
+    padding = 50
+    full_width = 600 + padding
+    full_height = 450 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            None,
+            panels["A"],
+            0 + padding,
+            0 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-combined", "tcs", "tc_mean_u.svg"),
+        "B": ("grp-combined", "tcs", "tc_mean_full_shortcut.svg"),
+    },
+    savepath=("figures", "tuning_curves_mean.svg"),
+    copy_to="tuning_curves_mean.pdf",
+)
+def fig_tuning_curves_mean(panels, savepath):
+    padding = 20
+    full_width = 1100 + padding
+    full_height = 450 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(None, panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["B"], 550 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-combined", "tcs", "tc_mean_appear_phase2.svg"),
+        "B": ("grp-combined", "tcs", "tc_mean_appear_phase3.svg"),
+        "C": ("grp-combined", "tcs", "tc_mean_disappear_phase1.svg"),
+        "D": ("grp-combined", "tcs", "tc_mean_disappear_phase2.svg"),
+    },
+    savepath=("figures", "tuning_curves_remapping_ppt.svg"),
+    copy_to="tuning_curves_remapping_ppt.pdf",
+)
+def fig_tuning_curves_remapping_ppt(panels, savepath):
+    padding = 20
+    full_width = 1250 + padding
+    full_height = 950 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            None,
+            panels["B"],
+            630 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el("B", panels["C"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            None,
+            panels["D"],
+            630 + padding,
+            500 + padding,
             offset=(-padding / 3, 0),
         )
     )

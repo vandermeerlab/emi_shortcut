@@ -433,6 +433,15 @@ def cache_combined_swr_durations(infos, group_name, *, all_swrs):
     return durations
 
 
+@task(groups=meta_session.analysis_grouped, cache_saves="replay_durations")
+def cache_combined_replay_durations(infos, group_name, *, all_replays):
+    durations = {trajectory: [] for trajectory in meta.trajectories}
+    for trajectory in meta.trajectories:
+        for replay in all_replays:
+            durations[trajectory].extend(replay[trajectory].durations)
+    return durations
+
+
 @task(groups=meta_session.analysis_grouped, cache_saves="swr_durations_byphase")
 def cache_combined_swr_durations_byphase(infos, group_name, *, all_swrs_byphase):
     durations = {}
@@ -1269,7 +1278,7 @@ def cache_replay_proportions_normalized_byphase(
     return normalized
 
 
-def get_swrs_byexperience(trials, swrs):
+def get_swrs_byexperience_bytrial(trials, swrs):
     first_shortcut_trial = trials["full_shortcut"][0]
     shortcut_trials = trials["full_shortcut"][1:]
     familiar_trials = trials["u"].time_slice(
@@ -1284,9 +1293,38 @@ def get_swrs_byexperience(trials, swrs):
     }
 
 
+def get_swrs_byexperience(task_times, trials, swrs):
+    first_shortcut_trial = trials["full_shortcut"][0]
+    phase3_after = nept.Epoch(first_shortcut_trial.stop, task_times["phase3"].stop)
+
+    return {
+        "familiar_phase12": (swrs["phase1"].n_epochs + swrs["phase2"].n_epochs),
+        "first_shortcut": (swrs["phase3"].intersect(first_shortcut_trial).n_epochs),
+        "phase3_after": (swrs["phase3"].intersect(phase3_after).n_epochs),
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_bytrial")
+def cache_swr_n_byexperience_bytrial(info, *, task_times, trials, swrs_byphase):
+    return get_swrs_byexperience_bytrial(trials, swrs_byphase)
+
+
+@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_bytrial")
+def cache_combined_swr_n_byexperience_bytrial(
+    infos, group_name, *, all_swr_n_byexperience_bytrial
+):
+    return {
+        experience: sum(
+            swr_n_byexperience[experience]
+            for swr_n_byexperience in all_swr_n_byexperience_bytrial
+        )
+        for experience in meta.experiences
+    }
+
+
 @task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience")
-def cache_swr_n_byexperience(info, *, trials, swrs_byphase):
-    return get_swrs_byexperience(trials, swrs_byphase)
+def cache_swr_n_byexperience(info, *, task_times, trials, swrs_byphase):
+    return get_swrs_byexperience(task_times, trials, swrs_byphase)
 
 
 @task(groups=meta_session.groups, cache_saves="swr_n_byexperience")
@@ -1296,12 +1334,12 @@ def cache_combined_swr_n_byexperience(infos, group_name, *, all_swr_n_byexperien
             swr_n_byexperience[experience]
             for swr_n_byexperience in all_swr_n_byexperience
         )
-        for experience in meta.experiences
+        for experience in meta.on_task
     }
 
 
-@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience")
-def cache_replay_n_byexperience(info, *, trials, replays_byphase):
+@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience_bytrial")
+def cache_replay_n_byexperience_bytrial(info, *, trials, replays_byphase):
     first_shortcut_trial = trials["full_shortcut"][0]
     shortcut_trials = trials["full_shortcut"][1:]
     familiar_trials = trials["u"].time_slice(
@@ -1334,6 +1372,46 @@ def cache_replay_n_byexperience(info, *, trials, replays_byphase):
     }
 
 
+@task(groups=meta_session.groups, cache_saves="replay_n_byexperience_bytrial")
+def cache_combined_replay_n_byexperience_bytrial(
+    infos, group_name, *, all_replay_n_byexperience_bytrial
+):
+    return {
+        trajectory: {
+            experience: sum(
+                replay_n_byexperience[trajectory][experience]
+                for replay_n_byexperience in all_replay_n_byexperience_bytrial
+            )
+            for experience in meta.experiences
+        }
+        for trajectory in all_replay_n_byexperience_bytrial[0]
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience")
+def cache_replay_n_byexperience(info, *, task_times, trials, replays_byphase):
+    first_shortcut_trial = trials["full_shortcut"][0]
+    phase3_after = nept.Epoch(first_shortcut_trial.stop, task_times["phase3"].stop)
+
+    return {
+        trajectory: {
+            "familiar_phase12": (
+                replays_byphase[trajectory]["phase1"].n_epochs
+                + replays_byphase[trajectory]["phase2"].n_epochs
+            ),
+            "first_shortcut": (
+                replays_byphase[trajectory]["phase3"]
+                .intersect(first_shortcut_trial)
+                .n_epochs
+            ),
+            "phase3_after": (
+                replays_byphase[trajectory]["phase3"].intersect(phase3_after).n_epochs
+            ),
+        }
+        for trajectory in replays_byphase
+    }
+
+
 @task(groups=meta_session.groups, cache_saves="replay_n_byexperience")
 def cache_combined_replay_n_byexperience(
     infos, group_name, *, all_replay_n_byexperience
@@ -1344,13 +1422,13 @@ def cache_combined_replay_n_byexperience(
                 replay_n_byexperience[trajectory][experience]
                 for replay_n_byexperience in all_replay_n_byexperience
             )
-            for experience in meta.experiences
+            for experience in meta.on_task
         }
         for trajectory in all_replay_n_byexperience[0]
     }
 
 
-def get_replay_proportions_byexperience(replay_n, swr_n):
+def get_replay_proportions_byexperience_bytrial(replay_n, swr_n):
     prop = {
         trajectory: {
             experience: replay_n[trajectory][experience] / swr_n[experience]
@@ -1377,25 +1455,77 @@ def get_replay_proportions_byexperience(replay_n, swr_n):
     return prop
 
 
-@task(infos=meta_session.all_infos, cache_saves="replay_proportions_byexperience")
-def cache_replay_proportions_byexperience(
-    info, *, replay_n_byexperience, swr_n_byexperience
+def get_replay_proportions_byexperience(replay_n, swr_n):
+    prop = {
+        trajectory: {
+            experience: replay_n[trajectory][experience] / swr_n[experience]
+            if swr_n[experience] > 0
+            else 0
+            for experience in meta.on_task
+        }
+        for trajectory in replay_n
+    }
+    prop["difference"] = {
+        experience: prop["only_full_shortcut"][experience] - prop["only_u"][experience]
+        for experience in meta.on_task
+    }
+    exclusive_sum = {
+        experience: prop["only_full_shortcut"][experience] + prop["only_u"][experience]
+        for experience in meta.on_task
+    }
+    prop["contrast"] = {
+        experience: prop["difference"][experience] / exclusive_sum[experience]
+        if exclusive_sum[experience] > 0
+        else 0
+        for experience in meta.on_task
+    }
+    return prop
+
+
+@task(
+    infos=meta_session.all_infos, cache_saves="replay_proportions_byexperience_bytrial"
+)
+def cache_replay_proportions_byexperience_bytrial(
+    info, *, replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
 ):
-    return get_replay_proportions_byexperience(
-        replay_n_byexperience, swr_n_byexperience
+    return get_replay_proportions_byexperience_bytrial(
+        replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
     )
 
 
-@task(groups=meta_session.groups, cache_saves="replay_proportions_byexperience")
-def cache_combined_replay_proportions_byexperience(
-    infos, group_name, *, replay_n_byexperience, swr_n_byexperience
+@task(groups=meta_session.groups, cache_saves="replay_proportions_byexperience_bytrial")
+def cache_combined_replay_proportions_byexperience_bytrial(
+    infos, group_name, *, replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
 ):
-    return get_replay_proportions_byexperience(
-        replay_n_byexperience, swr_n_byexperience
+    return get_replay_proportions_byexperience_bytrial(
+        replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
     )
 
 
 def get_replay_proportions_byexperience_pval(replay_n, swr_n):
+    return {
+        key: {
+            task_time: simple_ttest(
+                n1=swr_n[task_time],
+                p1=replay_n[f"{'only_' if key == 'exclusive' else ''}u"][task_time]
+                / swr_n[task_time],
+                n2=swr_n[task_time],
+                p2=(
+                    replay_n[f"{'only_' if key == 'exclusive' else ''}full_shortcut"][
+                        task_time
+                    ]
+                    / swr_n[task_time]
+                ),
+            )
+            if swr_n[task_time] > 0
+            else 1.0
+            for task_time in meta.on_task
+        }
+        for key in ["overlapping", "exclusive"]
+    }
+
+
+def get_replay_proportions_byexperience_bytrial_pval(replay_n, swr_n):
     return {
         key: {
             task_time: simple_ttest(
@@ -1418,26 +1548,32 @@ def get_replay_proportions_byexperience_pval(replay_n, swr_n):
     }
 
 
-@task(infos=meta_session.all_infos, cache_saves="replay_proportions_byexperience_pval")
-def cache_replay_proportions_byexperience_pval(
-    info, *, replay_n_byexperience, swr_n_byexperience
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_bytrial_pval",
+)
+def cache_replay_proportions_byexperience_bytrial_pval(
+    info, *, replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
 ):
     return get_replay_proportions_byexperience_pval(
-        replay_n_byexperience, swr_n_byexperience
+        replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
     )
 
 
-@task(groups=meta_session.groups, cache_saves="replay_proportions_byexperience_pval")
-def cache_combined_replay_proportions_byexperience_pval(
-    infos, group_name, *, replay_n_byexperience, swr_n_byexperience
+@task(
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_bytrial_pval",
+)
+def cache_combined_replay_proportions_byexperience_bytrial_pval(
+    infos, group_name, *, replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
 ):
-    return get_replay_proportions_byexperience_pval(
-        replay_n_byexperience, swr_n_byexperience
+    return get_replay_proportions_byexperience_bytrial_pval(
+        replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
     )
 
 
 @task(infos=meta_session.all_infos, cache_saves="swrs_byphase_feederonly")
-def cache_swrs_byphase_feederonly(info, *, task_times, position_byzone, swrs_byphase):
+def cache_swrs_byphase_feederonly(info, *, position_byzone, swrs_byphase):
     swrs_infeeders = {phase: [] for phase in meta.run_times}
     for phase in meta.run_times:
         starts = []
@@ -1468,19 +1604,21 @@ def cache_swrs_byphase_feederonly(info, *, task_times, position_byzone, swrs_byp
     return swrs_infeeders
 
 
-@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_feederonly")
-def cache_swr_n_byexperience_feederonly(info, *, trials, swrs_byphase_feederonly):
-    return get_swrs_byexperience(trials, swrs_byphase_feederonly)
+@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_feederonly_bytrial")
+def cache_swr_n_byexperience_feederonly_bytrial(
+    info, *, trials, swrs_byphase_feederonly_bytrial
+):
+    return get_swrs_byexperience_bytrial(trials, swrs_byphase_feederonly_bytrial)
 
 
-@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_feederonly")
-def cache_combined_swr_n_byexperience_feederonly(
-    infos, group_name, *, all_swr_n_byexperience_feederonly
+@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_feederonly_bytrial")
+def cache_combined_swr_n_byexperience_feederonly_bytrial(
+    infos, group_name, *, all_swr_n_byexperience_feederonly_bytrial
 ):
     return {
         experience: sum(
             swr_n_byexperience[experience]
-            for swr_n_byexperience in all_swr_n_byexperience_feederonly
+            for swr_n_byexperience in all_swr_n_byexperience_feederonly_bytrial
         )
         for experience in meta.experiences
     }
@@ -1520,7 +1658,28 @@ def cache_replays_byphase_feederonly(info, *, position_byzone, replays_byphase):
     return replays_infeeders
 
 
-def get_replays_byexperience(trials, replays):
+def get_replays_byexperience(task_times, trials, replays):
+    first_shortcut_trial = trials["full_shortcut"][0]
+    phase3_after = nept.Epoch(first_shortcut_trial.stop, task_times["phase3"].stop)
+
+    return {
+        trajectory: {
+            "familiar_phase12": (
+                replays[trajectory]["phase1"].n_epochs
+                + replays[trajectory]["phase2"].n_epochs
+            ),
+            "first_shortcut": (
+                replays[trajectory]["phase3"].intersect(first_shortcut_trial).n_epochs
+            ),
+            "phase3_after": (
+                replays[trajectory]["phase3"].intersect(phase3_after).n_epochs
+            ),
+        }
+        for trajectory in replays
+    }
+
+
+def get_replays_byexperience_bytrial(trials, replays):
     first_shortcut_trial = trials["full_shortcut"][0]
     shortcut_trials = trials["full_shortcut"][1:]
     familiar_trials = trials["u"].time_slice(
@@ -1547,79 +1706,92 @@ def get_replays_byexperience(trials, replays):
     }
 
 
-@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience_feederonly")
-def cache_replay_n_byexperience_feederonly(info, *, trials, replays_byphase_feederonly):
-    return get_replays_byexperience(trials, replays_byphase_feederonly)
+@task(
+    infos=meta_session.all_infos, cache_saves="replay_n_byexperience_feederonly_bytrial"
+)
+def cache_replay_n_byexperience_feederonly_bytrial(
+    info, *, trials, replays_byphase_feederonly_bytrial
+):
+    return get_replays_byexperience_bytrial(trials, replays_byphase_feederonly_bytrial)
 
 
-@task(groups=meta_session.groups, cache_saves="replay_n_byexperience_feederonly")
-def cache_combined_replay_n_byexperience_feederonly(
-    infos, group_name, *, all_replay_n_byexperience_feederonly
+@task(
+    groups=meta_session.groups, cache_saves="replay_n_byexperience_feederonly_bytrial"
+)
+def cache_combined_replay_n_byexperience_feederonly_bytrial(
+    infos, group_name, *, all_replay_n_byexperience_feederonly_bytrial
 ):
     return {
         trajectory: {
             experience: sum(
                 replay_n_byexperience[trajectory][experience]
-                for replay_n_byexperience in all_replay_n_byexperience_feederonly
+                for replay_n_byexperience in all_replay_n_byexperience_feederonly_bytrial
             )
             for experience in meta.experiences
         }
-        for trajectory in all_replay_n_byexperience_feederonly[0]
+        for trajectory in all_replay_n_byexperience_feederonly_bytrial[0]
     }
 
 
 @task(
     infos=meta_session.all_infos,
-    cache_saves="replay_proportions_byexperience_feederonly_feederonly",
+    cache_saves="replay_proportions_byexperience_feederonly_bytrial",
 )
-def cache_replay_proportions_byexperience_feederonly(
-    info, *, replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
-):
-    return get_replay_proportions_byexperience(
-        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
-    )
-
-
-@task(
-    groups=meta_session.groups, cache_saves="replay_proportions_byexperience_feederonly"
-)
-def cache_combined_replay_proportions_byexperience(
-    infos,
-    group_name,
+def cache_replay_proportions_byexperience_feederonly_bytrial(
+    info,
     *,
-    replay_n_byexperience_feederonly,
-    swr_n_byexperience_feederonly,
+    replay_n_byexperience_feederonly_bytrial,
+    swr_n_byexperience_feederonly_bytrial,
 ):
-    return get_replay_proportions_byexperience(
-        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
-    )
-
-
-@task(
-    infos=meta_session.all_infos,
-    cache_saves="replay_proportions_byexperience_feederonly_pval",
-)
-def cache_replay_proportions_byexperience_feederonly_pval(
-    info, *, replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
-):
-    return get_replay_proportions_byexperience_pval(
-        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
+    return get_replay_proportions_byexperience_bytrial(
+        replay_n_byexperience_feederonly_bytrial, swr_n_byexperience_feederonly_bytrial
     )
 
 
 @task(
     groups=meta_session.groups,
-    cache_saves="replay_proportions_byexperience_feederonly_pval",
+    cache_saves="replay_proportions_byexperience_feederonly_bytrial",
 )
-def cache_combined_replay_proportions_byexperience_feederonly_pval(
+def cache_combined_replay_proportions_byexperience(
     infos,
     group_name,
     *,
-    replay_n_byexperience_feederonly,
-    swr_n_byexperience_feederonly,
+    replay_n_byexperience_feederonly_bytrial,
+    swr_n_byexperience_feederonly_bytrial,
 ):
-    return get_replay_proportions_byexperience_pval(
-        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
+    return get_replay_proportions_byexperience_bytrial(
+        replay_n_byexperience_feederonly_bytrial, swr_n_byexperience_feederonly_bytrial
+    )
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_feederonly_bytrial_pval",
+)
+def cache_replay_proportions_byexperience_feederonly_bytrial_pval(
+    info,
+    *,
+    replay_n_byexperience_feederonly_bytrial,
+    swr_n_byexperience_feederonly_bytrial,
+):
+    return get_replay_proportions_byexperience_bytrial_pval(
+        replay_n_byexperience_feederonly_bytrial, swr_n_byexperience_feederonly_bytrial
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_feederonly_bytrial_pval",
+)
+def cache_combined_replay_proportions_byexperience_feederonly_bytrial_pval(
+    infos,
+    group_name,
+    *,
+    replay_n_byexperience_feederonly_bytrial,
+    swr_n_byexperience_feederonly_bytrial,
+):
+    return get_replay_proportions_byexperience_bytrial_pval(
+        replay_n_byexperience_feederonly_bytrial, swr_n_byexperience_feederonly_bytrial
     )
 
 
@@ -1651,19 +1823,19 @@ def cache_swrs_byphase_nofeeder(info, *, task_times, position_byzone, swrs_bypha
     return swrs_nofeeders
 
 
-@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_nofeeder")
-def cache_swr_n_byexperience_nofeeder(info, *, trials, swrs_byphase_nofeeder):
-    return get_swrs_byexperience(trials, swrs_byphase_nofeeder)
+@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_nofeeder_bytrial")
+def cache_swr_n_byexperience_nofeeder_bytrial(info, *, trials, swrs_byphase_nofeeder):
+    return get_swrs_byexperience_bytrial(trials, swrs_byphase_nofeeder)
 
 
-@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_nofeeder")
-def cache_combined_swr_n_byexperience_nofeeder(
-    infos, group_name, *, all_swr_n_byexperience_nofeeder
+@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_nofeeder_bytrial")
+def cache_combined_swr_n_byexperience_nofeeder_bytrial(
+    infos, group_name, *, all_swr_n_byexperience_nofeeder_bytrial
 ):
     return {
         experience: sum(
             swr_n_byexperience[experience]
-            for swr_n_byexperience in all_swr_n_byexperience_nofeeder
+            for swr_n_byexperience in all_swr_n_byexperience_nofeeder_bytrial
         )
         for experience in meta.experiences
     }
@@ -1704,9 +1876,217 @@ def cache_replays_byphase_nofeeder(info, *, position_byzone, replays_byphase):
     return replays_nofeeders
 
 
+@task(
+    infos=meta_session.all_infos, cache_saves="replay_n_byexperience_nofeeder_bytrial"
+)
+def cache_replay_n_byexperience_nofeeder_bytrial(
+    info, *, trials, replays_byphase_nofeeder
+):
+    return get_replays_byexperience_bytrial(trials, replays_byphase_nofeeder)
+
+
+@task(groups=meta_session.groups, cache_saves="replay_n_byexperience_nofeeder_bytrial")
+def cache_combined_replay_n_byexperience_nofeeder_bytrial(
+    infos, group_name, *, all_replay_n_byexperience_nofeeder_bytrial
+):
+    return {
+        trajectory: {
+            experience: sum(
+                replay_n_byexperience[trajectory][experience]
+                for replay_n_byexperience in all_replay_n_byexperience_nofeeder_bytrial
+            )
+            for experience in meta.experiences
+        }
+        for trajectory in all_replay_n_byexperience_nofeeder_bytrial[0]
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_nofeeder_bytrial",
+)
+def cache_replay_proportions_byexperience_nofeederonly(
+    info, *, replay_n_byexperience_nofeeder_bytrial, swr_n_byexperience_nofeeder_bytrial
+):
+    return get_replay_proportions_byexperience_bytrial(
+        replay_n_byexperience_nofeeder_bytrial, swr_n_byexperience_nofeeder_bytrial
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_nofeeder_bytrial",
+)
+def cache_combined_replay_proportions_byexperience_nofeeder(
+    infos,
+    group_name,
+    *,
+    replay_n_byexperience_nofeeder_bytrial,
+    swr_n_byexperience_nofeeder_bytrial,
+):
+    return get_replay_proportions_byexperience_bytrial(
+        replay_n_byexperience_nofeeder_bytrial, swr_n_byexperience_nofeeder_bytrial
+    )
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_nofeeder_bytrial_pval",
+)
+def cache_replay_proportions_byexperience_nofeeder_bytrial_pval(
+    info, *, replay_n_byexperience_nofeeder_bytrial, swr_n_byexperience_nofeeder_bytrial
+):
+    return get_replay_proportions_byexperience_bytrial_pval(
+        replay_n_byexperience_nofeeder_bytrial, swr_n_byexperience_nofeeder_bytrial
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_nofeeder_bytrial_pval",
+)
+def cache_combined_replay_proportions_byexperience_nofeeder_bytrial_pval(
+    infos,
+    group_name,
+    *,
+    replay_n_byexperience_nofeeder_bytrial,
+    swr_n_byexperience_nofeeder_bytrial,
+):
+    return get_replay_proportions_byexperience_bytrial_pval(
+        replay_n_byexperience_nofeeder_bytrial, swr_n_byexperience_nofeeder_bytrial
+    )
+
+
+@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_feederonly")
+def cache_swr_n_byexperience_feederonly(
+    info, *, task_times, trials, swrs_byphase_feederonly
+):
+    return get_swrs_byexperience(task_times, trials, swrs_byphase_feederonly)
+
+
+@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_feederonly")
+def cache_combined_swr_n_byexperience_feederonly(
+    infos, group_name, *, all_swr_n_byexperience_feederonly
+):
+    return {
+        experience: sum(
+            swr_n_byexperience[experience]
+            for swr_n_byexperience in all_swr_n_byexperience_feederonly
+        )
+        for experience in meta.on_task
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience_feederonly")
+def cache_replay_n_byexperience_feederonly(
+    info, *, task_times, trials, replays_byphase_feederonly
+):
+    return get_replays_byexperience(task_times, trials, replays_byphase_feederonly)
+
+
+@task(groups=meta_session.groups, cache_saves="replay_n_byexperience_feederonly")
+def cache_combined_replay_n_byexperience_feederonly(
+    infos, group_name, *, all_replay_n_byexperience_feederonly
+):
+    return {
+        trajectory: {
+            experience: sum(
+                replay_n_byexperience[trajectory][experience]
+                for replay_n_byexperience in all_replay_n_byexperience_feederonly
+            )
+            for experience in meta.on_task
+        }
+        for trajectory in all_replay_n_byexperience_feederonly[0]
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_feederonly",
+)
+def cache_replay_proportions_byexperience_feederonly(
+    info,
+    *,
+    replay_n_byexperience_feederonly,
+    swr_n_byexperience_feederonly,
+):
+    return get_replay_proportions_byexperience(
+        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_feederonly",
+)
+def cache_combined_replay_proportions_byexperience(
+    infos,
+    group_name,
+    *,
+    replay_n_byexperience_feederonly,
+    swr_n_byexperience_feederonly,
+):
+    return get_replay_proportions_byexperience(
+        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
+    )
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="replay_proportions_byexperience_feederonly_pval",
+)
+def cache_replay_proportions_byexperience_feederonly_pval(
+    info,
+    *,
+    replay_n_byexperience_feederonly,
+    swr_n_byexperience_feederonly,
+):
+    return get_replay_proportions_byexperience_pval(
+        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_feederonly_pval",
+)
+def cache_combined_replay_proportions_byexperience_feederonly_pval(
+    infos,
+    group_name,
+    *,
+    replay_n_byexperience_feederonly,
+    swr_n_byexperience_feederonly,
+):
+    return get_replay_proportions_byexperience_pval(
+        replay_n_byexperience_feederonly, swr_n_byexperience_feederonly
+    )
+
+
+@task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_nofeeder")
+def cache_swr_n_byexperience_nofeeder(
+    info, *, task_times, trials, swrs_byphase_nofeeder
+):
+    return get_swrs_byexperience(task_times, trials, swrs_byphase_nofeeder)
+
+
+@task(groups=meta_session.groups, cache_saves="swr_n_byexperience_nofeeder")
+def cache_combined_swr_n_byexperience_nofeeder(
+    infos, group_name, *, all_swr_n_byexperience_nofeeder
+):
+    return {
+        experience: sum(
+            swr_n_byexperience[experience]
+            for swr_n_byexperience in all_swr_n_byexperience_nofeeder
+        )
+        for experience in meta.on_task
+    }
+
+
 @task(infos=meta_session.all_infos, cache_saves="replay_n_byexperience_nofeeder")
-def cache_replay_n_byexperience_nofeeder(info, *, trials, replays_byphase_nofeeder):
-    return get_replays_byexperience(trials, replays_byphase_nofeeder)
+def cache_replay_n_byexperience_nofeeder(
+    info, *, task_times, trials, replays_byphase_nofeeder
+):
+    return get_replays_byexperience(task_times, trials, replays_byphase_nofeeder)
 
 
 @task(groups=meta_session.groups, cache_saves="replay_n_byexperience_nofeeder")
@@ -1719,7 +2099,7 @@ def cache_combined_replay_n_byexperience_nofeeder(
                 replay_n_byexperience[trajectory][experience]
                 for replay_n_byexperience in all_replay_n_byexperience_nofeeder
             )
-            for experience in meta.experiences
+            for experience in meta.on_task
         }
         for trajectory in all_replay_n_byexperience_nofeeder[0]
     }
@@ -1729,8 +2109,11 @@ def cache_combined_replay_n_byexperience_nofeeder(
     infos=meta_session.all_infos,
     cache_saves="replay_proportions_byexperience_nofeeder",
 )
-def cache_replay_proportions_byexperience_nofeederonly(
-    info, *, replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
+def cache_replay_proportions_byexperience_nofeeder(
+    info,
+    *,
+    replay_n_byexperience_nofeeder,
+    swr_n_byexperience_nofeeder,
 ):
     return get_replay_proportions_byexperience(
         replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
@@ -1738,9 +2121,10 @@ def cache_replay_proportions_byexperience_nofeederonly(
 
 
 @task(
-    groups=meta_session.groups, cache_saves="replay_proportions_byexperience_nofeeder"
+    groups=meta_session.groups,
+    cache_saves="replay_proportions_byexperience_nofeeder",
 )
-def cache_combined_replay_proportions_byexperience_nofeeder(
+def cache_combined_replay_proportions_byexperience(
     infos,
     group_name,
     *,
@@ -1757,7 +2141,10 @@ def cache_combined_replay_proportions_byexperience_nofeeder(
     cache_saves="replay_proportions_byexperience_nofeeder_pval",
 )
 def cache_replay_proportions_byexperience_nofeeder_pval(
-    info, *, replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder
+    info,
+    *,
+    replay_n_byexperience_nofeeder,
+    swr_n_byexperience_nofeeder,
 ):
     return get_replay_proportions_byexperience_pval(
         replay_n_byexperience_nofeeder, swr_n_byexperience_nofeeder

@@ -54,24 +54,11 @@ def plot_behavior_bybarriers(infos, group_name, *, barrier_time, savepath):
     n_sessions = len(barrier_time["shortcut"])
 
     title = (
-        f"{meta.title_labels[group_name]}"
+        f"{meta.title_labels[group_name]} Phase 2\nn = {n_sessions} sessions"
         if group_name not in ["all", "combined"]
-        else None
+        else f"Phase 2\nn = {n_sessions} sessions"
     )
-
-    if title is not None:
-        plt.title(title, fontsize=meta.fontsize)
-
-    txt = f"n = {n_sessions} sessions"
-    plt.text(
-        0.95,
-        0.95,
-        s=txt,
-        horizontalalignment="center",
-        verticalalignment="center",
-        transform=ax.transAxes,
-        fontsize=meta.fontsize_small,
-    )
+    plt.title(title, fontsize=meta.fontsize)
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

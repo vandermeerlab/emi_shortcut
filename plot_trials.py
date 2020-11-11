@@ -15,7 +15,9 @@ from plots import plot_aligned_position_and_spikes
 from tasks import task
 
 
-def _plot_trial_proportions(infos, group_name, trial_proportions, ylabel, savepath):
+def _plot_trial_proportions(
+    infos, group_name, trial_proportions, ylabel, title=None, savepath=None
+):
     x = np.arange(len(trial_proportions))
     y = [np.mean(trial_proportions[trajectory]) for trajectory in meta.trial_types]
     sem = [
@@ -40,17 +42,12 @@ def _plot_trial_proportions(infos, group_name, trial_proportions, ylabel, savepa
     else:
         txt = f"n = {n_sessions} sessions"
 
-    title = (
-        f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None
-    )
     if title is not None:
         plt.title(title + f"\n{txt}", fontsize=meta.fontsize)
     else:
         plt.text(
             0.8,
-            0.95,
+            1.05,
             s=txt,
             horizontalalignment="center",
             verticalalignment="center",
@@ -76,6 +73,9 @@ def plot_trial_proportions(infos, group_name, *, trial_proportions, savepath):
         group_name,
         trial_proportions,
         ylabel="Proportion of trials chosen",
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 3",
         savepath=savepath,
     )
 
@@ -95,6 +95,9 @@ def plot_firsttrial_proportions(
         group_name,
         firsttrial_proportions,
         ylabel="Proportion of first trial chosen",
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 3",
         savepath=savepath,
     )
 
@@ -109,6 +112,7 @@ def plot_trial_durations(infos, group_name, *, trial_durations, savepath):
         ],
         n_sessions=len(infos),
         ylabel="Trial duration (s)",
+        title="Phase 3",
         savepath=savepath,
     )
 
@@ -127,11 +131,15 @@ def plot_behavior_firsttrial(infos, group_name, *, all_trial_durations, savepath
         y=y,
         n_sessions=len(infos),
         ylabel="First trial durations (s)",
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 3",
         savepath=savepath,
     )
 
 
-def _plot_boxplot(y, n_sessions, ylabel, savepath):
+def _plot_boxplot(y, n_sessions, ylabel, title=None, savepath=None):
+    assert savepath is not None
     fig, ax = plt.subplots(figsize=(8, 6))
 
     box = plt.boxplot(
@@ -168,15 +176,19 @@ def _plot_boxplot(y, n_sessions, ylabel, savepath):
         txt = "Example session"
     else:
         txt = f"n = {n_sessions} sessions"
-    plt.text(
-        0.8,
-        1.05,
-        s=txt,
-        horizontalalignment="center",
-        verticalalignment="center",
-        transform=ax.transAxes,
-        fontsize=meta.fontsize_small,
-    )
+
+    if title is not None:
+        plt.title(title + f"\n{txt}", fontsize=meta.fontsize)
+    else:
+        plt.text(
+            0.8,
+            1.05,
+            s=txt,
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=ax.transAxes,
+            fontsize=meta.fontsize_small,
+        )
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -245,7 +257,7 @@ def _plot_behavior_bytrial(
             alpha=0.3,
         )
 
-    plt.ylabel("Proportion of trials", fontsize=meta.fontsize)
+    plt.ylabel("Proportion of sessions", fontsize=meta.fontsize)
     plt.xlabel("Trial", fontsize=meta.fontsize)
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
@@ -309,7 +321,7 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
         len(infos),
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
-        else None,
+        else "Phase 3",
         legend_loc="upper left"
         if group_name in ["all", "combined", "r063", "day1"]
         else "best",
@@ -324,7 +336,7 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
         n_trials=meta.first_n_trials,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
-        else None,
+        else "Phase 3",
         legend_loc="upper left"
         if group_name in ["all", "combined", "r063", "day1"]
         else "best",

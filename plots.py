@@ -513,6 +513,8 @@ def plot_replay_metric(
     ylim=None,
     color_byvalue=False,
     title=None,
+    original_xlabels=meta.experiences,
+    labels=meta.experiences_labels,
     savepath=None,
 ):
     assert savepath is not None
@@ -520,8 +522,8 @@ def plot_replay_metric(
     if orig_xlabels == meta.task_times:
         xlabels = list(meta.task_times_labels.values())
     else:
-        assert orig_xlabels == meta.experiences, orig_xlabels
-        xlabels = list(meta.experiences_labels.values())
+        assert orig_xlabels == original_xlabels, orig_xlabels
+        xlabels = list(labels.values())
     x = np.arange(len(xlabels))
     width = 0.8 / (len(trajectories))
     fig, ax = plt.subplots(figsize=(8, 6))
