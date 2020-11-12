@@ -8,6 +8,7 @@ from plots import (
     plot_aligned_position_and_spikes,
     plot_both_by_standard_position,
     plot_by_standard_position,
+    significance_text,
 )
 from tasks import task
 
@@ -357,6 +358,7 @@ def plot_joined_decoded_replay(
 
 def _plot_decoding_preference(
     preference,
+    shuffled,
     ylabel,
     full_shuffle,
     axhline=None,
@@ -369,6 +371,15 @@ def _plot_decoding_preference(
     fig, ax = plt.subplots(figsize=figsize)
     x = np.arange(len(meta.task_times))
     mean_preference = [np.nanmean(preference[phase]) for phase in meta.task_times]
+    pvals = []
+    for i, phase in enumerate(meta.task_times):
+        shuffle_means = np.nanmean(shuffled[phase], axis=0)
+        np.sort(shuffle_means)
+        rank = np.searchsorted(shuffle_means, mean_preference[i])
+        rank /= shuffle_means.size
+        pvals.append(2 * min(rank, 1 - rank))
+    print(f"pvals: {pvals}")
+
     if axhline is not None:
         color = [
             meta.colors["full_shortcut"]
@@ -381,6 +392,8 @@ def _plot_decoding_preference(
     plt.plot(mean_preference, color="k")
     for i, (phase_preference, phase_color) in enumerate(zip(mean_preference, color)):
         plt.scatter(x[i], phase_preference, color=phase_color, marker="o", s=200)
+        significance_text(x[i], phase_preference, pvals[i])
+
     plt.xticks(
         np.arange(len(meta.task_times)),
         list(meta.task_times_labels.values()),
@@ -429,6 +442,7 @@ def plot_zscored_logodds_byphase(
 ):
     _plot_decoding_preference(
         zscored_logodds,
+        shuffled=shuffled_zscored_logodds,
         ylabel="Z-scored log odds",
         full_shuffle=shuffled_zscored_logodds["prerecord"].size
         == meta.n_likelihood_shuffles,
@@ -442,13 +456,14 @@ def plot_zscored_logodds_byphase(
     savepath=("decoding", "zscored_logodds_byphase.svg"),
 )
 def plot_group_zscored_logodds_byphase(
-    infos, group_name, *, zscored_logodds, all_shuffled_zscored_logodds, savepath
+    infos, group_name, *, zscored_logodds, shuffled_zscored_logodds, savepath
 ):
-    full_shuffle = (
-        all_shuffled_zscored_logodds[0]["prerecord"].size == meta.n_likelihood_shuffles
-    )
+    full_shuffle = shuffled_zscored_logodds[
+        "prerecord"
+    ].size == meta.n_likelihood_shuffles * len(infos)
     _plot_decoding_preference(
         zscored_logodds,
+        shuffled=shuffled_zscored_logodds,
         ylabel="Z-scored log odds",
         full_shuffle=full_shuffle,
         axhline=0.0,

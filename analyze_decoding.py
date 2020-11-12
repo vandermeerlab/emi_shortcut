@@ -206,6 +206,18 @@ def cache_combined_zscored_logodds(infos, group_name, *, all_zscored_logodds):
     }
 
 
+@task(groups=meta_session.groups, cache_saves="shuffled_zscored_logodds")
+def cache_combined_shuffled_zscored_logodds(
+    infos, group_name, *, all_shuffled_zscored_logodds
+):
+    return {
+        phase: np.vstack(
+            [zscored_logodds[phase] for zscored_logodds in all_shuffled_zscored_logodds]
+        )
+        for phase in meta.task_times
+    }
+
+
 def get_aligned_position(linear, decoded):
     f_xy = scipy.interpolate.interp1d(
         linear.time,

@@ -19,10 +19,11 @@ def significance_text(x, height, pval):
         return False
 
     # draw the text with a bounding box covering up the line
-    h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.01
+    h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.04
+
     plt.text(
         x,
-        height - h_adjust,
+        height + h_adjust,
         text,
         ha="center",
         va="center",
@@ -35,10 +36,11 @@ def significance_text(x, height, pval):
 def significance_bar(start, end, height, pval):
     if significance_text((start + end) * 0.5, height, pval):
         # draw a line with downticks at the ends
+        h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.05
         linewidth = 1.2
         plt.plot(
             [start, end],
-            [height, height],
+            [height + h_adjust, height + h_adjust],
             "-",
             color="k",
             lw=linewidth,
@@ -546,7 +548,6 @@ def plot_replay_metric(
 
     # Add significance bars
     if pval is not None:
-        h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.05
         if len(trajectories) == 2 and trajectories[0].endswith("u"):
             key = "exclusive" if trajectories[0].startswith("only_") else "overlapping"
             for i, xlabel in enumerate(orig_xlabels):
@@ -557,14 +558,13 @@ def plot_replay_metric(
                         replay_metric[trajectories[0]][xlabel],
                         replay_metric[trajectories[1]][xlabel],
                         0,
-                    )
-                    + h_adjust,
+                    ),
                     pval=pval[key][xlabel],
                 )
         if len(trajectories) == 1 and trajectories[0] in ["difference", "contrast"]:
             key = "exclusive" if trajectories[0].startswith("only_") else "overlapping"
             for i, xlabel in enumerate(orig_xlabels):
-                height = max(replay_metric[trajectories[0]][xlabel], 0) + h_adjust
+                height = max(replay_metric[trajectories[0]][xlabel], 0)
                 significance_text(
                     x=i,
                     height=height,
@@ -580,8 +580,7 @@ def plot_replay_metric(
                     height=max(
                         list(replay_metric[trajectories[0]].values())[start : end + 1]
                         + [0],
-                    )
-                    + h_adjust,
+                    ),
                     pval=pp,
                 )
 
