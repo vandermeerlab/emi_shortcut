@@ -1137,12 +1137,22 @@ def fig_replay_summary_byexperience(panels, savepath):
         "A": (
             "grp-combined",
             "replays",
-            "exclusive_replay_proportions_byexperience_nofeeder_bytrial.svg",
+            "overlapping_replay_proportions_byexperience_nofeeder_bytrial.svg",
         ),
         "B": (
             "grp-combined",
             "replays",
-            "exclusive_replay_proportions_byexperience_feederonly.svg",
+            "contrast_replay_proportions_byexperience_nofeeder_bytrial.svg",
+        ),
+        "C": (
+            "grp-combined",
+            "replays",
+            "overlapping_replay_proportions_byexperience_feederonly.svg",
+        ),
+        "D": (
+            "grp-combined",
+            "replays",
+            "contrast_replay_proportions_byexperience_feederonly.svg",
         ),
     },
     savepath=("figures", "replay_summary_byexperience_ppt.svg"),
@@ -1150,8 +1160,8 @@ def fig_replay_summary_byexperience(panels, savepath):
 )
 def fig_replay_summary_byexperience_ppt(panels, savepath):
     padding = 50
-    full_width = 1000 + padding
-    full_height = 500 + padding
+    full_width = 1300 + padding
+    full_height = 1000 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -1169,6 +1179,24 @@ def fig_replay_summary_byexperience_ppt(panels, savepath):
             panels["B"],
             650 + padding,
             20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "C",
+            panels["C"],
+            20 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "D",
+            panels["D"],
+            650 + padding,
+            500 + padding,
             offset=(-padding / 3, 0),
         )
     )
