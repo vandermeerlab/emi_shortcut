@@ -1,6 +1,7 @@
 import nept
 import numpy as np
 import scipy.interpolate
+import statsmodels.api as sm
 
 import meta
 import meta_session
@@ -112,14 +113,21 @@ def save_joined_replay_likelihood_bybin(
 ):
     with open(savepath, "w") as fp:
         print("% Mean likelihood", file=fp)
+        u = joined_replay_likelihood_bybin[:50]
+        full_shortcut = joined_replay_likelihood_bybin[50:]
         print(
-            fr"\def \meanulikelihood/{{{np.mean(joined_replay_likelihood_bybin[:50]):.3f}}}",
+            fr"\def \meanulikelihood/{{{np.mean(u):.3f}}}",
             file=fp,
         )
         print(
-            fr"\def \meanfullshortcutlikelihood/{{{np.mean(joined_replay_likelihood_bybin[50:]):.3f}}}",
+            fr"\def \meanfullshortcutlikelihood/{{{np.mean(full_shortcut):.3f}}}",
             file=fp,
         )
+        tstat, pval, df = sm.stats.ttest_ind(u, full_shortcut)
+        print(fr"\def \tstatlikelihood/{{{tstat}}}", file=fp)
+        print(fr"\def \pvallikelihood/{{{pval}}}", file=fp)
+        print(fr"\def \dflikelihood/{{{df}}}", file=fp)
+
         print("% ---------", file=fp)
 
 
