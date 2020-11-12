@@ -32,7 +32,7 @@ experiences = [
     "familiar_phase3",
 ]
 experiences_labels = {
-    "familiar_phase12": "Phases 1 + 2",
+    "familiar_phase12": "Familiar 1 + 2",
     "first_shortcut": "First Shortcut",
     "shortcut_phase3": "Shortcut Phase 3",
     "familiar_phase3": "Familiar Phase 3",
