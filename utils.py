@@ -70,9 +70,12 @@ def save_ttest_results(df, variable, savepath):
             print("% ---------\n", file=fp)
 
 
-def simple_ttest(n1, p1, n2, p2):
-    rng = np.random.RandomState(meta.seed + 2)
-    population1 = rng.binomial(1, p1, n1)
-    population2 = rng.binomial(1, p2, n2)
-    t_stat, p_val, n = sm.stats.ttest_ind(population1, population2)
-    return p_val
+def ranksum_test(xn, xtotal, yn, ytotal):
+    if xn == 0 and yn == 0:
+        return 1.0
+    x = np.zeros(xtotal)
+    x[:xn] = 1
+    y = np.zeros(ytotal)
+    y[:yn] = 1
+    statistic, pval = stats.mannwhitneyu(x, y)
+    return pval

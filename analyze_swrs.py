@@ -10,7 +10,7 @@ import meta
 import meta_session
 import paths
 from tasks import task
-from utils import simple_ttest
+from utils import ranksum_test
 
 
 @task(infos=meta_session.all_infos, cache_saves="swrs")
@@ -1184,11 +1184,11 @@ def get_replay_proportions_byphase_pval(swr_n_byphase, replay_n_byphase):
             meta.rest_times[1:] + meta.run_times[1:],
         ):
             pval[trajectory][(left, right)] = (
-                simple_ttest(
-                    n1=swr_n_byphase[left],
-                    p1=replay_n_byphase[trajectory][left] / swr_n_byphase[left],
-                    n2=swr_n_byphase[right],
-                    p2=replay_n_byphase[trajectory][right] / swr_n_byphase[right],
+                ranksum_test(
+                    xtotal=swr_n_byphase[left],
+                    xn=replay_n_byphase[trajectory][left],
+                    ytotal=swr_n_byphase[right],
+                    yn=replay_n_byphase[trajectory][right],
                 )
                 if swr_n_byphase[left] > 0 and swr_n_byphase[right] > 0
                 else 1.0
@@ -1197,12 +1197,11 @@ def get_replay_proportions_byphase_pval(swr_n_byphase, replay_n_byphase):
     for key in ["overlapping", "exclusive"]:
         prefix = "only_" if key == "exclusive" else ""
         pval[key] = {
-            task_time: simple_ttest(
-                n1=swr_n_byphase[task_time],
-                p1=replay_n_byphase[f"{prefix}u"][task_time] / swr_n_byphase[task_time],
-                n2=swr_n_byphase[task_time],
-                p2=replay_n_byphase[f"{prefix}full_shortcut"][task_time]
-                / swr_n_byphase[task_time],
+            task_time: ranksum_test(
+                xtotal=swr_n_byphase[task_time],
+                xn=replay_n_byphase[f"{prefix}u"][task_time],
+                ytotal=swr_n_byphase[task_time],
+                yn=replay_n_byphase[f"{prefix}full_shortcut"][task_time],
             )
             if swr_n_byphase[task_time] > 0
             else 1.0
@@ -1505,17 +1504,13 @@ def cache_combined_replay_proportions_byexperience_bytrial(
 def get_replay_proportions_byexperience_pval(replay_n, swr_n):
     return {
         key: {
-            task_time: simple_ttest(
-                n1=swr_n[task_time],
-                p1=replay_n[f"{'only_' if key == 'exclusive' else ''}u"][task_time]
-                / swr_n[task_time],
-                n2=swr_n[task_time],
-                p2=(
-                    replay_n[f"{'only_' if key == 'exclusive' else ''}full_shortcut"][
-                        task_time
-                    ]
-                    / swr_n[task_time]
-                ),
+            task_time: ranksum_test(
+                xtotal=swr_n[task_time],
+                xn=replay_n[f"{'only_' if key == 'exclusive' else ''}u"][task_time],
+                ytotal=swr_n[task_time],
+                yn=replay_n[f"{'only_' if key == 'exclusive' else ''}full_shortcut"][
+                    task_time
+                ],
             )
             if swr_n[task_time] > 0
             else 1.0
@@ -1528,17 +1523,13 @@ def get_replay_proportions_byexperience_pval(replay_n, swr_n):
 def get_replay_proportions_byexperience_bytrial_pval(replay_n, swr_n):
     return {
         key: {
-            task_time: simple_ttest(
-                n1=swr_n[task_time],
-                p1=replay_n[f"{'only_' if key == 'exclusive' else ''}u"][task_time]
-                / swr_n[task_time],
-                n2=swr_n[task_time],
-                p2=(
-                    replay_n[f"{'only_' if key == 'exclusive' else ''}full_shortcut"][
-                        task_time
-                    ]
-                    / swr_n[task_time]
-                ),
+            task_time: ranksum_test(
+                xtotal=swr_n[task_time],
+                xn=replay_n[f"{'only_' if key == 'exclusive' else ''}u"][task_time],
+                ytotal=swr_n[task_time],
+                yn=replay_n[f"{'only_' if key == 'exclusive' else ''}full_shortcut"][
+                    task_time
+                ],
             )
             if swr_n[task_time] > 0
             else 1.0
@@ -1606,9 +1597,9 @@ def cache_swrs_byphase_feederonly(info, *, position_byzone, swrs_byphase):
 
 @task(infos=meta_session.all_infos, cache_saves="swr_n_byexperience_feederonly_bytrial")
 def cache_swr_n_byexperience_feederonly_bytrial(
-    info, *, trials, swrs_byphase_feederonly_bytrial
+    info, *, trials, swrs_byphase_feederonly
 ):
-    return get_swrs_byexperience_bytrial(trials, swrs_byphase_feederonly_bytrial)
+    return get_swrs_byexperience_bytrial(trials, swrs_byphase_feederonly)
 
 
 @task(groups=meta_session.groups, cache_saves="swr_n_byexperience_feederonly_bytrial")
@@ -1710,9 +1701,9 @@ def get_replays_byexperience_bytrial(trials, replays):
     infos=meta_session.all_infos, cache_saves="replay_n_byexperience_feederonly_bytrial"
 )
 def cache_replay_n_byexperience_feederonly_bytrial(
-    info, *, trials, replays_byphase_feederonly_bytrial
+    info, *, trials, replays_byphase_feederonly
 ):
-    return get_replays_byexperience_bytrial(trials, replays_byphase_feederonly_bytrial)
+    return get_replays_byexperience_bytrial(trials, replays_byphase_feederonly)
 
 
 @task(
@@ -1917,7 +1908,7 @@ def cache_replay_proportions_byexperience_nofeederonly(
     groups=meta_session.groups,
     cache_saves="replay_proportions_byexperience_nofeeder_bytrial",
 )
-def cache_combined_replay_proportions_byexperience_nofeeder(
+def cache_combined_replay_proportions_byexperience_nofeeder_bytrial(
     infos,
     group_name,
     *,
@@ -2019,7 +2010,7 @@ def cache_replay_proportions_byexperience_feederonly(
     groups=meta_session.groups,
     cache_saves="replay_proportions_byexperience_feederonly",
 )
-def cache_combined_replay_proportions_byexperience(
+def cache_combined_replay_proportions_byexperience_feederonly(
     infos,
     group_name,
     *,
@@ -2124,7 +2115,7 @@ def cache_replay_proportions_byexperience_nofeeder(
     groups=meta_session.groups,
     cache_saves="replay_proportions_byexperience_nofeeder",
 )
-def cache_combined_replay_proportions_byexperience(
+def cache_combined_replay_proportions_byexperience_nofeeder(
     infos,
     group_name,
     *,

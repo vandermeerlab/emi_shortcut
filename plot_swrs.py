@@ -1,7 +1,6 @@
 import os
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
 import nept
 import numpy as np
 import scipy.stats
@@ -957,7 +956,7 @@ def plot_group_replay_proportions_byexperience(
 
 
 @task(
-    infos=meta_session.analysis_infos,
+    groups=meta_session.groups,
     savepath={
         key: (
             "replays",
