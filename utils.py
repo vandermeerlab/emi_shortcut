@@ -1,5 +1,4 @@
 import numpy as np
-import statsmodels.api as sm
 from scipy import stats
 
 import meta
