@@ -5,7 +5,6 @@ import nept
 import numpy as np
 import scipy.stats
 from matplotlib.colors import SymLogNorm
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from shapely.geometry import Point
 
 import meta
@@ -14,6 +13,7 @@ import paths
 from plots import (
     plot_aligned_position_and_spikes,
     plot_by_standard_position,
+    plot_correlations,
     plot_raster,
     significance_bar,
 )
@@ -1193,59 +1193,12 @@ def plot_group_tc_mean_disappear_normalized(
         )
 
 
-def _plot_tc_correlations_within_phase(tc_correlations_within_phase, titles, savepath):
-    n_plots = len(titles)
-    fig, axs = plt.subplots(1, n_plots, figsize=[5 * n_plots, 5])
-    for ax, phase in zip(axs, titles):
-        im = ax.imshow(
-            tc_correlations_within_phase[phase],
-            cmap="inferno",
-            interpolation="nearest",
-            vmin=0,
-            vmax=1,
-        )
-        ax.set_title(titles[phase], y=1.08, fontsize=meta.fontsize)
-        ax.set_xlabel("Linearized position bins", fontsize=meta.fontsize)
-
-        trans = ax.get_xaxis_transform()  # x in data units, y in axes units
-        for xx in meta.std_axvlines["u"]:
-            ax.annotate(
-                " ",
-                xy=(xx, 1.0),
-                xytext=(xx, 1.07),
-                textcoords=trans,
-                xycoords=trans,
-                arrowprops=dict(arrowstyle="->", lw=2, connectionstyle="angle"),
-            )
-        ax.tick_params(labelsize=meta.fontsize)
-        ax.set_xticks(meta.ticks)
-        ax.set_yticks(meta.ticks)
-
-    axs[0].set_ylabel("Linearized position bins", fontsize=meta.fontsize)
-
-    axins = inset_axes(
-        axs[-1],
-        width="5%",  # width = 5% of parent_bbox width
-        height="70%",  # height : 50%
-        loc="lower left",
-        bbox_to_anchor=(1.05, 0.0, 1, 1),
-        bbox_transform=axs[-1].transAxes,
-        borderpad=0,
-    )
-    cbar = fig.colorbar(im, cax=axins)
-    cbar.ax.tick_params(labelsize=meta.fontsize)
-
-    plt.tight_layout(h_pad=0.003)
-    plt.savefig(savepath, bbox_inches="tight", transparent=True)
-    plt.close(fig)
-
-
 @task(
     infos=meta_session.analysis_infos,
     savepath=("tcs", "tc_correlations_within_phase.svg"),
 )
 def plot_tc_correlations_within_phase(info, *, tc_correlations_within_phase, savepath):
-    _plot_tc_correlations_within_phase(
+    plot_correlations(
         tc_correlations_within_phase, titles=meta.task_times_labels, savepath=savepath
     )
 
@@ -1257,7 +1210,7 @@ def plot_tc_correlations_within_phase(info, *, tc_correlations_within_phase, sav
 def plot_group_tc_correlations_within_phase(
     infos, group_name, *, tc_correlations_within_phase, savepath
 ):
-    _plot_tc_correlations_within_phase(
+    plot_correlations(
         tc_correlations_within_phase, titles=meta.task_times_labels, savepath=savepath
     )
 
@@ -1269,7 +1222,7 @@ def plot_group_tc_correlations_within_phase(
 def plot_group_tc_appear_correlations(
     infos, group_name, *, tc_appear_correlations, savepath
 ):
-    _plot_tc_correlations_within_phase(
+    plot_correlations(
         tc_appear_correlations,
         titles={
             "phases12": "Appearing in Phase 2",
@@ -1286,7 +1239,7 @@ def plot_group_tc_appear_correlations(
 def plot_group_tc_disappear_correlations(
     infos, group_name, *, tc_disappear_correlations, savepath
 ):
-    _plot_tc_correlations_within_phase(
+    plot_correlations(
         tc_disappear_correlations,
         titles={
             "phases12": "Disappearing in Phase 2",

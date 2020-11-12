@@ -3,6 +3,7 @@ import numpy as np
 import scalebar
 import scipy.stats
 from matplotlib.markers import TICKDOWN
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import meta
 from utils import map_range
@@ -607,5 +608,57 @@ def plot_replay_metric(
 
     plt.tight_layout(h_pad=0.003)
 
+    plt.savefig(savepath, bbox_inches="tight", transparent=True)
+    plt.close(fig)
+
+
+def plot_correlations(correlations, titles, savepath):
+    n_plots = len(titles)
+    fig, axs = plt.subplots(1, n_plots, figsize=[5 * n_plots, 5])
+    for ax, condition in zip(axs, titles):
+        im = ax.imshow(
+            correlations[condition],
+            cmap="inferno",
+            interpolation="nearest",
+            vmin=0,
+            vmax=0.01,
+        )
+        ax.set_title(titles[condition], y=1.08, fontsize=meta.fontsize)
+        ax.set_xlabel("Linearized position bins", fontsize=meta.fontsize)
+
+        trans = ax.get_xaxis_transform()  # x in data units, y in axes units
+        axvlines = (
+            meta.std_axvlines["full_shortcut"]
+            if condition == "full_shortcut"
+            else meta.std_axvlines["u"]
+        )
+        for xx in axvlines:
+            ax.annotate(
+                " ",
+                xy=(xx, 1.0),
+                xytext=(xx, 1.07),
+                textcoords=trans,
+                xycoords=trans,
+                arrowprops=dict(arrowstyle="->", lw=2, connectionstyle="angle"),
+            )
+        ax.tick_params(labelsize=meta.fontsize)
+        ax.set_xticks(meta.ticks)
+        ax.set_yticks(meta.ticks)
+
+    axs[0].set_ylabel("Linearized position bins", fontsize=meta.fontsize)
+
+    axins = inset_axes(
+        axs[-1],
+        width="5%",  # width = 5% of parent_bbox width
+        height="70%",  # height : 50%
+        loc="lower left",
+        bbox_to_anchor=(1.05, 0.0, 1, 1),
+        bbox_transform=axs[-1].transAxes,
+        borderpad=0,
+    )
+    cbar = fig.colorbar(im, cax=axins)
+    cbar.ax.tick_params(labelsize=meta.fontsize)
+
+    plt.tight_layout(h_pad=0.003)
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)
