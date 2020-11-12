@@ -390,9 +390,10 @@ def _plot_decoding_preference(
     else:
         color = ["k" for _ in mean_preference]
     plt.plot(mean_preference, color="k")
+    h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.15
     for i, (phase_preference, phase_color) in enumerate(zip(mean_preference, color)):
         plt.scatter(x[i], phase_preference, color=phase_color, marker="o", s=200)
-        significance_text(x[i], phase_preference, pvals[i])
+        significance_text(x[i], phase_preference + h_adjust, pvals[i])
 
     plt.xticks(
         np.arange(len(meta.task_times)),

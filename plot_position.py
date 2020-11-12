@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
+import statsmodels.api as sm
 
 import meta
 import meta_session
-from plots import plot_bar_mean_byphase, plot_position
+from plots import plot_bar_mean_byphase, plot_position, significance_bar
 from tasks import task
 
 
@@ -42,15 +43,18 @@ def plot_behavior_bybarriers(infos, group_name, *, barrier_time, savepath):
         scipy.stats.sem(barrier_time["shortcut"]),
         scipy.stats.sem(barrier_time["novel"]),
     ]
+    _, pval, _ = sm.stats.ttest_ind(barrier_time["shortcut"], barrier_time["novel"])
+
     colors = [meta.colors["full_shortcut"], meta.colors["novel"]]
     fig, ax = plt.subplots(figsize=(8, 6))
     plt.bar(x, y, width=width, color=colors, yerr=sem, ecolor="k")
+    significance_bar(x[0], x[1], max(y) + max(sem), pval)
     plt.xticks(x, ("Shortcut barrier", "Dead-end barrier"), fontsize=meta.fontsize)
     plt.ylabel("Mean time spent (s)", fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
     plt.axhline(np.mean(barrier_time["baseline"]), -1, 2, linestyle="dashed", color="k")
     plt.xlim(-0.7, 1.7)
-    plt.ylim(0, 105)
+    plt.ylim(0, 115)
     n_sessions = len(barrier_time["shortcut"])
 
     title = (

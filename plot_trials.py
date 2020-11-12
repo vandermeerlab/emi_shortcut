@@ -1,22 +1,24 @@
 import os
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 import nept
 import numpy as np
 import scipy.stats
+import statsmodels.api as sm
+from matplotlib.ticker import MaxNLocator
 from scipy.ndimage import median_filter
 from shapely.geometry import Point
 
 import meta
 import meta_session
 import paths
-from plots import plot_aligned_position_and_spikes
+from plots import plot_aligned_position_and_spikes, significance_bar
 from tasks import task
+from utils import ranksum_test
 
 
 def _plot_trial_proportions(
-    infos, group_name, trial_proportions, ylabel, title=None, savepath=None
+    infos, group_name, trial_proportions, ylabel, pval=None, title=None, savepath=None
 ):
     x = np.arange(len(trial_proportions))
     y = [np.mean(trial_proportions[trajectory]) for trajectory in meta.trial_types]
@@ -27,6 +29,8 @@ def _plot_trial_proportions(
     colors = [meta.colors[trajectory] for trajectory in meta.trial_types]
     fig, ax = plt.subplots(figsize=(8, 6))
     plt.bar(x, y, color=colors, yerr=sem, ecolor="k")
+    if pval is not None:
+        significance_bar(0, 1, max(y[:2]) + max(sem[:2]), pval)
     plt.xticks(
         x,
         [meta.trajectories_labels[trajectory] for trajectory in meta.trial_types],
@@ -67,12 +71,21 @@ def _plot_trial_proportions(
 
 
 @task(groups=meta_session.groups, savepath=("behavior", "behavior_choice.svg"))
-def plot_trial_proportions(infos, group_name, *, trial_proportions, savepath):
+def plot_trial_proportions(
+    infos, group_name, *, trial_proportions, n_trials_ph3, savepath
+):
+    n_trials_total = n_trials_ph3["u"] + n_trials_ph3["full_shortcut"]
     _plot_trial_proportions(
         infos,
         group_name,
         trial_proportions,
         ylabel="Proportion of trials chosen",
+        pval=ranksum_test(
+            xn=n_trials_ph3["u"],
+            xtotal=n_trials_total,
+            yn=n_trials_ph3["full_shortcut"],
+            ytotal=n_trials_total,
+        ),
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else "Phase 3",
@@ -95,9 +108,15 @@ def plot_firsttrial_proportions(
         group_name,
         firsttrial_proportions,
         ylabel="Proportion of first trial chosen",
+        pval=ranksum_test(
+            xn=int(sum(firsttrial_proportions["u"])),
+            xtotal=len(firsttrial_proportions["u"]),
+            yn=int(sum(firsttrial_proportions["full_shortcut"])),
+            ytotal=len(firsttrial_proportions["full_shortcut"]),
+        ),
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
-        else "Phase 3",
+        else "Phase 3 first trial",
         savepath=savepath,
     )
 
@@ -146,6 +165,9 @@ def _plot_boxplot(y, n_sessions, ylabel, title=None, savepath=None):
         y,
         patch_artist=True,
     )
+
+    _, pval, _ = sm.stats.ttest_ind(y[0], y[1])
+    significance_bar(1, 2, (plt.ylim()[1] - plt.ylim()[0]) * 0.75, pval)
 
     for patch, color in zip(
         box["boxes"],

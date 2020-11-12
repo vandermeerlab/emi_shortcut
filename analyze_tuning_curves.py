@@ -855,6 +855,17 @@ def cache_combined_tc_correlations(infos, group_name, *, all_tc_correlations):
     }
 
 
+@task(groups=meta_session.analysis_grouped, savepath=("tcs", "tc_correlations.tex"))
+def save_tc_correlations(infos, group_name, *, tc_correlations, savepath):
+    with open(savepath, "w") as fp:
+        print("% TC correlation stats", file=fp)
+        stats, pval = scipy.stats.mannwhitneyu(
+            tc_correlations["phases12"], tc_correlations["phases23"]
+        )
+        print(fr"% \def \tccorr/{{{stats}}}", file=fp)
+        print(fr"\def \tccorrpval/{{{pval:.3g}}}", file=fp)
+
+
 @task(infos=meta_session.all_infos, cache_saves="tc_correlations_bybin")
 def cache_tc_correlations_bybin(info, *, u_tcs_byphase):
     tc_correlations_bybin = {phases: [] for phases in meta.phases_corr}

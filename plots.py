@@ -19,7 +19,7 @@ def significance_text(x, height, pval):
         return False
 
     # draw the text with a bounding box covering up the line
-    h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.04
+    h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.05
 
     plt.text(
         x,
@@ -36,7 +36,7 @@ def significance_text(x, height, pval):
 def significance_bar(start, end, height, pval):
     if significance_text((start + end) * 0.5, height, pval):
         # draw a line with downticks at the ends
-        h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.05
+        h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.06
         linewidth = 1.2
         plt.plot(
             [start, end],

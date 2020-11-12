@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import nept
 import numpy as np
+import scipy.stats
 from matplotlib.colors import SymLogNorm
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from shapely.geometry import Point
@@ -14,8 +15,10 @@ from plots import (
     plot_aligned_position_and_spikes,
     plot_by_standard_position,
     plot_raster,
+    significance_bar,
 )
 from tasks import task
+from utils import ranksum_test
 
 
 @task(infos=meta_session.analysis_infos, write_example_plots="run_raster")
@@ -658,6 +661,10 @@ def _plot_tc_correlations_histogram(tc_correlations, savepath):
             weights=weights,
             color=meta.colors["u"],
         )
+        mean = np.mean(tc_correlations[phases])
+        sem = scipy.stats.sem(tc_correlations[phases])
+        ax.axvline(mean, lw=1, c=meta.colors["contrast"])
+        ax.axvspan(mean - sem, mean + sem, facecolor=meta.colors["contrast"], alpha=0.5)
 
         ax.set_title(f"Phases {phases[-2]}-{phases[-1]}", fontsize=meta.fontsize)
 
@@ -709,6 +716,10 @@ def _plot_tc_correlations_histogram_without13(tc_correlations, savepath):
             weights=weights,
             color=meta.colors["u"],
         )
+        mean = np.mean(tc_correlations[phases])
+        sem = scipy.stats.sem(tc_correlations[phases])
+        ax.axvline(mean, lw=1, c=meta.colors["contrast"])
+        ax.axvspan(mean - sem, mean + sem, facecolor=meta.colors["contrast"], alpha=0.5)
 
         ax.set_title(f"Phases {phases[-2]}-{phases[-1]}", fontsize=meta.fontsize)
 
@@ -858,6 +869,19 @@ def _plot_tc_field_remapping(tc_fields_appear, tc_fields_disappear, savepath):
         color=meta.colors["contrast"],
         label="Disappear",
     )
+    for i, phases in enumerate(["phases12", "phases23"]):
+        n_total = n_appear[phases] + n_disappear[phases]
+        significance_bar(
+            x[i],
+            x[i] + width,
+            max(prop_appear[phases], prop_disappear[phases]),
+            pval=ranksum_test(
+                xn=n_appear[phases],
+                xtotal=n_total,
+                yn=n_disappear[phases],
+                ytotal=n_total,
+            ),
+        )
     top = plt.ylim()[1]
     textargs = {
         "color": "w",

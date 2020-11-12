@@ -1,8 +1,6 @@
 import nept
 import numpy as np
 import pandas as pd
-import statsmodels.formula.api as smf
-from scipy import stats
 
 import meta
 import meta_session
@@ -141,17 +139,21 @@ def cache_matched_trials(info, *, trials):
     return trials
 
 
-@task(infos=meta_session.all_infos, cache_saves="trial_proportions")
-def cache_trial_proportions(info, *, task_times, trials):
+@task(infos=meta_session.all_infos, cache_saves="n_trials_ph3")
+def cache_n_trials_ph3(info, *, task_times, trials):
     ph3 = task_times["phase3"]
-    n_trials = {
+    return {
         trajectory: trials[trajectory].time_slice(ph3.start, ph3.stop).n_epochs
         for trajectory in meta.trial_types
     }
-    n_trials_total = sum(n_trials[trajectory] for trajectory in meta.trial_types)
+
+
+@task(infos=meta_session.all_infos, cache_saves="trial_proportions")
+def cache_trial_proportions(info, *, n_trials_ph3):
+    n_trials_total = sum(n_trials_ph3[trajectory] for trajectory in meta.trial_types)
     assert n_trials_total > 0
     return {
-        trajectory: n_trials[trajectory] / n_trials_total
+        trajectory: n_trials_ph3[trajectory] / n_trials_total
         for trajectory in meta.trial_types
     }
 
@@ -178,6 +180,14 @@ def cache_trial_proportions_df(infos, group_name, *, all_trial_proportions):
 )
 def save_trial_proportion_stats(infos, group_name, *, trial_proportions_df, savepath):
     save_ttest_results(trial_proportions_df, "proportions", savepath)
+
+
+@task(groups=meta_session.groups, cache_saves="n_trials_ph3")
+def cache_combined_n_trials_ph3(infos, group_name, *, all_n_trials_ph3):
+    return {
+        trajectory: sum(n_trials_ph3[trajectory] for n_trials_ph3 in all_n_trials_ph3)
+        for trajectory in meta.trial_types
+    }
 
 
 @task(groups=meta_session.groups, cache_saves="trial_proportions")
@@ -550,7 +560,7 @@ def cache_mostly_shortcut_idx(info, *, trial_proportions_bytrial):
 
 
 @task(groups=meta_session.groups, cache_saves="mostly_shortcut_idx")
-def cache_mostly_shortcut_idx(infos, group_name, *, trial_proportions_bytrial):
+def cache_combined_mostly_shortcut_idx(infos, group_name, *, trial_proportions_bytrial):
     above_thresh = np.asarray(
         np.array(
             [np.mean(trial) for trial in trial_proportions_bytrial["full_shortcut"]]
