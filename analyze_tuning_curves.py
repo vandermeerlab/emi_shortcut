@@ -1039,6 +1039,36 @@ def cache_combined_tc_appear_maxpeaks(infos, group_name, *, all_tc_appear_maxpea
     }
 
 
+@task(groups=meta_session.groups, cache_saves="tc_appear_correlations")
+def cache_combined_tc_appear_correlations(
+    infos, group_name, *, all_tc_fields_appear, all_u_tcs_byphase
+):
+    correlations = {
+        phases: np.zeros((meta.linear_bin_centers.size, meta.linear_bin_centers.size))
+        for phases in meta.phases_corr
+    }
+
+    for phases in meta.phases_corr:
+        tcs_byphase = np.vstack(
+            tcs[f"phase{phases[-1]}"][appear[phases]]
+            for tcs, appear in zip(all_u_tcs_byphase, all_tc_fields_appear)
+        )
+        for i in range(meta.linear_bin_centers.size):
+            for j in range(meta.linear_bin_centers.size):
+                short = ["short_standard", "day2", "day3", "day4"]
+                if group_name in short and (i < 20 or j < 20):
+                    correlations[phases][i, j] = np.nan
+                else:
+                    left = tcs_byphase[:, i]
+                    right = tcs_byphase[:, j]
+                    valid = (~np.isnan(left)) & (~np.isnan(right))
+                    if np.sum(valid) >= 2:
+                        corr, _ = scipy.stats.pearsonr(left[valid], right[valid])
+                        correlations[phases][i, j] = 0 if np.isnan(corr) else corr
+
+    return correlations
+
+
 @task(infos=meta_session.all_infos, cache_saves="tc_appear_mean_normalized")
 def cache_tc_appear_mean_normalized(info, *, tc_fields_appear, u_tcs_byphase):
     return {
@@ -1107,7 +1137,7 @@ def cache_tc_disappear_maxpeaks(info, *, tc_fields_disappear, u_tcs_byphase):
     return {
         phases: np.histogram(
             np.nanargmax(
-                u_tcs_byphase[f"phase{phases[-1]}"][tc_fields_disappear[phases]], axis=1
+                u_tcs_byphase[f"phase{phases[-2]}"][tc_fields_disappear[phases]], axis=1
             ),
             bins=meta.linear_bin_edges,
         )[0]
@@ -1125,6 +1155,36 @@ def cache_combined_tc_disappear_maxpeaks(
         phases: np.sum(maxpeaks[phases] for maxpeaks in all_tc_disappear_maxpeaks)
         for phases in meta.phases_corr
     }
+
+
+@task(groups=meta_session.groups, cache_saves="tc_disappear_correlations")
+def cache_combined_tc_disappear_correlations(
+    infos, group_name, *, all_tc_fields_disappear, all_u_tcs_byphase
+):
+    correlations = {
+        phases: np.zeros((meta.linear_bin_centers.size, meta.linear_bin_centers.size))
+        for phases in meta.phases_corr
+    }
+
+    for phases in meta.phases_corr:
+        tcs_byphase = np.vstack(
+            tcs[f"phase{phases[-2]}"][disappear[phases]]
+            for tcs, disappear in zip(all_u_tcs_byphase, all_tc_fields_disappear)
+        )
+        for i in range(meta.linear_bin_centers.size):
+            for j in range(meta.linear_bin_centers.size):
+                short = ["short_standard", "day2", "day3", "day4"]
+                if group_name in short and (i < 20 or j < 20):
+                    correlations[phases][i, j] = np.nan
+                else:
+                    left = tcs_byphase[:, i]
+                    right = tcs_byphase[:, j]
+                    valid = (~np.isnan(left)) & (~np.isnan(right))
+                    if np.sum(valid) >= 2:
+                        corr, _ = scipy.stats.pearsonr(left[valid], right[valid])
+                        correlations[phases][i, j] = 0 if np.isnan(corr) else corr
+
+    return correlations
 
 
 @task(infos=meta_session.all_infos, cache_saves="tc_disappear_mean_normalized")

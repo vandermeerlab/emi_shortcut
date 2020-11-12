@@ -2089,6 +2089,11 @@ def task_copy_figures():
         return rf'"C:\Program Files\Inkscape\inkscape.com" --export-pdf="{pdf}" "{svg}"'
 
     def svg_to_png(svg, png):
+        if sys.platform == "linux":
+            return (
+                f'inkscape "{svg}" --export-area-drawing --batch-process '
+                f'--export-filename="{png}"'
+            )
         return rf'"C:\Program Files\Inkscape\inkscape.com" --export-png="{png}" "{svg}"'
 
     for svg, pdf, png in figure_files:

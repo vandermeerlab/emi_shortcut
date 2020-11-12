@@ -1193,9 +1193,10 @@ def plot_group_tc_mean_disappear_normalized(
         )
 
 
-def _plot_tc_correlations_within_phase(tc_correlations_within_phase, savepath):
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=[15, 5])
-    for ax, phase in zip((ax1, ax2, ax3), meta.run_times):
+def _plot_tc_correlations_within_phase(tc_correlations_within_phase, titles, savepath):
+    n_plots = len(titles)
+    fig, axs = plt.subplots(1, n_plots, figsize=[5 * n_plots, 5])
+    for ax, phase in zip(axs, titles):
         im = ax.imshow(
             tc_correlations_within_phase[phase],
             cmap="inferno",
@@ -1203,7 +1204,7 @@ def _plot_tc_correlations_within_phase(tc_correlations_within_phase, savepath):
             vmin=0,
             vmax=1,
         )
-        ax.set_title(meta.task_times_labels[phase], y=1.08, fontsize=meta.fontsize)
+        ax.set_title(titles[phase], y=1.08, fontsize=meta.fontsize)
         ax.set_xlabel("Linearized position bins", fontsize=meta.fontsize)
 
         trans = ax.get_xaxis_transform()  # x in data units, y in axes units
@@ -1220,15 +1221,15 @@ def _plot_tc_correlations_within_phase(tc_correlations_within_phase, savepath):
         ax.set_xticks(meta.ticks)
         ax.set_yticks(meta.ticks)
 
-    ax1.set_ylabel("Linearized position bins", fontsize=meta.fontsize)
+    axs[0].set_ylabel("Linearized position bins", fontsize=meta.fontsize)
 
     axins = inset_axes(
-        ax3,
+        axs[-1],
         width="5%",  # width = 5% of parent_bbox width
         height="70%",  # height : 50%
         loc="lower left",
         bbox_to_anchor=(1.05, 0.0, 1, 1),
-        bbox_transform=ax3.transAxes,
+        bbox_transform=axs[-1].transAxes,
         borderpad=0,
     )
     cbar = fig.colorbar(im, cax=axins)
@@ -1244,7 +1245,9 @@ def _plot_tc_correlations_within_phase(tc_correlations_within_phase, savepath):
     savepath=("tcs", "tc_correlations_within_phase.svg"),
 )
 def plot_tc_correlations_within_phase(info, *, tc_correlations_within_phase, savepath):
-    _plot_tc_correlations_within_phase(tc_correlations_within_phase, savepath)
+    _plot_tc_correlations_within_phase(
+        tc_correlations_within_phase, titles=meta.task_times_labels, savepath=savepath
+    )
 
 
 @task(
@@ -1254,7 +1257,43 @@ def plot_tc_correlations_within_phase(info, *, tc_correlations_within_phase, sav
 def plot_group_tc_correlations_within_phase(
     infos, group_name, *, tc_correlations_within_phase, savepath
 ):
-    _plot_tc_correlations_within_phase(tc_correlations_within_phase, savepath)
+    _plot_tc_correlations_within_phase(
+        tc_correlations_within_phase, titles=meta.task_times_labels, savepath=savepath
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath=("tcs", "tc_appear_correlations.svg"),
+)
+def plot_group_tc_appear_correlations(
+    infos, group_name, *, tc_appear_correlations, savepath
+):
+    _plot_tc_correlations_within_phase(
+        tc_appear_correlations,
+        titles={
+            "phases12": "Appearing in Phase 2",
+            "phases23": "Appearing in Phase 3",
+        },
+        savepath=savepath,
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath=("tcs", "tc_disappear_correlations.svg"),
+)
+def plot_group_tc_disappear_correlations(
+    infos, group_name, *, tc_disappear_correlations, savepath
+):
+    _plot_tc_correlations_within_phase(
+        tc_disappear_correlations,
+        titles={
+            "phases12": "Disappearing in Phase 2",
+            "phases23": "Disappearing in Phase 3",
+        },
+        savepath=savepath,
+    )
 
 
 @task(infos=meta_session.analysis_infos)
