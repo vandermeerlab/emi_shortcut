@@ -621,7 +621,7 @@ def plot_correlations(correlations, titles, savepath):
             cmap="inferno",
             interpolation="nearest",
             vmin=0,
-            vmax=0.01,
+            vmax=1.0,
         )
         ax.set_title(titles[condition], y=1.08, fontsize=meta.fontsize)
         ax.set_xlabel("Linearized position bins", fontsize=meta.fontsize)

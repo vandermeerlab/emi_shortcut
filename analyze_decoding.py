@@ -120,7 +120,15 @@ def save_joined_replay_likelihood_bybin(
             file=fp,
         )
         print(
+            fr"\def \semulikelihood/{{{scipy.stats.sem(u):.5f}}}",
+            file=fp,
+        )
+        print(
             fr"\def \meanfullshortcutlikelihood/{{{np.mean(full_shortcut):.3f}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \semfullshortcutlikelihood/{{{scipy.stats.sem(full_shortcut):.5f}}}",
             file=fp,
         )
         tstat, pval, df = sm.stats.ttest_ind(u, full_shortcut)

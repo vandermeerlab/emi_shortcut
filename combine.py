@@ -612,10 +612,8 @@ def fig_tuning_curves_supplemental(panels, savepath):
     panels={
         "A": ("grp-combined", "tcs", "tc_correlations_without13_proportion.svg"),
         "B": ("grp-combined", "tcs", "tc_field_remapping.svg"),
-        "C": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase2.svg"),
-        "D": ("grp-combined", "tcs", "tc_appear_maxpeaks_phase3.svg"),
-        "E": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase1.svg"),
-        "F": ("grp-combined", "tcs", "tc_disappear_maxpeaks_phase2.svg"),
+        "C": ("grp-combined", "tcs", "tc_appear_correlations.svg"),
+        "D": ("grp-combined", "tcs", "tc_disappear_correlations.svg"),
     },
     savepath=("figures", "tuning_curves_supplemental_ppt.svg"),
     copy_to="tuning_curves_supplemental_ppt.pdf",
@@ -642,19 +640,13 @@ def fig_tuning_curves_supplemental_ppt(panels, savepath):
         )
     )
     fig.append(
-        el(None, panels["D"], 490 + padding, 500 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
         el(
             "D",
-            panels["E"],
+            panels["D"],
             960 + padding,
             500 + padding,
             offset=(-padding / 3, 0),
         )
-    )
-    fig.append(
-        el(None, panels["F"], 1430 + padding, 500 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
