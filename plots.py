@@ -563,13 +563,12 @@ def plot_replay_metric(
                     pval=pval[key][xlabel],
                 )
         if len(trajectories) == 1 and trajectories[0] in ["difference", "contrast"]:
-            key = "exclusive" if trajectories[0].startswith("only_") else "overlapping"
             for i, xlabel in enumerate(orig_xlabels):
                 height = max(replay_metric[trajectories[0]][xlabel], 0)
                 significance_text(
                     x=i,
                     height=height,
-                    pval=pval[key][xlabel],
+                    pval=pval[trajectories[0]][xlabel],
                 )
         if len(trajectories) == 1 and trajectories[0] not in ["difference", "contrast"]:
             for (left, right), pp in pval[trajectories[0]].items():

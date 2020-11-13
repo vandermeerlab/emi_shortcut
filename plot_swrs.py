@@ -729,7 +729,7 @@ def plot_group_replay_proportions_byphase(
         ["u", "full_shortcut"],
         ylabel="Proportion of SWRs\nthat are replays",
         pval=replay_proportions_byphase_pval,
-        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
+        title=f"{meta.title_labels[group_name]}\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["overlapping"],
@@ -740,7 +740,7 @@ def plot_group_replay_proportions_byphase(
         ylabel="Proportion of SWRs\nthat are replays",
         pval=replay_proportions_byphase_pval,
         ylim=0.225 if group_name not in ["all", "combined"] else None,
-        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
+        title=f"{meta.title_labels[group_name]}\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["exclusive"],
@@ -751,7 +751,7 @@ def plot_group_replay_proportions_byphase(
         ylabel="Replay proportion for shortcut - familiar",
         pval=replay_proportions_byphase_pval,
         color_byvalue=True,
-        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
+        title=f"{meta.title_labels[group_name]}\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["difference"],
@@ -762,7 +762,7 @@ def plot_group_replay_proportions_byphase(
         ylabel="Replay proportion contrast\nfor shortcut vs familiar",
         pval=replay_proportions_byphase_pval,
         color_byvalue=True,
-        title=f"{meta.title_labels[group_name]}" + f"\n n = {len(infos)} sessions"
+        title=f"{meta.title_labels[group_name]}\n n = {len(infos)} sessions"
         if group_name not in ["all", "combined"]
         else None,
         savepath=savepath["contrast"],

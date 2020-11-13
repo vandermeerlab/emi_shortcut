@@ -1911,7 +1911,7 @@ def cache_combined_replay_n_byexperience_nofeeder_bytrial(
     infos=meta_session.all_infos,
     cache_saves="replay_proportions_byexperience_nofeeder_bytrial",
 )
-def cache_replay_proportions_byexperience_nofeederonly(
+def cache_replay_proportions_byexperience_nofeeder_bytrial(
     info, *, replay_n_byexperience_nofeeder_bytrial, swr_n_byexperience_nofeeder_bytrial
 ):
     return get_replay_proportions_byexperience_bytrial(
