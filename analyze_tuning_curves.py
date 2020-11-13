@@ -915,6 +915,28 @@ def cache_combined_tc_correlations_bybin(infos, group_name, *, all_u_tcs_byphase
     }
 
 
+@task(
+    groups=meta_session.analysis_grouped, savepath=("tcs", "tc_correlations_bybin.tex")
+)
+def save_tc_correlations_bybin(infos, group_name, *, tc_correlations_bybin, savepath):
+    dist_to_landmark = np.tile(np.hstack([np.arange(10), np.arange(9, -1, -1)]), 5)
+    left = np.hstack([np.arange(20, -1, -1), np.arange(1, 31)])
+    dist_to_shortcut = np.hstack([left, left[-2:0:-1]])
+
+    with open(savepath, "w") as fp:
+        for ph, text in zip(["12", "23"], ["onetwo", "twothree"]):
+            corr, pval = scipy.stats.pearsonr(
+                tc_correlations_bybin[f"phases{ph}"], dist_to_landmark
+            )
+            print(fr"\def \phase{text}bybinlandmarkcorr/{{{corr:.2f}}}", file=fp)
+            print(fr"\def \phase{text}bybinlandmarkpval/{{{pval:.3g}}}", file=fp)
+            corr, pval = scipy.stats.pearsonr(
+                tc_correlations_bybin[f"phases{ph}"], dist_to_shortcut
+            )
+            print(fr"\def \phase{text}bybinshortcutcorr/{{{corr:.2f}}}", file=fp)
+            print(fr"\def \phase{text}bybinshortcutpval/{{{pval:.3g}}}", file=fp)
+
+
 @task(infos=meta_session.all_infos, cache_saves="tc_fields_appear")
 def cache_tc_fields_appear(info, *, u_tcs_with_fields_byphase):
     appear = {}

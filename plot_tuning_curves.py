@@ -833,9 +833,10 @@ def plot_group_tc_correlations_bybin(
         plot_by_standard_position(
             value_bybin=tc_correlations_bybin[phases],
             ylabel="Correlation",
+            title=meta.phases_corr_labels[phases],
             color=meta.colors["u"],
             axvlines=meta.std_axvlines["u"],
-            ylim=(-0.2, 1.0),
+            ylim=(0.2, 0.8),
             savepath=savepath[phases],
         )
 

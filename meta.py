@@ -25,6 +25,11 @@ task_times_labels = {
     "postrecord": "Post-task",
 }
 phases_corr = ["phases12", "phases13", "phases23"]
+phases_corr_labels = {
+    "phases12": "Phases 1-2",
+    "phases13": "Phases 1-3",
+    "phases23": "Phases 2-3",
+}
 experiences = [
     "familiar_phase12",
     "first_shortcut",
