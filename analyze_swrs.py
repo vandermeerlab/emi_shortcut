@@ -567,7 +567,7 @@ def save_n_variable_swrs_byphase(infos, group_name, *, all_swr_n_byphase, savepa
 
 @task(groups=meta_session.analysis_grouped, savepath=("swrs", "swrs_rates_byphase.tex"))
 def save_rates_variable_swrs_byphase(
-    infos, group_name, *, swr_rate_byphase, swr_rate_byphase_restonly, savepath
+    infos, group_name, *, swr_rate_byphase_restonly, savepath
 ):
     with open(savepath, "w") as fp:
         print("% SWR rates by phase", file=fp)
@@ -579,19 +579,26 @@ def save_rates_variable_swrs_byphase(
                 file=fp,
             )
 
-        pedestal = [np.mean(swr_rate_byphase[phase]) for phase in meta.rest_times]
-        pedcorr, pedpval = scipy.stats.pearsonr(list(range(len(pedestal))), pedestal)
-        maze = [np.mean(swr_rate_byphase[phase]) for phase in meta.run_times]
-        mazecorr, mazepval = scipy.stats.pearsonr(list(range(len(maze))), maze)
-        allphases = [np.mean(swr_rate_byphase[phase]) for phase in meta.task_times]
-        allcorr, allpval = scipy.stats.pearsonr(list(range(len(allphases))), allphases)
+        n_sessions = len(infos)
 
-        print(fr"\def \swrsratespedestalcorrelation/{{{pedcorr}}}", file=fp)
-        print(fr"\def \swrsratespedestalpval/{{{pedpval}}}", file=fp)
-        print(fr"\def \swrsratesmazecorrelation/{{{mazecorr}}}", file=fp)
-        print(fr"\def \swrsratesmazepval/{{{mazepval}}}", file=fp)
-        print(fr"\def \swrsratesallcorrelation/{{{allcorr}}}", file=fp)
-        print(fr"\def \swrsratesallpval/{{{allpval}}}", file=fp)
+        pedestal = np.hstack(
+            [swr_rate_byphase_restonly[phase] for phase in meta.rest_times]
+        )
+        ped_ramp = np.hstack(
+            [np.ones(n_sessions) * i for i in range(len(meta.rest_times))]
+        )
+        pedcorr, pedpval = scipy.stats.pearsonr(pedestal, ped_ramp)
+
+        maze = np.hstack([swr_rate_byphase_restonly[phase] for phase in meta.run_times])
+        maze_ramp = np.hstack(
+            [np.ones(n_sessions) * i for i in range(len(meta.run_times))]
+        )
+        mazecorr, mazepval = scipy.stats.pearsonr(maze, maze_ramp)
+
+        print(fr"\def \swrsratespedestalcorrelation/{{{pedcorr:.3f}}}", file=fp)
+        print(fr"\def \swrsratespedestalpval/{{{pedpval:.3g}}}", file=fp)
+        print(fr"\def \swrsratesmazecorrelation/{{{mazecorr:.3f}}}", file=fp)
+        print(fr"\def \swrsratesmazepval/{{{mazepval:.3g}}}", file=fp)
         print("% ---------", file=fp)
 
 

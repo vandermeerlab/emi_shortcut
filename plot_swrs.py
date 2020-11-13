@@ -323,6 +323,7 @@ def plot_swr_rate_byphase(
     plot_bar_mean_byphase(
         {phase: np.array(swr_rate_byphase[phase]) * 60 for phase in meta.task_times},
         n_byphase=swr_n_byphase,
+        n_sessions=len(infos),
         ylabel="Mean SWR rates (events/min)",
         savepath=savepath["full"],
     )
@@ -332,6 +333,7 @@ def plot_swr_rate_byphase(
             for phase in meta.task_times
         },
         n_byphase=swr_n_byphase_restonly,
+        n_sessions=len(infos),
         ylabel="Mean SWR rates (events/min)",
         savepath=savepath["rest"],
     )

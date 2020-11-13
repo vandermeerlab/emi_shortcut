@@ -202,7 +202,9 @@ def plot_raster(
     plt.close(fig)
 
 
-def plot_bar_mean_byphase(y_byphase, ylabel, n_byphase=None, savepath=None):
+def plot_bar_mean_byphase(
+    y_byphase, ylabel, n_byphase=None, n_sessions=None, savepath=None
+):
     n_phases = len(meta.task_times)
     x = np.arange(n_phases)
 
@@ -230,6 +232,17 @@ def plot_bar_mean_byphase(y_byphase, ylabel, n_byphase=None, savepath=None):
                 va="bottom",
                 fontsize=meta.fontsize_small,
             )
+
+    if n_sessions is not None:
+        plt.text(
+            0.8,
+            1.05,
+            s=f"n = {n_sessions} sessions",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=ax.transAxes,
+            fontsize=meta.fontsize_small,
+        )
 
     plt.xticks(
         x,
