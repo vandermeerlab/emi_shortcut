@@ -30,6 +30,7 @@ def significance_text(x, height, pval):
         va="center",
         bbox=dict(facecolor="1.", edgecolor="none", boxstyle="Square,pad=0.1"),
         size=meta.fontsize - 6,
+        zorder=1.6,
     )
     return True
 
@@ -48,6 +49,7 @@ def significance_bar(start, end, height, pval):
             marker=TICKDOWN,
             markeredgewidth=linewidth,
             markersize=8,
+            zorder=1.5,
         )
 
 

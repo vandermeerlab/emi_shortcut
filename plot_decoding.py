@@ -378,7 +378,6 @@ def _plot_decoding_preference(
         rank = np.searchsorted(shuffle_means, mean_preference[i])
         rank /= shuffle_means.size
         pvals.append(2 * min(rank, 1 - rank))
-    print(f"pvals: {pvals}")
 
     if axhline is not None:
         color = [
@@ -390,10 +389,8 @@ def _plot_decoding_preference(
     else:
         color = ["k" for _ in mean_preference]
     plt.plot(mean_preference, color="k")
-    h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.15
     for i, (phase_preference, phase_color) in enumerate(zip(mean_preference, color)):
         plt.scatter(x[i], phase_preference, color=phase_color, marker="o", s=200)
-        significance_text(x[i], phase_preference + h_adjust, pvals[i])
 
     plt.xticks(
         np.arange(len(meta.task_times)),
@@ -404,6 +401,10 @@ def _plot_decoding_preference(
     plt.ylabel(ylabel, fontsize=meta.fontsize)
     if ylim is not None:
         plt.ylim(ylim)
+
+    for i, phase_preference in enumerate(mean_preference):
+        significance_text(x[i], phase_preference, pvals[i])
+
     plt.locator_params(axis="y", nbins=6)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
     if axhline is not None:
