@@ -5,6 +5,11 @@ seed = 34
 
 rest_times = ["prerecord", "pauseA", "pauseB", "postrecord"]
 run_times = ["phase1", "phase2", "phase3"]
+run_times_labels = {
+    "phase1": "Phase 1",
+    "phase2": "Phase 2",
+    "phase3": "Phase 3",
+}
 
 task_times = [
     "prerecord",

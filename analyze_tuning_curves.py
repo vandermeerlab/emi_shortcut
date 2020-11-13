@@ -925,13 +925,17 @@ def save_tc_correlations_bybin(infos, group_name, *, tc_correlations_bybin, save
 
     with open(savepath, "w") as fp:
         for ph, text in zip(["12", "23"], ["onetwo", "twothree"]):
+            nan_idx = np.isnan(tc_correlations_bybin[f"phases{ph}"])
+
             corr, pval = scipy.stats.pearsonr(
-                tc_correlations_bybin[f"phases{ph}"], dist_to_landmark
+                tc_correlations_bybin[f"phases{ph}"][~nan_idx],
+                dist_to_landmark[~nan_idx],
             )
             print(fr"\def \phase{text}bybinlandmarkcorr/{{{corr:.2f}}}", file=fp)
             print(fr"\def \phase{text}bybinlandmarkpval/{{{pval:.3g}}}", file=fp)
             corr, pval = scipy.stats.pearsonr(
-                tc_correlations_bybin[f"phases{ph}"], dist_to_shortcut
+                tc_correlations_bybin[f"phases{ph}"][~nan_idx],
+                dist_to_shortcut[~nan_idx],
             )
             print(fr"\def \phase{text}bybinshortcutcorr/{{{corr:.2f}}}", file=fp)
             print(fr"\def \phase{text}bybinshortcutpval/{{{pval:.3g}}}", file=fp)

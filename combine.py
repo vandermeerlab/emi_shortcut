@@ -147,7 +147,7 @@ def day_details(panels, savepath):
     fig = svgfig(full_width, full_height)
     fig.append(
         el(
-            None,
+            "Day 1",
             panels["day1"],
             20 + padding,
             20 + padding,
@@ -156,7 +156,7 @@ def day_details(panels, savepath):
     )
     fig.append(
         el(
-            None,
+            "Day 2",
             panels["day2"],
             630 + padding,
             20 + padding,
@@ -164,17 +164,35 @@ def day_details(panels, savepath):
         )
     )
     fig.append(
-        el(None, panels["day3"], 1240 + padding, 20 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
-        el(None, panels["day4"], 1850 + padding, 20 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
-        el(None, panels["day5"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
+        el(
+            "Day 3",
+            panels["day3"],
+            1240 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
     )
     fig.append(
         el(
-            None,
+            "Day 4",
+            panels["day4"],
+            1850 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "Day 5",
+            panels["day5"],
+            20 + padding,
+            500 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "Day 6",
             panels["day6"],
             630 + padding,
             500 + padding,
@@ -183,7 +201,7 @@ def day_details(panels, savepath):
     )
     fig.append(
         el(
-            None,
+            "Day 7",
             panels["day7"],
             1240 + padding,
             500 + padding,
@@ -192,7 +210,7 @@ def day_details(panels, savepath):
     )
     fig.append(
         el(
-            None,
+            "Day 8",
             panels["day8"],
             1850 + padding,
             500 + padding,
@@ -210,7 +228,7 @@ def rat_details(panels, savepath):
     fig = svgfig(full_width, full_height)
     fig.append(
         el(
-            None,
+            "R063",
             panels["rat1"],
             20 + padding,
             20 + padding,
@@ -219,7 +237,7 @@ def rat_details(panels, savepath):
     )
     fig.append(
         el(
-            None,
+            "R066",
             panels["rat2"],
             600 + padding,
             20 + padding,
@@ -227,10 +245,22 @@ def rat_details(panels, savepath):
         )
     )
     fig.append(
-        el(None, panels["rat3"], 20 + padding, 450 + padding, offset=(-padding / 3, 0))
+        el(
+            "R067",
+            panels["rat3"],
+            20 + padding,
+            450 + padding,
+            offset=(-padding / 3, 0),
+        )
     )
     fig.append(
-        el(None, panels["rat4"], 600 + padding, 450 + padding, offset=(-padding / 3, 0))
+        el(
+            "R068",
+            panels["rat4"],
+            600 + padding,
+            450 + padding,
+            offset=(-padding / 3, 0),
+        )
     )
     savefig(fig, savepath)
 
@@ -611,40 +641,59 @@ def fig_tuning_curves_supplemental(panels, savepath):
 @task(
     panels={
         "A": ("grp-combined", "tcs", "tc_correlations_without13_proportion.svg"),
-        "B": ("grp-combined", "tcs", "tc_field_remapping.svg"),
-        "C": ("grp-combined", "tcs", "tc_appear_correlations.svg"),
-        "D": ("grp-combined", "tcs", "tc_disappear_correlations.svg"),
     },
     savepath=("figures", "tuning_curves_supplemental_ppt.svg"),
     copy_to="tuning_curves_supplemental_ppt.pdf",
 )
 def fig_tuning_curves_supplemental_ppt(panels, savepath):
     padding = 20
-    full_width = 1900 + padding
-    full_height = 950 + padding
+    full_width = 1000 + padding
+    full_height = 500 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
         el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-combined", "tcs", "tc_correlations_bybin_phases12.svg"),
+        "B": ("grp-combined", "tcs", "tc_correlations_bybin_phases23.svg"),
+        "C": ("grp-combined", "tcs", "tc_appear_correlations.svg"),
+        "D": ("grp-combined", "tcs", "tc_disappear_correlations.svg"),
+    },
+    savepath=("figures", "tuning_curves_bylandmarks_ppt.svg"),
+    copy_to="tuning_curves_bylandmarks_ppt.pdf",
+)
+def fig_tuning_curves_bylandmarks_ppt(panels, savepath):
+    padding = 20
+    full_width = 1800 + padding
+    full_height = 850 + padding
+
+    fig = svgfig(full_width, full_height)
     fig.append(
-        el("B", panels["B"], 1000 + padding, 30 + padding, offset=(-padding / 3, 0))
+        el("A", panels["A"], 20 + padding, 230 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["B"], 470 + padding, 230 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el(
-            "C",
+            "B",
             panels["C"],
+            950 + padding,
             20 + padding,
-            500 + padding,
             offset=(-padding / 3, 0),
         )
     )
     fig.append(
         el(
-            "D",
+            "C",
             panels["D"],
-            960 + padding,
-            500 + padding,
+            950 + padding,
+            430 + padding,
             offset=(-padding / 3, 0),
         )
     )
@@ -846,27 +895,31 @@ def fig_replay_ppt(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-combined", "replays", "overlapping_replay_proportions_byphase.svg"),
-        "B": ("grp-combined", "replays", "contrast_replay_proportions_byphase.svg"),
+        "A": ("grp-combined", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "B": (
+            "grp-combined",
+            "replays-session",
+            "difference_replay_prop_byphase.svg",
+        ),
         "C": (
             "grp-combined",
-            "replays",
-            "exclusive_replay_proportions_normalized_byphase_u.svg",
+            "replays-session",
+            "exclusive_replay_prop_normalized_byphase_u.svg",
         ),
         "D": (
             "grp-combined",
-            "replays",
-            "exclusive_replay_proportions_normalized_byphase_full_shortcut.svg",
+            "replays-session",
+            "exclusive_replay_prop_normalized_byphase_full_shortcut.svg",
         ),
         "E": (
             "grp-combined",
-            "replays",
-            "overlapping_replay_proportions_byexperience_bytrial.svg",
+            "replays-session",
+            "exclusive_replay_prop_byexperience_bytrial.svg",
         ),
         "F": (
             "grp-combined",
-            "replays",
-            "contrast_replay_proportions_byexperience_bytrial.svg",
+            "replays-session",
+            "difference_replay_prop_byexperience_bytrial.svg",
         ),
     },
     savepath=("figures", "replay_summary.svg"),
@@ -913,17 +966,17 @@ def fig_replay_summary(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-combined", "replays", "overlapping_replay_proportions_byphase.svg"),
-        "B": ("grp-combined", "replays", "contrast_replay_proportions_byphase.svg"),
+        "A": ("grp-combined", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "B": ("grp-combined", "replays-session", "difference_replay_prop_byphase.svg"),
         "C": (
             "grp-combined",
-            "replays",
-            "exclusive_replay_proportions_normalized_byphase_u.svg",
+            "replays-session",
+            "exclusive_replay_prop_normalized_byphase_u.svg",
         ),
         "D": (
             "grp-combined",
-            "replays",
-            "exclusive_replay_proportions_normalized_byphase_full_shortcut.svg",
+            "replays-session",
+            "exclusive_replay_prop_normalized_byphase_full_shortcut.svg",
         ),
     },
     savepath=("figures", "replay_summary_byphase.svg"),
@@ -964,17 +1017,25 @@ def fig_replay_summary_byphase(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-combined", "replays", "overlapping_replay_proportions_byphase.svg"),
-        "B": ("grp-combined", "replays", "contrast_replay_proportions_byphase.svg"),
+        "A": (
+            "grp-combined",
+            "replays-session",
+            "exclusive_replay_prop_byphase.svg",
+        ),
+        "B": (
+            "grp-combined",
+            "replays-session",
+            "difference_replay_prop_byphase.svg",
+        ),
         "C": (
             "grp-combined",
-            "replays",
-            "overlapping_replay_proportions_byexperience_bytrial.svg",
+            "replays-session",
+            "exclusive_replay_prop_byexperience_bytrial.svg",
         ),
         "D": (
             "grp-combined",
-            "replays",
-            "contrast_replay_proportions_byexperience_bytrial.svg",
+            "replays-session",
+            "difference_replay_prop_byexperience_bytrial.svg",
         ),
     },
     savepath=("figures", "replay_summary_byphase_ppt.svg"),
@@ -1029,33 +1090,33 @@ def fig_replay_summary_byphase_ppt(panels, savepath):
     panels={
         "A": (
             "grp-combined",
-            "replays",
-            "overlapping_replay_proportions_byexperience_bytrial.svg",
+            "replays-session",
+            "exclusive_replay_prop_byexperience_bytrial.svg",
         ),
         "B": (
             "grp-combined",
-            "replays",
-            "contrast_replay_proportions_byexperience_bytrial.svg",
+            "replays-session",
+            "difference_replay_prop_byexperience_bytrial.svg",
         ),
         "C": (
             "grp-combined",
-            "replays",
-            "overlapping_replay_proportions_byexperience_feederonly_bytrial.svg",
+            "replays-session",
+            "exclusive_replay_prop_byexperience_feederonly.svg",
         ),
         "D": (
             "grp-combined",
-            "replays",
-            "contrast_replay_proportions_byexperience_feederonly_bytrial.svg",
+            "replays-session",
+            "difference_replay_prop_byexperience_feederonly.svg",
         ),
         "E": (
             "grp-combined",
-            "replays",
-            "overlapping_replay_proportions_byexperience_nofeeder_bytrial.svg",
+            "replays-session",
+            "exclusive_replay_prop_byexperience_nofeeder_bytrial.svg",
         ),
         "F": (
             "grp-combined",
-            "replays",
-            "contrast_replay_proportions_byexperience_nofeeder_bytrial.svg",
+            "replays-session",
+            "difference_replay_prop_byexperience_nofeeder_bytrial.svg",
         ),
     },
     savepath=("figures", "replay_summary_byexperience.svg"),
@@ -1128,23 +1189,23 @@ def fig_replay_summary_byexperience(panels, savepath):
     panels={
         "A": (
             "grp-combined",
-            "replays",
-            "overlapping_replay_proportions_byexperience_nofeeder_bytrial.svg",
+            "replays-session",
+            "exclusive_replay_prop_byexperience_nofeeder_bytrial.svg",
         ),
         "B": (
             "grp-combined",
-            "replays",
-            "contrast_replay_proportions_byexperience_nofeeder_bytrial.svg",
+            "replays-session",
+            "difference_replay_prop_byexperience_nofeeder_bytrial.svg",
         ),
         "C": (
             "grp-combined",
-            "replays",
-            "overlapping_replay_proportions_byexperience_feederonly.svg",
+            "replays-session",
+            "exclusive_replay_prop_byexperience_feederonly.svg",
         ),
         "D": (
             "grp-combined",
-            "replays",
-            "contrast_replay_proportions_byexperience_feederonly.svg",
+            "replays-session",
+            "difference_replay_prop_byexperience_feederonly.svg",
         ),
     },
     savepath=("figures", "replay_summary_byexperience_ppt.svg"),
@@ -1197,18 +1258,18 @@ def fig_replay_summary_byexperience_ppt(panels, savepath):
 
 @task(
     panels={
-        "day1": ("grp-day1", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day2": ("grp-day2", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day3": ("grp-day3", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day4": ("grp-day4", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day5": ("grp-day5", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day6": ("grp-day6", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day7": ("grp-day7", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day8": ("grp-day8", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "rat1": ("grp-r063", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "rat2": ("grp-r066", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "rat3": ("grp-r067", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "rat4": ("grp-r068", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day1": ("grp-day1", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day2": ("grp-day2", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day3": ("grp-day3", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day4": ("grp-day4", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day5": ("grp-day5", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day6": ("grp-day6", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day7": ("grp-day7", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day8": ("grp-day8", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "rat1": ("grp-r063", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "rat2": ("grp-r066", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "rat3": ("grp-r067", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "rat4": ("grp-r068", "replays-session", "exclusive_replay_prop_byphase.svg"),
     },
     savepath=("figures", "replay_details.svg"),
     copy_to="replay_details.pdf",
@@ -1219,14 +1280,14 @@ def fig_replay_details(panels, savepath):
 
 @task(
     panels={
-        "day1": ("grp-day1", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day2": ("grp-day2", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day3": ("grp-day3", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day4": ("grp-day4", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day5": ("grp-day5", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day6": ("grp-day6", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day7": ("grp-day7", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "day8": ("grp-day8", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "day1": ("grp-day1", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day2": ("grp-day2", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day3": ("grp-day3", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day4": ("grp-day4", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day5": ("grp-day5", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day6": ("grp-day6", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day7": ("grp-day7", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "day8": ("grp-day8", "replays-session", "exclusive_replay_prop_byphase.svg"),
     },
     savepath=("figures", "replay_day_details.svg"),
     copy_to="replay_day_details.pdf",
@@ -1237,10 +1298,10 @@ def fig_replay_day_details(panels, savepath):
 
 @task(
     panels={
-        "rat1": ("grp-r063", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "rat2": ("grp-r066", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "rat3": ("grp-r067", "replays", "exclusive_replay_proportions_byphase.svg"),
-        "rat4": ("grp-r068", "replays", "exclusive_replay_proportions_byphase.svg"),
+        "rat1": ("grp-r063", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "rat2": ("grp-r066", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "rat3": ("grp-r067", "replays-session", "exclusive_replay_prop_byphase.svg"),
+        "rat4": ("grp-r068", "replays-session", "exclusive_replay_prop_byphase.svg"),
     },
     savepath=("figures", "replay_rat_details.svg"),
     copy_to="replay_rat_details.pdf",
@@ -1286,8 +1347,7 @@ def fig_decoding_errors(panels, savepath):
 
 @task(
     panels={
-        "A": ("grp-combined", "decoding", "std_error_bybin.svg"),
-        "B": (
+        "A": (
             "grp-combined",
             "decoding",
             "replay_likelihood_bybin.svg",
@@ -1299,24 +1359,15 @@ def fig_decoding_errors(panels, savepath):
 def fig_decoding_ppt(panels, savepath):
     padding = 50
     full_width = 950 + padding
-    full_height = 950 + padding
+    full_height = 500 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
         el(
-            "A",
+            None,
             panels["A"],
             20 + padding / 2,
             20 + padding / 2,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "B",
-            panels["B"],
-            20 + padding / 2,
-            500 + padding / 2,
             offset=(-padding / 3, 0),
         )
     )
@@ -1981,15 +2032,34 @@ def fig_tuning_curves_mean(panels, savepath):
 
 @task(
     panels={
+        "A": ("grp-combined", "tcs", "tc_field_remapping.svg"),
+    },
+    savepath=("figures", "tc_field_remapping_ppt.svg"),
+    copy_to="tc_field_remapping_ppt.pdf",
+)
+def fig_tc_field_remapping_ppt(panels, savepath):
+    padding = 20
+    full_width = 600 + padding
+    full_height = 500 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(None, panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "A": ("grp-combined", "tcs", "tc_mean_appear_phase2.svg"),
         "B": ("grp-combined", "tcs", "tc_mean_appear_phase3.svg"),
         "C": ("grp-combined", "tcs", "tc_mean_disappear_phase1.svg"),
         "D": ("grp-combined", "tcs", "tc_mean_disappear_phase2.svg"),
     },
-    savepath=("figures", "tuning_curves_remapping_ppt.svg"),
-    copy_to="tuning_curves_remapping_ppt.pdf",
+    savepath=("figures", "mean_tuning_curves_remapping_ppt.svg"),
+    copy_to="mean_tuning_curves_remapping_ppt.pdf",
 )
-def fig_tuning_curves_remapping_ppt(panels, savepath):
+def fig_mean_tuning_curves_remapping_ppt(panels, savepath):
     padding = 20
     full_width = 1250 + padding
     full_height = 950 + padding

@@ -1149,8 +1149,13 @@ def save_replays_mean_durations(infos, group_name, *, all_replays_byphase, savep
         for trajectory in meta.exclusive_trajectories:
             traj = trajectory.replace("_", "")
             mean_duration = np.mean(replays_durations[trajectory]) * 1000
+            sem_duration = scipy.stats.sem(replays_durations[trajectory]) * 1000
             print(
-                fr"\def \{traj}replaymeandurations/{{{mean_duration:.1f}}}",
+                fr"\def \{traj}replaymeandurations/{{{mean_duration:.2f}}}",
+                file=fp,
+            )
+            print(
+                fr"\def \{traj}replaysemdurations/{{{sem_duration:.3g}}}",
                 file=fp,
             )
 

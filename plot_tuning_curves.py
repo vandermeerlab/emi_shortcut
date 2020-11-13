@@ -1200,7 +1200,7 @@ def plot_group_tc_mean_disappear_normalized(
 )
 def plot_tc_correlations_within_phase(info, *, tc_correlations_within_phase, savepath):
     plot_correlations(
-        tc_correlations_within_phase, titles=meta.task_times_labels, savepath=savepath
+        tc_correlations_within_phase, titles=meta.run_times_labels, savepath=savepath
     )
 
 
@@ -1212,7 +1212,7 @@ def plot_group_tc_correlations_within_phase(
     infos, group_name, *, tc_correlations_within_phase, savepath
 ):
     plot_correlations(
-        tc_correlations_within_phase, titles=meta.task_times_labels, savepath=savepath
+        tc_correlations_within_phase, titles=meta.run_times_labels, savepath=savepath
     )
 
 

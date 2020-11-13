@@ -31,7 +31,7 @@ def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, sa
     _plot_replay_metric(
         replay_prop_byphase,
         ["difference"],
-        ylabel="Replay proportion for shortcut - familiar",
+        ylabel="Replay proportion\nfor shortcut - familiar",
         color_byvalue=True,
         savepath=savepath["difference"],
     )
