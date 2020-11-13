@@ -18,9 +18,13 @@ def plot_error_boxplot(infos, group_name, *, decoding_error, savepath):
     fig, ax = plt.subplots(figsize=(7, 6))
     bp = ax.boxplot(
         [decoding_error["u"], decoding_error["full_shortcut"]],
-        whis=(5, 95),
         patch_artist=True,
+        showfliers=False,
     )
+    # _, pval, _ = sm.stats.ttest_ind(
+    #     decoding_error["u"], decoding_error["full_shortcut"]
+    # )
+    # significance_bar(1, 2, plt.ylim()[1] * 0.95, pval)
 
     colors = [meta.colors["u"], meta.colors["full_shortcut"]]
 
