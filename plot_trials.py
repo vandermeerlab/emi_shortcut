@@ -91,6 +91,13 @@ def plot_trial_proportions(
         else "Phase 3",
         savepath=savepath,
     )
+    pval = ranksum_test(
+        xn=n_trials_ph3["u"],
+        xtotal=n_trials_total,
+        yn=n_trials_ph3["full_shortcut"],
+        ytotal=n_trials_total,
+    )
+    print(pval)
 
 
 @task(
@@ -119,6 +126,13 @@ def plot_firsttrial_proportions(
         else "Phase 3 first trial",
         savepath=savepath,
     )
+    # pval = ranksum_test(
+    #     xn=int(sum(firsttrial_proportions["u"])),
+    #     xtotal=len(firsttrial_proportions["u"]),
+    #     yn=int(sum(firsttrial_proportions["full_shortcut"])),
+    #     ytotal=len(firsttrial_proportions["full_shortcut"]),
+    # )
+    # print(pval)
 
 
 @task(groups=meta_session.groups, savepath=("behavior", "behavior_duration.svg"))
@@ -166,8 +180,13 @@ def _plot_boxplot(y, n_sessions, ylabel, title=None, savepath=None):
         patch_artist=True,
     )
 
-    _, pval, _ = sm.stats.ttest_ind(y[0], y[1])
+    t, pval, df = sm.stats.ttest_ind(y[0], y[1])
     significance_bar(1, 2, (plt.ylim()[1] - plt.ylim()[0]) * 0.75, pval)
+    # print(f"familiar mean: {np.mean(y[0])}")
+    # print(f"familiar sem: {scipy.stats.sem(y[0])}")
+    # print(f"shortcut mean: {np.mean(y[1])}")
+    # print(f"shortcut sem: {scipy.stats.sem(y[1])}")
+    # print(f"t: {t:3f}\ndf: {df}\npval: {pval:3g}")
 
     for patch, color in zip(
         box["boxes"],

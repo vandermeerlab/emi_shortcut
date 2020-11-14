@@ -652,7 +652,7 @@ def fig_tuning_curves_supplemental_ppt(panels, savepath):
 
     fig = svgfig(full_width, full_height)
     fig.append(
-        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+        el(None, panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -1027,16 +1027,6 @@ def fig_replay_summary_byphase(panels, savepath):
             "replays-session",
             "difference_replay_prop_byphase.svg",
         ),
-        "C": (
-            "grp-combined",
-            "replays-session",
-            "exclusive_replay_prop_byexperience_bytrial.svg",
-        ),
-        "D": (
-            "grp-combined",
-            "replays-session",
-            "difference_replay_prop_byexperience_bytrial.svg",
-        ),
     },
     savepath=("figures", "replay_summary_byphase_ppt.svg"),
     copy_to="replay_summary_byphase_ppt.pdf",
@@ -1044,7 +1034,7 @@ def fig_replay_summary_byphase(panels, savepath):
 def fig_replay_summary_byphase_ppt(panels, savepath):
     padding = 50
     full_width = 1300 + padding
-    full_height = 1000 + padding
+    full_height = 500 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -1062,24 +1052,6 @@ def fig_replay_summary_byphase_ppt(panels, savepath):
             panels["B"],
             650 + padding,
             20 + padding,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "C",
-            panels["C"],
-            20 + padding,
-            500 + padding,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "D",
-            panels["D"],
-            650 + padding,
-            500 + padding,
             offset=(-padding / 3, 0),
         )
     )
