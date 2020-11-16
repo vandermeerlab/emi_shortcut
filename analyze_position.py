@@ -3,11 +3,14 @@ import re
 import nept
 import numpy as np
 from shapely.geometry import Point
+import scipy.stats
+import statsmodels.api as sm
 
 import aggregate
 import meta
 import meta_session
 from tasks import task
+from utils import latex_float
 
 
 @task(infos=meta_session.all_infos, cache_saves="raw_position_byzone")
@@ -192,11 +195,31 @@ def save_barrier_time(infos, group_name, *, barrier_time, all_barrier_time, save
                 fr"\def \mean{traj}barrier/{{{np.mean(barrier_time[trajectory]):.1f}}}",
                 file=fp,
             )
+            print(
+                fr"\def \sem{traj}barrier/{{{scipy.stats.sem(barrier_time[trajectory]):.1f}}}",
+                file=fp,
+            )
+        t, pval, df = sm.stats.ttest_ind(
+            barrier_time["shortcut"], barrier_time["novel"]
+        )
+        pval = latex_float(pval)
+        print(
+            fr"\def \allbarrierststat/{{{t:.2f}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \allbarrierspval/{{{pval}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \allbarriersdf/{{{int(df)}}}",
+            file=fp,
+        )
         print("% ---------", file=fp)
 
 
 @task(
-    groups={"day7": meta_session.day7_infos},
+    groups={"day7_beh": meta_session.day7_infos_beh},
     savepath=("behavior", "barrier_time_day7.tex"),
 )
 def save_barrier_time_day7(
@@ -213,9 +236,29 @@ def save_barrier_time_day7(
         for trajectory in barrier_time:
             traj = trajectory.replace("_", "")
             print(
-                fr"\def \mean{traj}barrierday7/{{{np.mean(barrier_time[trajectory]):.1f}}}",
+                fr"\def \mean{traj}barrierdayseven/{{{np.mean(barrier_time[trajectory]):.1f}}}",
                 file=fp,
             )
+            print(
+                fr"\def \sem{traj}barrierdayseven/{{{scipy.stats.sem(barrier_time[trajectory]):.1f}}}",
+                file=fp,
+            )
+        t, pval, df = sm.stats.ttest_ind(
+            barrier_time["shortcut"], barrier_time["novel"]
+        )
+        pval = latex_float(pval)
+        print(
+            fr"\def \barrierdaysevenstat/{{{t:.2f}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \barrierdaysevenpval/{{{pval}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \barrierdaysevendf/{{{int(df)}}}",
+            file=fp,
+        )
         print("% ---------", file=fp)
 
 

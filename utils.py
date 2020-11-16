@@ -78,3 +78,12 @@ def ranksum_test(xn, xtotal, yn, ytotal):
     y[:yn] = 1
     statistic, pval = stats.mannwhitneyu(x, y)
     return pval
+
+
+def latex_float(f):
+    float_str = f"{f:2e}"
+    if "e" in float_str:
+        base, exponent = float_str.split("e")
+        return fr"{float(base):.1f} \times 10^{{{int(exponent)}}}"
+    else:
+        return float_str

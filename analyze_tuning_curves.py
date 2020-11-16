@@ -8,6 +8,7 @@ import meta
 import meta_session
 import paths
 from tasks import task
+from utils import latex_float
 
 
 def has_field(tuning_curve):
@@ -859,11 +860,20 @@ def cache_combined_tc_correlations(infos, group_name, *, all_tc_correlations):
 def save_tc_correlations(infos, group_name, *, tc_correlations, savepath):
     with open(savepath, "w") as fp:
         print("% TC correlation stats", file=fp)
+        mean12 = np.mean(tc_correlations["phases12"])
+        sem12 = scipy.stats.sem(tc_correlations["phases12"])
+        mean23 = np.mean(tc_correlations["phases23"])
+        sem23 = scipy.stats.sem(tc_correlations["phases23"])
+        print(fr"\def \tcbtwonetwomean/{{{mean12:.2f}}}", file=fp)
+        print(fr"\def \tcbtwonetwosem/{{{sem12:.2f}}}", file=fp)
+        print(fr"\def \tcbtwtwothreemean/{{{mean23:.2f}}}", file=fp)
+        print(fr"\def \tcbtwtwothreesem/{{{sem23:.2f}}}", file=fp)
         stats, pval = scipy.stats.mannwhitneyu(
             tc_correlations["phases12"], tc_correlations["phases23"]
         )
-        print(fr"% \def \tccorr/{{{stats}}}", file=fp)
-        print(fr"\def \tccorrpval/{{{pval:.3g}}}", file=fp)
+        pval = latex_float(pval)
+        print(fr"\def \tccorr/{{{stats}}}", file=fp)
+        print(fr"\def \tccorrpval/{{{pval}}}", file=fp)
 
 
 @task(infos=meta_session.all_infos, cache_saves="tc_correlations_bybin")

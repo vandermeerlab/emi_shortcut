@@ -1,11 +1,13 @@
 import nept
 import numpy as np
 import pandas as pd
+import scipy.stats
+import statsmodels.api as sm
 
 import meta
 import meta_session
 from tasks import task
-from utils import save_ttest_results
+from utils import latex_float, ranksum_test, save_ttest_results
 
 
 @task(infos=meta_session.all_infos, cache_saves="raw_trials")
@@ -602,3 +604,105 @@ def save_mostly_shortcut_idx(infos, group_name, *, mostly_shortcut_idx, savepath
                 f"% {mostly_shortcut_idx + 1}",
                 file=fp,
             )
+
+
+@task(
+    groups=meta_session.all_grouped, savepath=("behavior", "behavior_duration_pval.tex")
+)
+def save_behavior_duration_pval(
+    infos,
+    group_name,
+    *,
+    trial_durations,
+    savepath,
+):
+    t, pval, df = sm.stats.ttest_ind(
+        trial_durations["phase3"]["u"], trial_durations["phase3"]["full_shortcut"]
+    )
+    with open(savepath, "w") as fp:
+        print("% Behavior Duration pval", file=fp)
+        for trajectory in meta.trial_types:
+            traj = trajectory.replace("_", "")
+            totalmeandurations = np.mean(trial_durations["phase3"][trajectory])
+            totalsemdurations = scipy.stats.sem(trial_durations["phase3"][trajectory])
+            print(
+                fr"\def \totalmeandurations{traj}/{{{totalmeandurations:.2f}}}",
+                file=fp,
+            )
+            print(
+                fr"\def \totalsemdurations{traj}/{{{totalsemdurations:.2f}}}",
+                file=fp,
+            )
+        print(
+            fr"\def \totaldurationststat/{{{t:.2f}}}",
+            file=fp,
+        )
+        pval = latex_float(pval)
+        print(
+            fr"\def \totaldurationspval/{{{pval}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \totaldurationsdf/{{{int(df)}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)
+
+
+@task(
+    groups=meta_session.all_grouped, savepath=("behavior", "behavior_choice_pval.tex")
+)
+def save_behavior_choice_pval(
+    infos,
+    group_name,
+    *,
+    trial_proportions,
+    n_trials_ph3,
+    savepath,
+):
+    n_trials_total = n_trials_ph3["u"] + n_trials_ph3["full_shortcut"]
+    pval = ranksum_test(
+        xn=n_trials_ph3["u"],
+        xtotal=n_trials_total,
+        yn=n_trials_ph3["full_shortcut"],
+        ytotal=n_trials_total,
+    )
+    pval = latex_float(pval)
+    with open(savepath, "w") as fp:
+        print("% Behavior choice pval", file=fp)
+        print(
+            fr"\def \behaviorchoicepval/{{{pval}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)
+
+
+@task(
+    groups=meta_session.all_grouped,
+    savepath=("behavior", "behavior_choice_firsttrial_pval.tex"),
+)
+def save_behavior_choice_firsttrial_pval(
+    infos,
+    group_name,
+    *,
+    trial_proportions_bytrial,
+    savepath,
+):
+    firsttrial_proportions = {
+        trajectory: trial_proportions_bytrial[trajectory][0]
+        for trajectory in meta.trial_types
+    }
+    pval = ranksum_test(
+        xn=int(sum(firsttrial_proportions["u"])),
+        xtotal=len(firsttrial_proportions["u"]),
+        yn=int(sum(firsttrial_proportions["full_shortcut"])),
+        ytotal=len(firsttrial_proportions["full_shortcut"]),
+    )
+    pval = latex_float(pval)
+    with open(savepath, "w") as fp:
+        print("% Behavior choice pval", file=fp)
+        print(
+            fr"\def \behaviorchoicefirsttrialpval/{{{pval}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)

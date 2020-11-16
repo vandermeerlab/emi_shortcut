@@ -44,9 +44,6 @@ def plot_behavior_bybarriers(infos, group_name, *, barrier_time, savepath):
         scipy.stats.sem(barrier_time["novel"]),
     ]
     t, pval, df = sm.stats.ttest_ind(barrier_time["shortcut"], barrier_time["novel"])
-    # print(y)
-    # print(sem)
-    # print(f"t: {t:3f}\ndf: {df}\npval: {pval:3g}")
 
     colors = [meta.colors["full_shortcut"], meta.colors["novel"]]
     fig, ax = plt.subplots(figsize=(8, 6))
