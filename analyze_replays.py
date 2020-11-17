@@ -3,6 +3,7 @@ import numpy as np
 import meta
 import meta_session
 from tasks import task
+from utils import latex_float, mannwhitneyu
 
 
 def group_all(all_props, phases):
@@ -62,3 +63,38 @@ def cache_combined_replay_prop_byexperience_feederonly(
     infos, group_name, *, all_replay_proportions_byexperience_feederonly
 ):
     return group_all(all_replay_proportions_byexperience_feederonly, meta.on_task)
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("replays-session", "replay_prop_normalized_byphase_pval.tex"),
+)
+def save_replay_prop_normalized_byphase_pval(
+    infos,
+    group_name,
+    *,
+    replay_prop_normalized_byphase,
+    savepath,
+):
+    with open(savepath, "w") as fp:
+        print("% replay prop normalized byphase pval", file=fp)
+        pval = mannwhitneyu(
+            replay_prop_normalized_byphase["only_u"]["pauseA"],
+            replay_prop_normalized_byphase["only_u"]["pauseB"],
+        )
+        pval = latex_float(pval)
+        print(
+            fr"\def \replaynormalizeduabpval/{{{pval}}}",
+            file=fp,
+        )
+
+        pval = mannwhitneyu(
+            replay_prop_normalized_byphase["only_full_shortcut"]["phase2"],
+            replay_prop_normalized_byphase["only_full_shortcut"]["phase3"],
+        )
+        pval = latex_float(pval)
+        print(
+            fr"\def \replaynormalizedfullshortcuttwothreepval/{{{pval}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)

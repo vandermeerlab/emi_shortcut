@@ -852,7 +852,7 @@ def _plot_tc_field_remapping(tc_fields_appear, tc_fields_disappear, savepath):
         phases: n_disappear[phases] / n_neurons for phases in meta.phases_corr
     }
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(6, 5))
 
     x = np.arange(2)
     width = 0.8 / 2

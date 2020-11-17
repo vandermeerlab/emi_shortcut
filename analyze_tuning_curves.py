@@ -8,7 +8,7 @@ import meta
 import meta_session
 import paths
 from tasks import task
-from utils import latex_float
+from utils import latex_float, ranksum_test
 
 
 def has_field(tuning_curve):
@@ -941,14 +941,17 @@ def save_tc_correlations_bybin(infos, group_name, *, tc_correlations_bybin, save
                 tc_correlations_bybin[f"phases{ph}"][~nan_idx],
                 dist_to_landmark[~nan_idx],
             )
+            pval = latex_float(pval)
             print(fr"\def \phase{text}bybinlandmarkcorr/{{{corr:.2f}}}", file=fp)
-            print(fr"\def \phase{text}bybinlandmarkpval/{{{pval:.3g}}}", file=fp)
+            print(fr"\def \phase{text}bybinlandmarkpval/{{{pval}}}", file=fp)
             corr, pval = scipy.stats.pearsonr(
                 tc_correlations_bybin[f"phases{ph}"][~nan_idx],
                 dist_to_shortcut[~nan_idx],
             )
+            pval = latex_float(pval)
             print(fr"\def \phase{text}bybinshortcutcorr/{{{corr:.2f}}}", file=fp)
-            print(fr"\def \phase{text}bybinshortcutpval/{{{pval:.3g}}}", file=fp)
+            print(fr"\def \phase{text}bybinshortcutpval/{{{pval}}}", file=fp)
+        print("% ---------", file=fp)
 
 
 @task(infos=meta_session.all_infos, cache_saves="tc_fields_appear")
@@ -1323,3 +1326,38 @@ def cache_combined_tc_correlations_within_phase(
                         correlations[phase][i, j] = 0 if np.isnan(corr) else corr
 
     return correlations
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("tcs", "tc_field_remapping_pval.tex"),
+)
+def save_tc_field_remapping_pval(
+    infos,
+    group_name,
+    *,
+    tc_fields_appear,
+    tc_fields_disappear,
+    savepath,
+):
+    n_appear = {phases: np.sum(tc_fields_appear[phases]) for phases in meta.phases_corr}
+    n_disappear = {
+        phases: np.sum(tc_fields_disappear[phases]) for phases in meta.phases_corr
+    }
+    with open(savepath, "w") as fp:
+        print("% TC remapping pval", file=fp)
+        for i, phases in enumerate(["phases12", "phases23"]):
+            n_total = n_appear[phases] + n_disappear[phases]
+            pval = ranksum_test(
+                xn=n_appear[phases],
+                xtotal=n_total,
+                yn=n_disappear[phases],
+                ytotal=n_total,
+            )
+            pval = latex_float(pval)
+            phases = "onetwo" if phases == "phases12" else "twothree"
+            print(
+                fr"\def \tcremapping{phases}pval/{{{pval}}}",
+                file=fp,
+            )
+        print("% ---------", file=fp)

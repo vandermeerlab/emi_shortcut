@@ -6,6 +6,7 @@ import statsmodels.api as sm
 import meta
 import meta_session
 from tasks import task
+from utils import latex_float
 
 
 def get_decoded_position(task_times, tuning_curves, spikes, bin_centers):
@@ -115,26 +116,31 @@ def save_joined_replay_likelihood_bybin(
         print("% Mean likelihood", file=fp)
         u = joined_replay_likelihood_bybin[:50]
         full_shortcut = joined_replay_likelihood_bybin[50:]
+        meanu = latex_float(np.mean(u))
+        semu = latex_float(scipy.stats.sem(u))
         print(
-            fr"\def \meanulikelihood/{{{np.mean(u):.3f}}}",
+            fr"\def \meanulikelihood/{{{meanu}}}",
             file=fp,
         )
         print(
-            fr"\def \semulikelihood/{{{scipy.stats.sem(u):.5f}}}",
+            fr"\def \semulikelihood/{{{semu}}}",
+            file=fp,
+        )
+        meanshortcut = latex_float(np.mean(full_shortcut))
+        semshortcut = latex_float(scipy.stats.sem(full_shortcut))
+        print(
+            fr"\def \meanfullshortcutlikelihood/{{{meanshortcut}}}",
             file=fp,
         )
         print(
-            fr"\def \meanfullshortcutlikelihood/{{{np.mean(full_shortcut):.3f}}}",
-            file=fp,
-        )
-        print(
-            fr"\def \semfullshortcutlikelihood/{{{scipy.stats.sem(full_shortcut):.5f}}}",
+            fr"\def \semfullshortcutlikelihood/{{{semshortcut}}}",
             file=fp,
         )
         tstat, pval, df = sm.stats.ttest_ind(u, full_shortcut)
-        print(fr"\def \tstatlikelihood/{{{tstat}}}", file=fp)
+        pval = latex_float(pval)
+        print(fr"\def \tstatlikelihood/{{{tstat:.2f}}}", file=fp)
         print(fr"\def \pvallikelihood/{{{pval}}}", file=fp)
-        print(fr"\def \dflikelihood/{{{df}}}", file=fp)
+        print(fr"\def \dflikelihood/{{{int(df)}}}", file=fp)
 
         print("% ---------", file=fp)
 

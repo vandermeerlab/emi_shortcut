@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import stats
+import scipy.stats
 
 import meta
 
@@ -55,7 +55,7 @@ def save_ttest_results(df, variable, savepath):
             print(f"% max: {output[trajectory].max():.3f}\n", file=fp)
 
         for grouping in meta.stats_trajectory_groupings:
-            t_check = stats.ttest_ind(
+            t_check = scipy.stats.ttest_ind(
                 output[grouping[0]].values.tolist(),
                 output[grouping[1]].values.tolist(),
             )
@@ -76,7 +76,15 @@ def ranksum_test(xn, xtotal, yn, ytotal):
     x[:xn] = 1
     y = np.zeros(ytotal)
     y[:yn] = 1
-    statistic, pval = stats.mannwhitneyu(x, y)
+    statistic, pval = scipy.stats.mannwhitneyu(x, y)
+    return pval
+
+
+def mannwhitneyu(x, y):
+    try:
+        _, pval = scipy.stats.mannwhitneyu(x, y)
+    except ValueError:
+        pval = 1.0
     return pval
 
 

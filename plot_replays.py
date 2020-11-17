@@ -6,6 +6,7 @@ import meta
 import meta_session
 from plots import significance_bar, significance_text
 from tasks import task
+from utils import mannwhitneyu
 
 
 @task(
@@ -249,14 +250,6 @@ def plot_group_replay_prop_byexperience_feederonly(
         labels=labels,
         savepath=savepath["contrast"],
     )
-
-
-def mannwhitneyu(x, y):
-    try:
-        _, pval = scipy.stats.mannwhitneyu(x, y)
-    except ValueError:
-        pval = 1.0
-    return pval
 
 
 def _plot_replay_metric(

@@ -11,7 +11,7 @@ import meta
 import meta_session
 import paths
 from tasks import task
-from utils import ranksum_test
+from utils import latex_float, ranksum_test
 
 
 @task(infos=meta_session.all_infos, cache_saves="swrs")
@@ -422,6 +422,10 @@ def save_n_swrs(infos, group_name, *, all_swrs, savepath):
         )
         print(
             fr"\def \meanswrsdurations/{{{np.mean(total_swrs_durations)*1000:.1f}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \semswrsdurations/{{{scipy.stats.sem(total_swrs_durations) * 1000:.1f}}}",
             file=fp,
         )
 
@@ -1155,7 +1159,7 @@ def save_replays_mean_durations(infos, group_name, *, all_replays_byphase, savep
                 file=fp,
             )
             print(
-                fr"\def \{traj}replaysemdurations/{{{sem_duration:.3g}}}",
+                fr"\def \{traj}replaysemdurations/{{{sem_duration:.2g}}}",
                 file=fp,
             )
 
@@ -1248,6 +1252,30 @@ def cache_combined_replay_proportions_byphase_pval(
     infos, group_name, *, swr_n_byphase, replay_n_byphase
 ):
     return get_replay_proportions_byphase_pval(swr_n_byphase, replay_n_byphase)
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("replays", "replay_proportions_byphase_pval.tex"),
+)
+def save_replay_proportions_byphase_pval(
+    infos,
+    group_name,
+    *,
+    replay_proportions_byphase_pval,
+    savepath,
+):
+    key = "exclusive"
+    phase = "phase3"
+    with open(savepath, "w") as fp:
+        print("% replay proportions byphase pval", file=fp)
+        pval = latex_float(replay_proportions_byphase_pval[key][phase])
+        phase = "phasethree" if phase == "phase3" else phase
+        print(
+            fr"\def \replayprop{phase}pval/{{{pval}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)
 
 
 @task(groups=meta_session.analysis_grouped, cache_saves="replay_proportions_byphase_df")
@@ -1588,6 +1616,31 @@ def cache_combined_replay_proportions_byexperience_bytrial_pval(
     return get_replay_proportions_byexperience_bytrial_pval(
         replay_n_byexperience_bytrial, swr_n_byexperience_bytrial
     )
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("replays", "replay_proportions_byexperience_bytrial_pval.tex"),
+)
+def save_replay_proportions_byexperience_bytrial_pval(
+    infos,
+    group_name,
+    *,
+    replay_proportions_byexperience_bytrial_pval,
+    savepath,
+):
+    key = "exclusive"
+    phase = "shortcut_phase3"
+    with open(savepath, "w") as fp:
+        print("% replay proportions byexperience pval", file=fp)
+        print("% replay proportions byexperience pval", file=fp)
+        pval = latex_float(replay_proportions_byexperience_bytrial_pval[key][phase])
+        phase = "shortcutphasethree" if phase == "shortcut_phase3" else phase
+        print(
+            fr"\def \replayexperienceprop{phase}pval/{{{pval}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)
 
 
 @task(infos=meta_session.all_infos, cache_saves="swrs_byphase_feederonly")

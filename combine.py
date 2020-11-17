@@ -702,6 +702,53 @@ def fig_tuning_curves_bylandmarks_ppt(panels, savepath):
 
 @task(
     panels={
+        "A": ("grp-combined", "tcs", "tc_field_remapping.svg"),
+        "B": ("grp-combined", "tcs", "tc_appear_correlations.svg"),
+        "C": ("grp-combined", "tcs", "tc_disappear_correlations.svg"),
+        "D": ("grp-combined", "tcs", "tc_correlations_bybin_phases12.svg"),
+        "E": ("grp-combined", "tcs", "tc_correlations_bybin_phases23.svg"),
+    },
+    savepath=("figures", "tuning_curves_bylandmarks.svg"),
+    copy_to="tuning_curves_bylandmarks.pdf",
+)
+def fig_tuning_curves_bylandmarks(panels, savepath):
+    padding = 20
+    full_width = 1300 + padding
+    full_height = 1300 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 20 + padding, 200 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            450 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "C",
+            panels["C"],
+            450 + padding,
+            430 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el("D", panels["D"], 220 + padding, 820 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["E"], 670 + padding, 820 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
         "A": ("ind-R066d1", "swrs", "swrs_in_position.svg"),
         "B": ("ind-R068d1", "swrs", "swrs_overtime.svg"),
         "C": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
@@ -960,6 +1007,49 @@ def fig_replay_summary(panels, savepath):
     )
     fig.append(
         el("F", panels["F"], 650 + padding, 960 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": (
+            "grp-combined",
+            "replays-session",
+            "exclusive_replay_prop_normalized_byphase_u.svg",
+        ),
+        "B": (
+            "grp-combined",
+            "replays-session",
+            "exclusive_replay_prop_normalized_byphase_full_shortcut.svg",
+        ),
+    },
+    savepath=("figures", "replay_normalized.svg"),
+    copy_to="replay_normalized.pdf",
+)
+def fig_replay_normalized(panels, savepath):
+    padding = 50
+    full_width = 1300 + padding
+    full_height = 500 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            650 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
     )
     savefig(fig, savepath)
 
@@ -1455,35 +1545,24 @@ def fig_decoding_rat_details(panels, savepath):
 
 @task(
     panels={
-        "A": ("ind-R066d8", "mazes", "maze_matched.svg"),
-        "B": ("grp-combined", "decoding", "replay_decoding_bybin.svg"),
-        "C": (
-            "grp-combined",
-            "decoding",
-            "joined_replay_likelihood_bybin.svg",
-        ),
-        "D": (
+        "A": ("grp-combined", "decoding", "replay_decoding_bybin.svg"),
+        "B": (
             "grp-combined",
             "decoding",
             "replay_likelihood_bybin.svg",
         ),
-        "E": (
-            "grp-combined",
-            "decoding",
-            "zscored_logodds_byphase.svg",
-        ),
-        "F": (
+        "C": (
             "grp-combined",
             "replays",
             "exclusive_replays_bybin.svg",
         ),
     },
-    savepath=("figures", "decoding.svg"),
-    copy_to="decoding.pdf",
+    savepath=("figures", "decoding_bybin.svg"),
+    copy_to="decoding_bybin.pdf",
 )
-def fig_decoding(panels, savepath):
+def fig_decoding_bybin(panels, savepath):
     padding = 50
-    full_width = 1400 + padding
+    full_width = 950 + padding
     full_height = 1400 + padding
 
     fig = svgfig(full_width, full_height)
@@ -1500,8 +1579,8 @@ def fig_decoding(panels, savepath):
         el(
             "B",
             panels["B"],
-            500 + padding / 2,
             20 + padding / 2,
+            500 + padding / 2,
             offset=(-padding / 3, 0),
         )
     )
@@ -1510,33 +1589,6 @@ def fig_decoding(panels, savepath):
             "C",
             panels["C"],
             20 + padding / 2,
-            500 + padding / 2,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "D",
-            panels["D"],
-            500 + padding / 2,
-            500 + padding / 2,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "E",
-            panels["E"],
-            20 + padding / 2,
-            950 + padding / 2,
-            offset=(-padding / 3, 0),
-        )
-    )
-    fig.append(
-        el(
-            "F",
-            panels["F"],
-            500 + padding / 2,
             950 + padding / 2,
             offset=(-padding / 3, 0),
         )
@@ -2102,6 +2154,7 @@ def task_copy_tex():
 
     def copy():
         for src, dst in to_copy:
+            shutil.copyfile(src, dst)
             shutil.copyfile(src, dst)
 
     return {
