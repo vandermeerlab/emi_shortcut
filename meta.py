@@ -139,6 +139,12 @@ trial_types = [
     "novel",
     "exploratory",
 ]
+trial_types_labels = {
+    "u": "Familiar",
+    "full_shortcut": "Shortcut",
+    "novel": "Dead-end",
+    "exploratory": "Other",
+}
 all_zones = [
     "u",
     "shortcut",

@@ -1,4 +1,5 @@
 import nept
+import csv
 import numpy as np
 import pandas as pd
 import scipy.stats
@@ -706,3 +707,34 @@ def save_behavior_choice_firsttrial_pval(
             file=fp,
         )
         print("% ---------", file=fp)
+
+
+@task(
+    groups=meta_session.all_grouped,
+    savepath=("behavior", "trial_times.csv"),
+)
+def save_trial_times_csv(
+    infos,
+    group_name,
+    *,
+    all_trials,
+    savepath,
+):
+    f = open(savepath, "w")
+    f.truncate()
+    with open(savepath, "a+", newline="") as write_obj:
+        csv_writer = csv.writer(write_obj)
+        headings = ["Rat ID", "Session", "Trial type", "Start", "Stop"]
+        csv_writer.writerow(headings)
+        for info, trials in zip(infos, all_trials):
+            for trajectory in meta.trial_types:
+                for trial in trials[trajectory]:
+                    this_trial = [
+                        info.session_id[:4],
+                        info.session_id[-1],
+                        meta.trial_types_labels[trajectory],
+                        trial.start,
+                        trial.stop,
+                    ]
+                    csv_writer.writerow(this_trial)
+    f.close()
