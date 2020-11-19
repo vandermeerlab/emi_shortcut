@@ -989,6 +989,7 @@ def save_replays_percents(
         )
         u_totals = [0 for _ in range(len(meta.task_times))]
         shortcut_totals = [0 for _ in range(len(meta.task_times))]
+        both_totals = [0 for _ in range(len(meta.task_times))]
         for info, replays_byphase, swrs_byphase in zip(
             infos, all_replays_byphase, all_swrs_byphase
         ):
@@ -997,15 +998,17 @@ def save_replays_percents(
                 u_replays = replays_byphase["u"][phase].n_epochs
                 shortcut_replays = replays_byphase["full_shortcut"][phase].n_epochs
 
-                percent_together = (
-                    f"{(u_replays + shortcut_replays) / swrs_byphase[phase].n_epochs * 100:.1f}"
+                percent_replays = (
+                    f"{u_replays / swrs_byphase[phase].n_epochs * 100:.0f} $\mid$ "
+                    + f"{shortcut_replays / swrs_byphase[phase].n_epochs * 100:.0f}"
                     if swrs_byphase[phase].n_epochs > 0
                     else "-"
                 )
 
-                output = output + rf"& {percent_together} "
+                output = output + rf"& {percent_replays} "
                 u_totals[i] += u_replays
                 shortcut_totals[i] += shortcut_replays
+                both_totals[i] += replays_byphase["both"][phase].n_epochs
 
             space = " [1ex]" if info.session_id == "R068d8" else ""
             print(
@@ -1015,16 +1018,28 @@ def save_replays_percents(
             if info.session_id in ["R063d8", "R066d8", "R067d8"]:
                 print(r"\midrule", file=fp)
 
-        output = r"\textbf{{Total}} "
+        total_byphase = r"\textbf{Total} "
+        both_byphase = r"\textbf{Both} "
         for i, phase in enumerate(meta.task_times):
             total_swrs = np.sum(
                 [swrs_byphase[phase].n_epochs for swrs_byphase in all_swrs_byphase]
             )
-            percent_together = (u_totals[i] + shortcut_totals[i]) / total_swrs * 100
-            output = output + rf"& \textbf{{{percent_together:.1f}}} "
+            percent_u_together = u_totals[i] / total_swrs * 100
+            percent_shortcut_together = shortcut_totals[i] / total_swrs * 100
+            total_byphase = (
+                total_byphase
+                + rf"& \textbf{{{percent_u_together:.0f}}} $\mid$ \textbf{{{percent_shortcut_together:.0f}}} "
+            )
+            percent_both_together = both_totals[i] / total_swrs * 100
+            both_byphase = both_byphase + rf"& {percent_both_together:.0f} "
         print(r"\bottomrule", file=fp)
         print(
-            rf"{output} \\",
+            rf"{both_byphase} \\",
+            file=fp,
+        )
+        print(r"\midrule", file=fp)
+        print(
+            rf"{total_byphase} \\",
             file=fp,
         )
         print(r"\bottomrule", file=fp)
@@ -1042,6 +1057,7 @@ def save_replays_byphase(
             for trajectory in meta.trajectories
         }
         total_n_swrs = {phase: 0 for phase in meta.task_times}
+        total_both_replays = {phase: 0 for phase in meta.task_times}
         for info, swrs_byphase, replays_byphase in zip(
             infos, all_swrs_byphase, all_replays_byphase
         ):
@@ -1052,12 +1068,15 @@ def save_replays_byphase(
                     ].n_epochs
                     if trajectory == "u":
                         total_n_swrs[phase] += swrs_byphase[phase].n_epochs
+            for phase in meta.task_times:
+                total_both_replays[phase] += replays_byphase["both"][phase].n_epochs
         print("% ---------\n", file=fp)
         print("% Combined", file=fp)
 
         allphases_swrs = [np.sum(total_n_swrs[phase]) for phase in meta.task_times]
         pedestal_swrs = [np.sum(total_n_swrs[phase]) for phase in meta.rest_times]
         maze_swrs = [np.sum(total_n_swrs[phase]) for phase in meta.run_times]
+        both_replays = [np.sum(total_both_replays[phase]) for phase in meta.task_times]
         for trajectory in meta.trajectories:
             traj = trajectory.replace("_", "")
             print(f"% {trajectory}", file=fp)
@@ -1101,6 +1120,14 @@ def save_replays_byphase(
                 fr"\def \maze{traj}replaypercent/{{{(sum(maze_replays) / sum(maze_swrs)) * 100:.1f}}}",
                 file=fp,
             )
+        print(
+            fr"\def \bothreplayn/{{{sum(both_replays)}}}",
+            file=fp,
+        )
+        print(
+            fr"\def \bothreplaypercent/{{{(sum(both_replays) / sum(allphases_swrs)) * 100:.1f}}}",
+            file=fp,
+        )
 
 
 @task(groups=meta_session.groups, savepath=("replays", "n_replays.tex"))
