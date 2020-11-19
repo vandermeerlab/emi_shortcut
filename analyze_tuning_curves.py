@@ -63,7 +63,7 @@ def filter_and_sort(tuning_curves, spikes):
     order = [i for i in order if has_field(tuning_curves[i])]
 
     # Order by location of max peak
-    maxpeak_loc = [np.argmax(tuning_curves[i]) for i in order]
+    maxpeak_loc = [np.nanargmax(tuning_curves[i]) for i in order]
     return [order[i] for i in np.argsort(maxpeak_loc)]
 
 

@@ -18,7 +18,7 @@ from plots import (
     significance_bar,
 )
 from tasks import task
-from utils import ranksum_test
+from utils import map_range, ranksum_test
 
 
 @task(infos=meta_session.analysis_infos, write_example_plots="run_raster")
@@ -1287,3 +1287,31 @@ def plot_tcs_2d_heatmap(info, *, tuning_spikes_histogram):
                 plt.tight_layout(h_pad=0.003)
                 plt.savefig(savepath, bbox_inches="tight", transparent=True)
                 plt.close(fig)
+
+
+@task(
+    infos=meta_session.analysis_infos,
+    savepath={traj: ("tcs", f"tcs_{traj}.svg") for traj in meta.trajectories},
+)
+def plot_tcs(info, *, tuning_curves, savepath):
+    for trajectory in meta.trajectories:
+        cm = plt.get_cmap("gist_rainbow")
+
+        n_colors = tuning_curves[trajectory].shape[0]
+        fig, ax = plt.subplots(figsize=(4, 10))
+        ax.set_prop_cycle(color=[cm(1.0 * i / n_colors) for i in range(n_colors)])
+        for i, tuning_curve in enumerate(reversed(tuning_curves[trajectory])):
+            tuning_curve[np.isnan(tuning_curve)] = 0.0
+            tc = map_range(tuning_curve, 0, np.max(tuning_curve), i, i + 0.8)
+            plt.fill_between(np.arange(tc.size), np.ones_like(tc) * np.min(tc), tc)
+
+        plt.ylim(bottom=-0.3)
+        plt.xlabel("Linear position", fontsize=meta.fontsize)
+        plt.yticks(())
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
+        plt.tight_layout()
+        plt.savefig(savepath[trajectory], bbox_inches="tight", transparent=True)
+        plt.close(fig)
