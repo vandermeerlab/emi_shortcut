@@ -1305,6 +1305,7 @@ def plot_tcs(info, *, tuning_curves, savepath):
             tc = map_range(tuning_curve, 0, np.max(tuning_curve), i, i + 0.8)
             plt.fill_between(np.arange(tc.size), np.ones_like(tc) * np.min(tc), tc)
 
+        plt.title(meta.trajectories_labels[trajectory], fontsize=meta.fontsize)
         plt.ylim(bottom=-0.3)
         plt.xlabel("Linear position", fontsize=meta.fontsize)
         plt.yticks(())

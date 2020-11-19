@@ -2116,6 +2116,53 @@ def fig_mean_tuning_curves_remapping_ppt(panels, savepath):
     savefig(fig, savepath)
 
 
+@task(
+    panels={
+        "A": ("ind-R063d6", "tcs", "tcs_u.svg"),
+        "B": ("ind-R063d6", "tcs", "tcs_full_shortcut.svg"),
+        "C": ("ind-R066d5", "tcs", "tcs_u.svg"),
+        "D": ("ind-R066d5", "tcs", "tcs_full_shortcut.svg"),
+        "E": ("ind-R067d8", "tcs", "tcs_u.svg"),
+        "F": ("ind-R067d8", "tcs", "tcs_full_shortcut.svg"),
+        "G": ("ind-R068d1", "tcs", "tcs_u.svg"),
+        "H": ("ind-R068d1", "tcs", "tcs_full_shortcut.svg"),
+    },
+    savepath=("figures", "tuning_curves_byrat.svg"),
+    copy_to="tuning_curves_byrat.pdf",
+)
+def fig_tuning_curves_byrat(panels, savepath):
+    padding = 20
+    full_width = 1230 + padding
+    full_height = 1500 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 0 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["B"], 300 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("B", panels["C"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["D"], 930 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("C", panels["E"], 0 + padding, 770 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["F"], 300 + padding, 770 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("D", panels["G"], 630 + padding, 770 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["H"], 930 + padding, 770 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
 def task_combine_tex():
     def combine_tex_files(tex_files, savepath):
         with open(savepath, "w") as outfile:
