@@ -742,3 +742,29 @@ def save_excluded_bins(
                     file=fp,
                 )
             print("% ---------", file=fp)
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("decoding", "zscored_logodds_byphase_pval.tex"),
+)
+def save_zscored_logodds_byphase_pval(
+    infos, group_name, *, zscored_logodds, shuffled_zscored_logodds, savepath
+):
+    mean_preference = [np.nanmean(zscored_logodds[phase]) for phase in meta.task_times]
+
+    with open(savepath, "w") as fp:
+        for i, phase in enumerate(meta.task_times):
+            shuffle_means = np.nanmean(shuffled_zscored_logodds[phase], axis=0)
+            np.sort(shuffle_means)
+            rank = np.searchsorted(shuffle_means, mean_preference[i])
+            if rank > shuffle_means.size / 2:
+                rank = shuffle_means.size - rank
+            rank += 1
+            rank /= shuffle_means.size + 1
+            pval = 2 * rank
+            print(
+                fr"\def \zscoredlogodds{meta.tex_ids[phase]}pval/"
+                fr"{{{latex_float(pval)}}}",
+                file=fp,
+            )

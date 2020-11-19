@@ -380,8 +380,11 @@ def _plot_decoding_preference(
         shuffle_means = np.nanmean(shuffled[phase], axis=0)
         np.sort(shuffle_means)
         rank = np.searchsorted(shuffle_means, mean_preference[i])
-        rank /= shuffle_means.size
-        pvals.append(2 * min(rank, 1 - rank))
+        if rank > shuffle_means.size / 2:
+            rank = shuffle_means.size - rank
+        rank += 1
+        rank /= shuffle_means.size + 1
+        pvals.append(2 * rank)
 
     if axhline is not None:
         color = [
@@ -437,24 +440,6 @@ def _plot_decoding_preference(
 
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)
-
-
-@task(
-    infos=meta_session.analysis_infos,
-    savepath=("decoding", "zscored_logodds_byphase.svg"),
-)
-def plot_zscored_logodds_byphase(
-    info, *, zscored_logodds, shuffled_zscored_logodds, savepath
-):
-    _plot_decoding_preference(
-        zscored_logodds,
-        shuffled=shuffled_zscored_logodds,
-        ylabel="Z-scored log odds",
-        full_shuffle=shuffled_zscored_logodds["prerecord"].size
-        == meta.n_likelihood_shuffles,
-        axhline=0.0,
-        savepath=savepath,
-    )
 
 
 @task(
