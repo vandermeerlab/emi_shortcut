@@ -370,7 +370,7 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
 
 
 @task(
-    groups=meta_session.all_grouped,
+    groups=meta_session.groups,
     savepath=("behavior", "behavior_bytrial_consecutive.svg"),
 )
 def plot_behavior_bytrial_consecutive(
