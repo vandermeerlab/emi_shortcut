@@ -2137,25 +2137,25 @@ def fig_tuning_curves_byrat(panels, savepath):
 
     fig = svgfig(full_width, full_height)
     fig.append(
-        el("A", panels["A"], 0 + padding, 20 + padding, offset=(-padding / 3, 0))
+        el("R063", panels["A"], 0 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el(None, panels["B"], 300 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("B", panels["C"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
+        el("R066", panels["C"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el(None, panels["D"], 930 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("C", panels["E"], 0 + padding, 770 + padding, offset=(-padding / 3, 0))
+        el("R067", panels["E"], 0 + padding, 770 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el(None, panels["F"], 300 + padding, 770 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("D", panels["G"], 630 + padding, 770 + padding, offset=(-padding / 3, 0))
+        el("R068", panels["G"], 630 + padding, 770 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el(None, panels["H"], 930 + padding, 770 + padding, offset=(-padding / 3, 0))
