@@ -283,11 +283,13 @@ def _plot_behavior_bytrial(
     plt.xlabel("Trial", fontsize=meta.fontsize)
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    if n_trials == 80:
-        plt.xticks([1, 10, 20, 30, 40, 50, 60, 70, 80])
-    else:
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune="lower"))
+    plt.xlim(0, trial_n[-1] + 1)
+    # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    xticks = ax.get_xticks()
+    if xticks[0] == 0:
+        xticks[0] = 1
+    ax.set_xticks(xticks)
+    # ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune="lower"))
 
     plt.ylim(0, 1.05)
 
