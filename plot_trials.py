@@ -227,37 +227,41 @@ def _plot_boxplot(y, n_sessions, ylabel, title=None, savepath=None):
 
 
 def _plot_behavior_bytrial(
-    trial_proportions_bytrial,
+    val_bytrial,
     n_sessions,
+    ylabel,
     n_trials=None,
     title=None,
     legend_loc=None,
     show_legend=False,
     axvline=None,
+    mfilter=True,
     savepath=None,
 ):
     assert savepath is not None
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    trial_n = (
-        np.arange(len([t for t in trial_proportions_bytrial["u"] if len(t) > 1])) + 1
-    )
-    if n_trials is not None:
-        trial_n = trial_n[:n_trials]
-
     labels = [meta.trajectories_labels[trajectory] for trajectory in meta.trial_types]
+    max_n_trials = 0
     for i, trajectory in enumerate(meta.trial_types):
-        this_proportions = trial_proportions_bytrial[trajectory]
-        mean = median_filter(
-            [np.mean(trial) for trial in this_proportions if len(trial) > 1],
-            size=(3,),
-            mode="nearest",
+        if trajectory not in val_bytrial:
+            continue
+
+        trial_n = np.arange(len([t for t in val_bytrial[trajectory] if len(t) > 1])) + 1
+        if n_trials is not None:
+            trial_n = trial_n[:n_trials]
+
+        this_proportions = val_bytrial[trajectory]
+        mean = np.array(
+            [np.mean(trial) for trial in this_proportions if len(trial) > 1]
         )
-        sem = median_filter(
-            [scipy.stats.sem(trial) for trial in this_proportions if len(trial) > 1],
-            size=(3,),
-            mode="nearest",
+        if mfilter:
+            mean = median_filter(mean, size=(3,), mode="nearest")
+        sem = np.array(
+            [scipy.stats.sem(trial) for trial in this_proportions if len(trial) > 1]
         )
+        if mfilter:
+            sem = median_filter(sem, size=(3,), mode="nearest")
         if n_trials is not None:
             mean = mean[:n_trials]
             sem = sem[:n_trials]
@@ -279,18 +283,21 @@ def _plot_behavior_bytrial(
             alpha=0.3,
         )
 
-    plt.ylabel("Proportion of sessions", fontsize=meta.fontsize)
+        max_n_trials = max(max_n_trials, trial_n[-1] - 1)
+
+    plt.ylabel(ylabel, fontsize=meta.fontsize)
     plt.xlabel("Trial", fontsize=meta.fontsize)
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.xlim(0, trial_n[-1] + 1)
+    plt.xlim(0, max_n_trials + 1)
     xticks = ax.get_xticks()
     if xticks[0] == 0:
         xticks[0] = 1
     ax.set_xticks(xticks)
 
-    plt.ylim(0, 1.05)
+    if ylabel.startswith("Proportion"):
+        plt.ylim(0, 1.05)
 
     if n_sessions == 1:
         txt = "Example session"
@@ -342,6 +349,7 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
     _plot_behavior_bytrial(
         trial_proportions_bytrial,
         len(infos),
+        ylabel="Proportion of sessions",
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else "Phase 3",
@@ -380,6 +388,7 @@ def plot_behavior_bytrial_consecutive(
     _plot_behavior_bytrial(
         trial_proportions_bytrial,
         len(infos),
+        ylabel="Proportion of sessions",
         n_trials=meta.first_n_trials_consecutive,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
@@ -392,6 +401,47 @@ def plot_behavior_bytrial_consecutive(
         else False,
         axvline=mostly_shortcut_idx + 1,
         savepath=savepath,
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath={
+        "all": ("behavior", "trial_durations_bytrial_all.svg"),
+        "first_n": ("behavior", "trial_durations_bytrial_first_n.svg"),
+    },
+)
+def plot_trial_durations_bytrial(
+    infos, group_name, *, trial_durations_bytrial, savepath
+):
+    del trial_durations_bytrial["exploratory"]
+    del trial_durations_bytrial["novel"]
+    _plot_behavior_bytrial(
+        trial_durations_bytrial,
+        len(infos),
+        ylabel="Mean duration (s)",
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 3",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        mfilter=False,
+        savepath=savepath["all"],
+    )
+    _plot_behavior_bytrial(
+        trial_durations_bytrial,
+        len(infos),
+        ylabel="Mean duration (s)",
+        n_trials=40,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 3",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        mfilter=False,
+        savepath=savepath["first_n"],
     )
 
 

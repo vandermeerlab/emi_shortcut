@@ -1,5 +1,6 @@
-import nept
 import csv
+
+import nept
 import numpy as np
 import pandas as pd
 import scipy.stats
@@ -297,6 +298,38 @@ def cache_combined_trial_proportions_bytrial(
         ]
         for trajectory in meta.trial_types
     }
+
+
+@task(infos=meta_session.all_infos, cache_saves="trial_durations_bytrial")
+def cache_trial_durations_bytrial(info, *, task_times, trials):
+    ph3 = task_times["phase3"]
+
+    durations = {}
+    for trajectory in meta.trial_types:
+        traj_trials = trials[trajectory].time_slice(ph3.start, ph3.stop)
+        durations[trajectory] = traj_trials.durations
+    return durations
+
+
+@task(groups=meta_session.groups, cache_saves="trial_durations_bytrial")
+def cache_combined_trial_durations_bytrial(
+    infos, group_name, *, all_trial_durations_bytrial
+):
+    all_durations = {}
+    for trajectory in meta.trial_types:
+        max_trials = max(
+            len(durations[trajectory]) for durations in all_trial_durations_bytrial
+        )
+        all_durations[trajectory] = []
+        for i in range(max_trials):
+            all_durations[trajectory].append(
+                [
+                    durations[trajectory][i]
+                    for durations in all_trial_durations_bytrial
+                    if len(durations[trajectory]) > i
+                ]
+            )
+    return all_durations
 
 
 def get_directional_trials(info, position, trials, task_times):
