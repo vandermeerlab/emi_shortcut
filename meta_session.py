@@ -314,9 +314,9 @@ day6_infos_beh = [
 ]
 
 day7_infos = [
-    r063d6,
-    r066d6,
-    r068d6,
+    r063d7,
+    r066d7,
+    r068d7,
 ]
 
 day7_infos_beh = [
@@ -333,71 +333,9 @@ day8_infos = [
     r068d8,
 ]
 
-days1234_infos = [
-    r066d1,
-    r067d1,
-    r068d1,
-    r063d2,
-    r066d2,
-    r067d2,
-    r068d2,
-    r063d3,
-    r066d3,
-    r067d3,
-    r068d3,
-    r063d4,
-    r066d4,
-    r068d4,
-]
+full_standard_infos = day1_infos + day5_infos + day6_infos + day7_infos + day8_infos
 
-days5678_infos = [
-    r063d5,
-    r066d5,
-    r068d5,
-    r063d6,
-    r066d6,
-    r068d6,
-    r063d7,
-    r066d7,
-    r068d7,
-    r063d8,
-    r066d8,
-    r067d8,
-    r068d8,
-]
-
-full_standard_infos = [
-    r066d1,
-    r067d1,
-    r068d1,
-    r063d5,
-    r066d5,
-    r068d5,
-    r063d6,
-    r066d6,
-    r068d6,
-    r063d7,
-    r066d7,
-    r068d7,
-    r063d8,
-    r066d8,
-    r067d8,
-    r068d8,
-]
-
-short_standard_infos = [
-    r063d2,
-    r066d2,
-    r067d2,
-    r068d2,
-    r063d3,
-    r066d3,
-    r067d3,
-    r068d3,
-    r063d4,
-    r066d4,
-    r068d4,
-]
+short_standard_infos = day2_infos + day3_infos + day4_infos
 
 all_grouped = {"all": all_infos}
 analysis_grouped = {"combined": analysis_infos}

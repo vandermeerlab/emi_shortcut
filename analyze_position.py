@@ -2,9 +2,9 @@ import re
 
 import nept
 import numpy as np
-from shapely.geometry import Point
 import scipy.stats
 import statsmodels.api as sm
+from shapely.geometry import Point
 
 import aggregate
 import meta

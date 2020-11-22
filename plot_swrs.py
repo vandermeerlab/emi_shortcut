@@ -13,8 +13,10 @@ from plots import (
     plot_both_by_standard_position,
     plot_raster,
     plot_replay_metric,
+    significance_bar,
 )
 from tasks import task
+from utils import mannwhitneyu
 
 
 @task(infos=meta_session.all_infos, write_example_plots="swrs")
@@ -1387,6 +1389,77 @@ def _plot_swr_correlation_histogram(
     ax.spines["top"].set_visible(False)
     ax.yaxis.set_ticks_position("left")
     ax.xaxis.set_ticks_position("bottom")
+
+    plt.savefig(savepath, bbox_inches="tight", transparent=True)
+    plt.close(fig)
+
+
+@task(groups=meta_session.groups, savepath=("swrs", "swr_rate_bysubphase.svg"))
+def plot_group_swr_rate_bysubphase(infos, group_name, *, swr_rate_bysubphase, savepath):
+    fig, ax = plt.subplots(figsize=(8, 6))
+    width = 0.8 / len(meta.subphases)
+
+    heights = [[] for _ in meta.subphases]
+    for i, subphase in enumerate(meta.subphases):
+        means = np.array(
+            [
+                np.mean(swr_rate_bysubphase[phase][subphase]) * 60
+                for phase in meta.run_times
+            ]
+        )
+        sems = np.array(
+            [
+                scipy.stats.sem(np.array(swr_rate_bysubphase[phase][subphase]) * 60)
+                for phase in meta.run_times
+            ]
+        )
+        ax.bar(
+            np.arange(len(meta.run_times)) + (i * width),
+            means,
+            width=width,
+            color=meta.colors[subphase],
+            yerr=sems,
+            ecolor="k",
+        )
+        for i, (mean, sem) in enumerate(zip(means, sems)):
+            heights[i].append(mean + sem)
+
+    for left, right in [["start", "middle"], ["middle", "end"], ["start", "end"]]:
+        for i, phase in enumerate(meta.run_times):
+            height = max(
+                heights[i][0 if left == "start" else 1],
+                heights[i][1 if right == "middle" else 2],
+            )
+            if left == "start" and right == "end":
+                height = max(heights[i]) * 1.07
+            significance_bar(
+                start=i + (0 if left == "start" else width),
+                end=i + (width if right == "middle" else width * 2),
+                height=height,
+                pval=mannwhitneyu(
+                    swr_rate_bysubphase[phase][left], swr_rate_bysubphase[phase][right]
+                ),
+            )
+
+    if group_name not in ["all", "combined"]:
+        plt.title(
+            f"{meta.title_labels[group_name]}\nn = {len(infos)} sessions",
+            fontsize=meta.fontsize,
+        )
+    plt.xticks(
+        np.arange(len(meta.run_times)) + width,
+        list(meta.run_times_labels.values()),
+        fontsize=meta.fontsize,
+    )
+    plt.ylabel("SWR rate (events/min)", fontsize=meta.fontsize)
+    plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.yaxis.set_ticks_position("left")
+    ax.xaxis.set_ticks_position("bottom")
+
+    plt.tight_layout(h_pad=0.003)
 
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)

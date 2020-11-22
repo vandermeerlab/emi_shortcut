@@ -35,6 +35,7 @@ phases_corr_labels = {
     "phases13": "Phases 1-3",
     "phases23": "Phases 2-3",
 }
+subphases = {"start": 90, "middle": 90, "end": 90}
 experiences = [
     "familiar_phase12",
     "first_shortcut",
@@ -94,6 +95,9 @@ colors = dict(
     other="#ece2f0",
     rest="#bdbdbd",
     run="#737373",
+    start="#bdbdbd",
+    middle="#969696",
+    end="#737373",
 )
 fontsize = 20
 fontsize_small = 15

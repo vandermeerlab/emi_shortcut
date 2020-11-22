@@ -11,7 +11,7 @@ import meta
 import meta_session
 import paths
 from tasks import task
-from utils import latex_float, ranksum_test
+from utils import latex_float, mannwhitneyu, ranksum_test
 
 
 @task(infos=meta_session.all_infos, cache_saves="swrs")
@@ -457,6 +457,88 @@ def cache_combined_swr_durations_byphase(infos, group_name, *, all_swrs_byphase)
     return durations
 
 
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["swr_rate_bysubphase", "swr_n_bysubphase"],
+)
+def cache_swr_rate_bysubphase(info, *, task_times, swrs, position):
+    rate_bysubphase = {}
+    n_swrs_bysubphase = {}
+    rest = nept.rest_threshold(
+        position, thresh=meta.std_rest_limit, t_smooth=meta.t_smooth
+    )
+    for phase in meta.task_times:
+        rate_bysubphase[phase] = {}
+        n_swrs_bysubphase[phase] = {}
+        start = task_times[phase].start
+        end = task_times[phase].stop
+        middle = (start + end) / 2
+        for subphase, t in meta.subphases.items():
+            if subphase == "start":
+                subphase_epochs = task_times[phase].time_slice(start, start + t)
+            elif subphase == "end":
+                subphase_epochs = task_times[phase].time_slice(end - t, end)
+            else:
+                subphase_epochs = task_times[phase].time_slice(
+                    middle - t / 2, middle + t / 2
+                )
+            subphase_epochs = subphase_epochs.intersect(rest)
+            subphase_swrs = swrs.intersect(subphase_epochs)
+            n_swrs_bysubphase[phase][subphase] = subphase_swrs.n_epochs
+            rate_bysubphase[phase][subphase] = (
+                0.0
+                if subphase_epochs.n_epochs == 0
+                else subphase_swrs.n_epochs / np.sum(subphase_epochs.durations)
+            )
+
+    return {
+        "swr_rate_bysubphase": rate_bysubphase,
+        "swr_n_bysubphase": n_swrs_bysubphase,
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="swr_rate_bysubphase")
+def cache_combined_swr_rate_bysubphase(infos, group_name, *, all_swr_rate_bysubphase):
+    swr_rate = {}
+    for phase in meta.task_times:
+        swr_rate[phase] = {}
+        for subphase in meta.subphases:
+            swr_rate[phase][subphase] = []
+            for rate in all_swr_rate_bysubphase:
+                swr_rate[phase][subphase].append(rate[phase][subphase])
+    return swr_rate
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("swrs", "swr_rate_bysubphase_pval.tex"),
+)
+def save_swr_rate_bysubphase_pval(infos, group_name, *, swr_rate_bysubphase, savepath):
+    with open(savepath, "w") as fp:
+        for left, right in [["start", "middle"], ["middle", "end"], ["start", "end"]]:
+            for i, phase in enumerate(meta.run_times):
+                pval = mannwhitneyu(
+                    swr_rate_bysubphase[phase][left], swr_rate_bysubphase[phase][right]
+                )
+                print(
+                    fr"\def \swrrate{meta.tex_ids[phase]}{left}{right}pval/"
+                    fr"{{{latex_float(pval)}}}",
+                    file=fp,
+                )
+
+
+@task(groups=meta_session.groups, cache_saves="swr_n_bysubphase")
+def cache_combined_swr_n_bysubphase(infos, group_name, *, all_swr_n_bysubphase):
+    swr_n = {}
+    for phase in meta.task_times:
+        swr_n[phase] = {}
+        for subphase in meta.subphases:
+            swr_n[phase][subphase] = 0
+            for n in all_swr_n_bysubphase:
+                swr_n[phase][subphase] += n[phase][subphase]
+    return swr_n
+
+
 def get_swr_rate_byphase(task_times, swrs_byphase, position, restonly):
     rate_byphase = {}
     n_swrs_byphase = {}
@@ -480,41 +562,6 @@ def get_swr_rate_byphase(task_times, swrs_byphase, position, restonly):
 def cache_swr_rate_byphase(info, *, task_times, swrs_byphase, position):
     rates, n = get_swr_rate_byphase(task_times, swrs_byphase, position, restonly=False)
     return {"swr_rate_byphase": rates, "swr_n_byphase": n}
-
-
-def get_combined_swr_rate_byphase(
-    all_task_times, all_swrs_byphase, all_position, restonly
-):
-    rate_byphase = {phase: 0 for phase in meta.task_times}
-    total_durations = {phase: 0 for phase in meta.task_times}
-    for task_times, swrs_byphase, position in zip(
-        all_task_times, all_swrs_byphase, all_position
-    ):
-        rest = nept.rest_threshold(
-            position, thresh=meta.std_rest_limit, t_smooth=meta.t_smooth
-        )
-        for phase in meta.task_times:
-            phase_epochs = task_times[phase]
-            swrs = swrs_byphase[phase]
-            if restonly:
-                phase_epochs = phase_epochs.intersect(rest)
-                swrs = swrs.intersect(rest)
-
-            rate_byphase[phase] += swrs.n_epochs
-            total_durations[phase] += np.sum(phase_epochs.durations)
-
-    return {
-        phase: rate_byphase[phase] / total_durations[phase] for phase in meta.task_times
-    }
-
-
-@task(groups=meta_session.analysis_grouped, cache_saves="avg_swr_rate_byphase")
-def cache_avg_combined_swr_rate_byphase(
-    infos, group_name, *, all_task_times, all_swrs_byphase, all_position
-):
-    return get_combined_swr_rate_byphase(
-        all_task_times, all_swrs_byphase, all_position, restonly=True
-    )
 
 
 @task(
