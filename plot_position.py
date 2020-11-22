@@ -218,3 +218,13 @@ def plot_speed_overtime(info, *, task_times, speed_overtime, savepath):
 
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)
+
+
+@task(groups=meta_session.groups, savepath=("behavior", "stop_rate.svg"))
+def plot_stop_rate(infos, group_name, *, stop_rate, savepath):
+    plot_bar_mean_byphase(
+        stop_rate,
+        ylabel="Stop rate (stops / min)",
+        n_sessions=len(infos),
+        savepath=savepath,
+    )

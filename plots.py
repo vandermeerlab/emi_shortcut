@@ -6,7 +6,7 @@ from matplotlib.markers import TICKDOWN
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import meta
-from utils import map_range
+from utils import mannwhitneyu, map_range
 
 
 def significance_text(x, height, pval):
@@ -207,24 +207,37 @@ def plot_raster(
 def plot_bar_mean_byphase(
     y_byphase, ylabel, n_byphase=None, n_sessions=None, savepath=None
 ):
-    n_phases = len(meta.task_times)
+    n_phases = len(y_byphase)
     x = np.arange(n_phases)
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    rects = ax.bar(
-        x,
-        [np.mean(y_byphase[phase]) for phase in meta.task_times],
-        width=0.65,
-        color=[
+
+    if n_phases == 7:
+        xticks = list(meta.task_times_labels.values())
+        color = [
             meta.colors["rest"] if i % 2 == 0 else meta.colors["run"]
             for i in range(n_phases)
-        ],
-        yerr=[scipy.stats.sem(y_byphase[phase]) for phase in meta.task_times],
+        ]
+    elif n_phases == 3:
+        xticks = list(meta.run_times_labels.values())
+        color = meta.colors["run"]
+    else:
+        assert False, f"n_phases = {n_phases}, not handled"
+
+    means = np.array([np.mean(val) for val in y_byphase.values()])
+    sems = np.array([scipy.stats.sem(val) for val in y_byphase.values()])
+    heights = means + sems
+    rects = ax.bar(
+        x,
+        means,
+        width=0.65,
+        color=color,
+        yerr=sems,
         ecolor="k",
     )
 
     if n_byphase is not None:
-        for phase, rect in zip(meta.task_times, rects):
+        for phase, rect in zip(y_byphase, rects):
             ax.annotate(
                 f"{np.sum(n_byphase[phase])}",
                 xy=(rect.get_x() + rect.get_width() / 2, 0),
@@ -246,11 +259,53 @@ def plot_bar_mean_byphase(
             fontsize=meta.fontsize_small,
         )
 
+    if n_phases == 7:
+        used_heights = []
+        tol = (plt.ylim()[1] - plt.ylim()[0]) * 0.06
+        for left, right in zip(
+            meta.rest_times[:-1] + meta.run_times[:-1],
+            meta.rest_times[1:] + meta.run_times[1:],
+        ):
+            pval = mannwhitneyu(y_byphase[left], y_byphase[right])
+            start = meta.task_times.index(left)
+            end = meta.task_times.index(right)
+            height = max(
+                heights[start : end + 1].tolist() + [0],
+            )
+            while any(abs(height - used) < tol for used in used_heights):
+                height += tol
+            if pval < 0.05:
+                significance_bar(
+                    start=start,
+                    end=end,
+                    height=height,
+                    pval=pval,
+                )
+                used_heights.append(height)
+
+    elif n_phases == 3:
+        for left, right in [
+            ("phase1", "phase2"),
+            ("phase1", "phase3"),
+            ("phase2", "phase3"),
+        ]:
+            pval = mannwhitneyu(y_byphase[left], y_byphase[right])
+            start = meta.run_times.index(left)
+            end = meta.run_times.index(right)
+            significance_bar(
+                start=start,
+                end=end,
+                height=max(
+                    heights[start : end + 1].tolist() + [0],
+                ),
+                pval=pval,
+            )
+
     plt.xticks(
         x,
-        list(meta.task_times_labels.values()),
+        xticks,
         fontsize=meta.fontsize,
-        rotation=meta.xtickrotation,
+        rotation=meta.xtickrotation if n_phases > 4 else None,
     )
     plt.ylabel(ylabel, fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)

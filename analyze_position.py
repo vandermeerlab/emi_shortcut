@@ -320,3 +320,20 @@ def print_missing_positions(info, *, task_times, position):
 @task(infos=meta_session.all_infos, cache_saves="speed_overtime")
 def cache_speed_overtime(info, *, position, task_times):
     return position.speed(t_smooth=meta.speed_overtime_dt)[task_times["maze_times"]]
+
+
+@task(infos=meta_session.all_infos, cache_saves="stop_rate")
+def cache_stop_rate(info, *, position, task_times):
+    stop_rate = {}
+    for run_time in meta.run_times:
+        pos = position[task_times[run_time]]
+        rest = nept.rest_threshold(pos, thresh=meta.speed_limit, t_smooth=meta.t_smooth)
+        stop_rate[run_time] = (
+            rest.n_epochs / np.sum(task_times[run_time].durations)
+        ) * 60
+    return stop_rate
+
+
+@task(groups=meta_session.groups, cache_saves="stop_rate")
+def cache_combined_stop_rate(infos, group_name, *, all_stop_rate):
+    return aggregate.combine_with_append(all_stop_rate)
