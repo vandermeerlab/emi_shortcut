@@ -166,6 +166,45 @@ def cache_combined_barrier_t(infos, group_name, *, all_barrier_t):
     return aggregate.combine_with_append(all_barrier_t)
 
 
+@task(infos=meta_session.all_infos, cache_saves="barrier_time_bytrial")
+def cache_barrier_time_bytrial(info, *, trials, task_times, position):
+    dt = np.median(np.diff(position.time))
+    position = position[task_times["phase2"]]
+    trials = trials["u"].time_slice(
+        task_times["phase2"].start, task_times["phase2"].stop
+    )
+    t = {}
+
+    for barrier in meta.barriers:
+        barrier_xy = info.path_pts[barrier]
+        t[barrier] = []
+        for trial in trials:
+            trial_pos = position[trial]
+            dist = dist_2d(barrier_xy, trial_pos.data.T)
+            n_points = np.sum(dist < meta.expand_by).item()
+            t[barrier].append(n_points * dt)
+
+    return t
+
+
+@task(groups=meta_session.groups, cache_saves="barrier_time_bytrial")
+def cache_combined_barrier_time_bytrial(infos, group_name, *, all_barrier_time_bytrial):
+    all_t = {}
+    for barrier in meta.barriers:
+        max_trials = max(len(time[barrier]) for time in all_barrier_time_bytrial)
+        all_t[barrier] = []
+        for i in range(max_trials):
+            all_t[barrier].append(
+                [
+                    time[barrier][i]
+                    for time in all_barrier_time_bytrial
+                    if len(time[barrier]) > i
+                ]
+            )
+
+    return all_t
+
+
 @task(infos=meta_session.all_infos, cache_saves="barrier_dist_to_feeder")
 def cache_barrier_dist_to_feeder(info, *, task_times):
     dist = {}

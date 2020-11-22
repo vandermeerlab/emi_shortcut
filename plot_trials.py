@@ -5,14 +5,12 @@ import nept
 import numpy as np
 import scipy.stats
 import statsmodels.api as sm
-from matplotlib.ticker import MaxNLocator
-from scipy.ndimage import median_filter
 from shapely.geometry import Point
 
 import meta
 import meta_session
 import paths
-from plots import plot_aligned_position_and_spikes, significance_bar
+from plots import plot_aligned_position_and_spikes, plot_bytrial, significance_bar
 from tasks import task
 from utils import ranksum_test
 
@@ -226,117 +224,6 @@ def _plot_boxplot(y, n_sessions, ylabel, title=None, savepath=None):
     plt.close(fig)
 
 
-def _plot_behavior_bytrial(
-    val_bytrial,
-    n_sessions,
-    ylabel,
-    n_trials=None,
-    title=None,
-    legend_loc=None,
-    show_legend=False,
-    axvline=None,
-    mfilter=True,
-    savepath=None,
-):
-    assert savepath is not None
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    labels = [meta.trajectories_labels[trajectory] for trajectory in meta.trial_types]
-    max_n_trials = 0
-    for i, trajectory in enumerate(meta.trial_types):
-        if trajectory not in val_bytrial:
-            continue
-
-        trial_n = np.arange(len([t for t in val_bytrial[trajectory] if len(t) > 1])) + 1
-        if n_trials is not None:
-            trial_n = trial_n[:n_trials]
-
-        this_proportions = val_bytrial[trajectory]
-        mean = np.array(
-            [np.mean(trial) for trial in this_proportions if len(trial) > 1]
-        )
-        if mfilter:
-            mean = median_filter(mean, size=(3,), mode="nearest")
-        sem = np.array(
-            [scipy.stats.sem(trial) for trial in this_proportions if len(trial) > 1]
-        )
-        if mfilter:
-            sem = median_filter(sem, size=(3,), mode="nearest")
-        if n_trials is not None:
-            mean = mean[:n_trials]
-            sem = sem[:n_trials]
-
-        plt.plot(
-            trial_n,
-            mean,
-            color=meta.colors[trajectory],
-            marker="o",
-            lw=2,
-            label=labels[i],
-        )
-        ax.fill_between(
-            trial_n,
-            mean - sem,
-            mean + sem,
-            color=meta.colors[trajectory],
-            interpolate=True,
-            alpha=0.3,
-        )
-
-        max_n_trials = max(max_n_trials, trial_n[-1] - 1)
-
-    plt.ylabel(ylabel, fontsize=meta.fontsize)
-    plt.xlabel("Trial", fontsize=meta.fontsize)
-    plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
-    plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.xlim(0, max_n_trials + 1)
-    xticks = ax.get_xticks()
-    if xticks[0] == 0:
-        xticks[0] = 1
-    ax.set_xticks(xticks)
-
-    if ylabel.startswith("Proportion"):
-        plt.ylim(0, 1.05)
-
-    if n_sessions == 1:
-        txt = "Example session"
-    else:
-        txt = f"n = {n_sessions} sessions"
-
-    if title is not None:
-        plt.title(title + f"\n{txt}", fontsize=meta.fontsize)
-    else:
-        plt.text(
-            0.8,
-            1.05,
-            s=txt,
-            horizontalalignment="center",
-            verticalalignment="center",
-            transform=ax.transAxes,
-            fontsize=meta.fontsize_small,
-        )
-
-    if axvline is not None:
-        ax.axvline(axvline, linestyle="dashed", color="k")
-
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.yaxis.set_ticks_position("left")
-    ax.xaxis.set_ticks_position("bottom")
-
-    if show_legend:
-        ax.legend(
-            loc=legend_loc if legend_loc is not None else "best",
-            fontsize=meta.fontsize_small,
-        )
-
-    plt.tight_layout(h_pad=0.003)
-
-    plt.savefig(savepath, bbox_inches="tight", transparent=True)
-    plt.close(fig)
-
-
 @task(
     groups=meta_session.groups,
     savepath={
@@ -346,10 +233,11 @@ def _plot_behavior_bytrial(
     },
 )
 def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savepath):
-    _plot_behavior_bytrial(
+    plot_bytrial(
         trial_proportions_bytrial,
         len(infos),
         ylabel="Proportion of sessions",
+        labels=meta.trajectories_labels,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else "Phase 3",
@@ -361,9 +249,11 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
         else False,
         savepath=savepath["all"],
     )
-    _plot_behavior_bytrial(
+    plot_bytrial(
         trial_proportions_bytrial,
         len(infos),
+        ylabel="Proportion of sessions",
+        labels=meta.trajectories_labels,
         n_trials=meta.first_n_trials,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
@@ -385,10 +275,11 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
 def plot_behavior_bytrial_consecutive(
     infos, group_name, *, trial_proportions_bytrial, mostly_shortcut_idx, savepath
 ):
-    _plot_behavior_bytrial(
+    plot_bytrial(
         trial_proportions_bytrial,
         len(infos),
         ylabel="Proportion of sessions",
+        labels=meta.trajectories_labels,
         n_trials=meta.first_n_trials_consecutive,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
@@ -416,10 +307,11 @@ def plot_trial_durations_bytrial(
 ):
     del trial_durations_bytrial["exploratory"]
     del trial_durations_bytrial["novel"]
-    _plot_behavior_bytrial(
+    plot_bytrial(
         trial_durations_bytrial,
         len(infos),
         ylabel="Mean duration (s)",
+        labels=meta.trajectories_labels,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else "Phase 3",
@@ -429,10 +321,11 @@ def plot_trial_durations_bytrial(
         mfilter=False,
         savepath=savepath["all"],
     )
-    _plot_behavior_bytrial(
+    plot_bytrial(
         trial_durations_bytrial,
         len(infos),
         ylabel="Mean duration (s)",
+        labels=meta.trajectories_labels,
         n_trials=40,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]

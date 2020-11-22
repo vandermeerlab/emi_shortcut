@@ -5,7 +5,7 @@ import statsmodels.api as sm
 
 import meta
 import meta_session
-from plots import plot_bar_mean_byphase, plot_position, significance_bar
+from plots import plot_bar_mean_byphase, plot_bytrial, plot_position, significance_bar
 from tasks import task
 from utils import latex_float
 
@@ -13,8 +13,8 @@ from utils import latex_float
 @task(
     groups=meta_session.groups,
     savepath={
-        "full": ("pos", "speed_byphase_full.svg"),
-        "rest": ("pos", "speed_byphase_rest.svg"),
+        "full": ("behavior", "speed_byphase_full.svg"),
+        "rest": ("behavior", "speed_byphase_rest.svg"),
     },
 )
 def plot_speed_byphase(
@@ -227,4 +227,43 @@ def plot_stop_rate(infos, group_name, *, stop_rate, savepath):
         ylabel="Stop rate (stops / min)",
         n_sessions=len(infos),
         savepath=savepath,
+    )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath={
+        "all": ("behavior", "barrier_time_bytrial_all.svg"),
+        "first_n": ("behavior", "barrier_time_bytrial_first_n.svg"),
+    },
+)
+def plot_barrier_time_bytrial(infos, group_name, *, barrier_time_bytrial, savepath):
+    plot_bytrial(
+        barrier_time_bytrial,
+        len(infos),
+        ylabel="Mean time at barrier (s)",
+        labels=meta.barrier_labels,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 2",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        mfilter=False,
+        savepath=savepath["all"],
+    )
+    plot_bytrial(
+        barrier_time_bytrial,
+        len(infos),
+        ylabel="Mean time at barrier (s)",
+        n_trials=20,
+        labels=meta.barrier_labels,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 2",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        mfilter=False,
+        savepath=savepath["first_n"],
     )

@@ -3,7 +3,9 @@ import numpy as np
 import scalebar
 import scipy.stats
 from matplotlib.markers import TICKDOWN
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from scipy.ndimage import median_filter
 
 import meta
 from utils import mannwhitneyu, map_range
@@ -729,5 +731,113 @@ def plot_correlations(correlations, titles, savepath):
     cbar.ax.tick_params(labelsize=meta.fontsize)
 
     plt.tight_layout(h_pad=0.003)
+    plt.savefig(savepath, bbox_inches="tight", transparent=True)
+    plt.close(fig)
+
+
+def plot_bytrial(
+    val_bytrial,
+    n_sessions,
+    ylabel,
+    labels,
+    n_trials=None,
+    title=None,
+    legend_loc=None,
+    show_legend=False,
+    axvline=None,
+    mfilter=True,
+    savepath=None,
+):
+    assert savepath is not None
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    max_n_trials = 0
+    for i, group in enumerate(val_bytrial):
+        trial_n = np.arange(len([t for t in val_bytrial[group] if len(t) > 1])) + 1
+        if n_trials is not None:
+            trial_n = trial_n[:n_trials]
+
+        this_proportions = val_bytrial[group]
+        mean = np.array(
+            [np.mean(trial) for trial in this_proportions if len(trial) > 1]
+        )
+        if mfilter:
+            mean = median_filter(mean, size=(3,), mode="nearest")
+        sem = np.array(
+            [scipy.stats.sem(trial) for trial in this_proportions if len(trial) > 1]
+        )
+        if mfilter:
+            sem = median_filter(sem, size=(3,), mode="nearest")
+        if n_trials is not None:
+            mean = mean[:n_trials]
+            sem = sem[:n_trials]
+
+        plt.plot(
+            trial_n,
+            mean,
+            color=meta.colors[group],
+            marker="o",
+            lw=2,
+            label=labels[group],
+        )
+        ax.fill_between(
+            trial_n,
+            mean - sem,
+            mean + sem,
+            color=meta.colors[group],
+            interpolate=True,
+            alpha=0.3,
+        )
+
+        max_n_trials = max(max_n_trials, trial_n[-1] - 1)
+
+    plt.ylabel(ylabel, fontsize=meta.fontsize)
+    plt.xlabel("Trial", fontsize=meta.fontsize)
+    plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
+    plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    plt.xlim(0, max_n_trials + 1)
+    xticks = ax.get_xticks()
+    if xticks[0] == 0:
+        xticks[0] = 1
+    ax.set_xticks(xticks)
+
+    if ylabel.startswith("Proportion"):
+        plt.ylim(0, 1.05)
+
+    if n_sessions == 1:
+        txt = "Example session"
+    else:
+        txt = f"n = {n_sessions} sessions"
+
+    if title is not None:
+        plt.title(title + f"\n{txt}", fontsize=meta.fontsize)
+    else:
+        plt.text(
+            0.8,
+            1.05,
+            s=txt,
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=ax.transAxes,
+            fontsize=meta.fontsize_small,
+        )
+
+    if axvline is not None:
+        ax.axvline(axvline, linestyle="dashed", color="k")
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.yaxis.set_ticks_position("left")
+    ax.xaxis.set_ticks_position("bottom")
+
+    if show_legend:
+        ax.legend(
+            loc=legend_loc if legend_loc is not None else "best",
+            fontsize=meta.fontsize_small,
+        )
+
+    plt.tight_layout(h_pad=0.003)
+
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)
