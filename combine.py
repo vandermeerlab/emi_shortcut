@@ -398,8 +398,6 @@ def fig_behavior_ppt(panels, savepath):
     panels={
         "A": ("grp-all", "behavior", "behavior_firsttrial.svg"),
         "B": ("grp-all", "behavior", "behavior_bytrial_consecutive.svg"),
-        "C": ("grp-all", "behavior", "behavior_barriers.svg"),
-        "D": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
     },
     savepath=("figures", "behavior_supplemental.svg"),
     copy_to="behavior_supplemental.pdf",
@@ -407,7 +405,7 @@ def fig_behavior_ppt(panels, savepath):
 def fig_behavior_supplemental(panels, savepath):
     padding = 20
     full_width = 1200 + padding
-    full_height = 1000 + padding
+    full_height = 500 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -415,12 +413,6 @@ def fig_behavior_supplemental(panels, savepath):
     )
     fig.append(
         el("B", panels["B"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
-        el("C", panels["C"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
-        el("D", panels["D"], 630 + padding, 500 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -751,10 +743,10 @@ def fig_tuning_curves_bylandmarks(panels, savepath):
     panels={
         "A": ("ind-R066d1", "swrs", "swrs_in_position.svg"),
         "B": ("ind-R068d1", "swrs", "swrs_overtime.svg"),
-        "C": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
-        "D": ("grp-combined", "pos", "speed_byphase_rest.svg"),
-        "E": ("grp-combined", "swrs", "swr_by_std_rate_full.svg"),
-        "F": ("grp-combined", "swrs", "swr_durations_histogram.svg"),
+        "C": ("grp-combined", "swrs", "swr_by_std_rate_full.svg"),
+        "D": ("grp-combined", "swrs", "swr_durations_histogram.svg"),
+        "E": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
+        "F": ("grp-combined", "swrs", "swr_rate_bysubphase.svg"),
     },
     savepath=("figures", "swr.svg"),
     copy_to="swr.pdf",
@@ -778,16 +770,16 @@ def fig_swr(panels, savepath):
         el("B", panels["B"], 400 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("C", panels["C"], 100 + padding, 380 + padding, offset=(-padding / 3, 0))
+        el("C", panels["C"], 20 + padding, 380 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("D", panels["D"], 730 + padding, 380 + padding, offset=(-padding / 3, 0))
+        el("D", panels["D"], 900 + padding, 380 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
         el("E", panels["E"], 20 + padding, 860 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("F", panels["F"], 900 + padding, 860 + padding, offset=(-padding / 3, 0))
+        el("F", panels["F"], 700 + padding, 860 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -2161,6 +2153,55 @@ def fig_tuning_curves_byrat(panels, savepath):
         el(None, panels["H"], 930 + padding, 770 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-all", "behavior", "behavior_barriers.svg"),
+        "B": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
+        "C": ("grp-all", "behavior", "barrier_scatter.svg"),
+    },
+    savepath=("figures", "barriers.svg"),
+    copy_to="barriers.pdf",
+)
+def fig_barriers(panels, savepath):
+    padding = 20
+    full_width = 1300 + padding
+    full_height = 950 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("B", panels["B"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("C", panels["C"], 330 + padding, 500 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "day1": ("grp-day1", "swrs", "swr_rate_bysubphase.svg"),
+        "day2": ("grp-day2", "swrs", "swr_rate_bysubphase.svg"),
+        "day3": ("grp-day3", "swrs", "swr_rate_bysubphase.svg"),
+        "day4": ("grp-day4", "swrs", "swr_rate_bysubphase.svg"),
+        "day5": ("grp-day5", "swrs", "swr_rate_bysubphase.svg"),
+        "day6": ("grp-day6", "swrs", "swr_rate_bysubphase.svg"),
+        "day7": ("grp-day7", "swrs", "swr_rate_bysubphase.svg"),
+        "day8": ("grp-day8", "swrs", "swr_rate_bysubphase.svg"),
+        "rat1": ("grp-r063", "swrs", "swr_rate_bysubphase.svg"),
+        "rat2": ("grp-r066", "swrs", "swr_rate_bysubphase.svg"),
+        "rat3": ("grp-r067", "swrs", "swr_rate_bysubphase.svg"),
+        "rat4": ("grp-r068", "swrs", "swr_rate_bysubphase.svg"),
+    },
+    savepath=("figures", "swr_rate_bysubphase_details.svg"),
+    copy_to="swr_rate_bysubphase_details.pdf",
+)
+def fig_swr_rate_bysubphase_details(panels, savepath):
+    day_rat_details(panels, savepath)
 
 
 def task_combine_tex():
