@@ -282,6 +282,8 @@ binsize = 3
 swr_overtime_dt = 30
 swr_buffer = 0.15
 
+speed_overtime_dt = 30
+
 # define_zones
 expand_by = 12
 feeder_scale = 1.6

@@ -315,3 +315,8 @@ def print_missing_positions(info, *, task_times, position):
                 f"during {task_time}:"
             )
             print(f"  {all_above.tolist()}")
+
+
+@task(infos=meta_session.all_infos, cache_saves="speed_overtime")
+def cache_speed_overtime(info, *, position, task_times):
+    return position.speed(t_smooth=meta.speed_overtime_dt)[task_times["maze_times"]]

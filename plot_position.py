@@ -26,11 +26,11 @@ def plot_speed_byphase(
     savepath,
 ):
     plot_bar_mean_byphase(
-        speed_byphase, ylabel="Mean speed (bins / s)", savepath=savepath["full"]
+        speed_byphase, ylabel="Mean speed (cm / s)", savepath=savepath["full"]
     )
     plot_bar_mean_byphase(
         speed_byphase_restonly,
-        ylabel="Mean speed (bins / s)",
+        ylabel="Mean speed (cm / s)",
         savepath=savepath["rest"],
     )
 
@@ -171,6 +171,47 @@ def plot_barrier_scatter(
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.yaxis.set_ticks_position("left")
+    ax.xaxis.set_ticks_position("bottom")
+
+    plt.tight_layout()
+
+    plt.savefig(savepath, bbox_inches="tight", transparent=True)
+    plt.close(fig)
+
+
+@task(infos=meta_session.all_infos, savepath=("behavior", "speed_overtime.svg"))
+def plot_speed_overtime(info, *, task_times, speed_overtime, savepath):
+    fig, ax = plt.subplots(figsize=(12, 4))
+
+    gap = 50
+    t = 0
+    xticks = []
+    for run_time in meta.run_times:
+        speed = speed_overtime[task_times[run_time]]
+        time = speed.time - speed.time[0] + t
+        xticks.append((time[-1] + time[0]) / 2)
+        plt.plot(time, speed.data, c="k")
+        plt.axvspan(time[0], time[-1], color="#737373", alpha=0.2)
+        t = time[-1] + gap
+
+    plt.text(
+        0.86,
+        0.95,
+        s="Example session",
+        fontsize=meta.fontsize_small,
+        horizontalalignment="center",
+        verticalalignment="center",
+        transform=ax.transAxes,
+    )
+
+    plt.xticks(xticks, list(meta.run_times_labels.values()))
+    plt.ylabel("Speed (cm / s)", fontsize=meta.fontsize)
+
+    plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
+    plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position("bottom")
 
     plt.tight_layout()
