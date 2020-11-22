@@ -205,6 +205,34 @@ def cache_combined_barrier_time_bytrial(infos, group_name, *, all_barrier_time_b
     return all_t
 
 
+@task(infos=meta_session.all_infos, cache_saves="shortcut_time_bytrial")
+def cache_shortcut_time_bytrial(info, *, trials, task_times, position, zones):
+    dt = np.median(np.diff(position.time))
+    position = position[task_times["phase3"]]
+    t = []
+
+    for trial in trials["full_shortcut"]:
+        trial_pos = position[trial]
+        trial_t = 0
+        for pos_idx in range(trial_pos.n_samples):
+            if zones["shortcut"].contains(Point(trial_pos.data[pos_idx])):
+                trial_t += dt
+        t.append(trial_t)
+
+    return t
+
+
+@task(groups=meta_session.groups, cache_saves="shortcut_time_bytrial")
+def cache_combined_shortcut_time_bytrial(
+    infos, group_name, *, all_shortcut_time_bytrial
+):
+    max_trials = max(len(time) for time in all_shortcut_time_bytrial)
+    all_t = []
+    for i in range(max_trials):
+        all_t.append([time[i] for time in all_shortcut_time_bytrial if len(time) > i])
+    return all_t
+
+
 @task(infos=meta_session.all_infos, cache_saves="barrier_dist_to_feeder")
 def cache_barrier_dist_to_feeder(info, *, task_times):
     dist = {}

@@ -267,3 +267,42 @@ def plot_barrier_time_bytrial(infos, group_name, *, barrier_time_bytrial, savepa
         mfilter=False,
         savepath=savepath["first_n"],
     )
+
+
+@task(
+    groups=meta_session.groups,
+    savepath={
+        "all": ("behavior", "shortcut_time_bytrial_all.svg"),
+        "first_n": ("behavior", "shortcut_time_bytrial_first_n.svg"),
+    },
+)
+def plot_shortcut_time_bytrial(infos, group_name, *, shortcut_time_bytrial, savepath):
+    plot_bytrial(
+        {"full_shortcut": shortcut_time_bytrial},
+        len(infos),
+        ylabel="Mean time in novel shortcut (s)",
+        labels=meta.trajectories_labels,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 3",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        mfilter=False,
+        savepath=savepath["all"],
+    )
+    plot_bytrial(
+        {"full_shortcut": shortcut_time_bytrial},
+        len(infos),
+        ylabel="Mean time in novel shortcut (s)",
+        n_trials=20,
+        labels=meta.trajectories_labels,
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else "Phase 3",
+        show_legend=True
+        if group_name in ["all", "combined", "r063", "day1"]
+        else False,
+        mfilter=False,
+        savepath=savepath["first_n"],
+    )
