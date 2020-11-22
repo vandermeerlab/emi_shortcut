@@ -1,5 +1,3 @@
-import re
-
 import nept
 import numpy as np
 import scipy.stats
@@ -144,8 +142,54 @@ def cache_combined_speed_byphase_restonly(
     return aggregate.combine_with_append(all_speed_byphase_restonly)
 
 
+def dist_2d(pt1, pt2):
+    return np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
+
+
+@task(infos=meta_session.all_infos, cache_saves="barrier_t")
+def cache_barrier_t(info, *, task_times, position):
+    dt = np.median(np.diff(position.time))
+    position = position[task_times["phase2"]]
+    t = {}
+
+    for barrier in meta.barriers:
+        barrier_xy = info.path_pts[barrier]
+        dist = dist_2d(barrier_xy, position.data.T)
+        n_points = np.sum(dist < meta.expand_by).item()
+        t[barrier] = n_points * dt
+
+    return t
+
+
+@task(groups=meta_session.groups, cache_saves="barrier_t")
+def cache_combined_barrier_t(infos, group_name, *, all_barrier_t):
+    return aggregate.combine_with_append(all_barrier_t)
+
+
+@task(infos=meta_session.all_infos, cache_saves="barrier_dist_to_feeder")
+def cache_barrier_dist_to_feeder(info, *, task_times):
+    dist = {}
+    feeder1_xy = info.path_pts["feeder1"]
+    feeder2_xy = info.path_pts["feeder2"]
+
+    for barrier in meta.barriers:
+        barrier_xy = info.path_pts[barrier]
+        dist[barrier] = min(
+            dist_2d(barrier_xy, feeder1_xy), dist_2d(barrier_xy, feeder2_xy)
+        )
+
+    return dist
+
+
+@task(groups=meta_session.groups, cache_saves="barrier_dist_to_feeder")
+def cache_combined_barrier_dist_to_feeder(
+    infos, group_name, *, all_barrier_dist_to_feeder
+):
+    return aggregate.combine_with_append(all_barrier_dist_to_feeder)
+
+
 @task(infos=meta_session.all_infos, cache_saves="barrier_time")
-def cache_barrier_time(info, *, task_times, position, zones):
+def cache_barrier_time(info, *, task_times, position):
     dt = np.median(np.diff(position.time))
     position = position[task_times["phase2"]]
     barriers = dict(meta.barriers)
@@ -161,9 +205,7 @@ def cache_barrier_time(info, *, task_times, position, zones):
     barrier_time = {trajectory: 0 for trajectory in meta.barrier_trajectories}
     for barrier, trajectory in barriers.items():
         barrier_xy = info.path_pts[barrier]
-        dist = np.sqrt(
-            (barrier_xy[0] - position.x) ** 2 + (barrier_xy[1] - position.y) ** 2
-        )
+        dist = dist_2d(barrier_xy, position.data.T)
         n_points = np.sum(dist < meta.expand_by).item()
         barrier_time[trajectory] += n_points * dt
 

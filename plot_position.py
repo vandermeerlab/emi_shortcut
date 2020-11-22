@@ -7,6 +7,7 @@ import meta
 import meta_session
 from plots import plot_bar_mean_byphase, plot_position, significance_bar
 from tasks import task
+from utils import latex_float
 
 
 @task(
@@ -124,3 +125,55 @@ def plot_task_time_positions(info, *, lines, task_times, position, savepath):
 
         plt.savefig(savepath[task_time], bbox_inches="tight", transparent=True)
         plt.close(fig)
+
+
+@task(groups=meta_session.groups, savepath=("behavior", "barrier_scatter.svg"))
+def plot_barrier_scatter(
+    infos, group_name, *, barrier_t, barrier_dist_to_feeder, savepath
+):
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for barrier in meta.barriers:
+        plt.scatter(
+            barrier_dist_to_feeder[barrier],
+            barrier_t[barrier],
+            c=meta.colors[barrier],
+            label=meta.barrier_labels[barrier],
+        )
+
+    def regress(x, y, c, height):
+        slope, intercept, rval, pval, _ = scipy.stats.linregress(x, y)
+        plt.plot(x, intercept + slope * x, c)
+        plt.text(
+            0.8,
+            height,
+            s=f"$r^2 = {rval ** 2:.3f}$\n$p = {latex_float(pval)}$",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=ax.transAxes,
+            fontsize=meta.fontsize_small,
+            color=c,
+        )
+
+    x = np.hstack(list(barrier_dist_to_feeder.values()))
+    y = np.hstack(list(barrier_t.values()))
+    regress(x, y, "k", 0.9)
+    regress(x[x > 0], y[x > 0], "r", 0.75)
+
+    if group_name not in ["all", "combined"]:
+        plt.title(meta.title_labels[group_name], fontsize=meta.fontsize)
+    plt.xlabel("Distance to nearest feeder (cm)", fontsize=meta.fontsize)
+    plt.ylabel("Time spent near barrier (s)", fontsize=meta.fontsize)
+    plt.legend(loc="upper center", fontsize=meta.fontsize_small)
+
+    plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
+    plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.yaxis.set_ticks_position("left")
+    ax.xaxis.set_ticks_position("bottom")
+
+    plt.tight_layout()
+
+    plt.savefig(savepath, bbox_inches="tight", transparent=True)
+    plt.close(fig)

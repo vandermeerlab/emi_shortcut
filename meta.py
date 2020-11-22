@@ -78,7 +78,9 @@ colors = dict(
     only_u="#0072b2",
     matched_u="#0072b2",
     shortcut="#78c679",
+    shortcut1="#78c679",
     full_shortcut="#009e73",
+    shortcut2="#009e73",
     only_full_shortcut="#009e73",
     matched_full_shortcut="#009e73",
     joined="#d7301f",
@@ -86,6 +88,7 @@ colors = dict(
     difference="#525252",
     contrast="#525252",
     novel="#d55e00",
+    novel1="#d55e00",
     feeders="#dd3497",
     u_feeder1="#fa9fb5",
     u_feeder2="#fcc5c0",
@@ -103,6 +106,11 @@ fontsize = 20
 fontsize_small = 15
 behavioral_trajectories = ["u", "full_shortcut", "novel"]
 barriers = {"shortcut1": "shortcut", "shortcut2": "shortcut", "novel1": "novel"}
+barrier_labels = {
+    "shortcut1": "Shortcut 1",
+    "shortcut2": "Shortcut 2",
+    "novel1": "Dead-end",
+}
 barrier_trajectories = ["shortcut", "novel", "baseline"]
 trajectories = ["u", "full_shortcut"]
 exclusive_trajectories = ["only_u", "only_full_shortcut", "both"]
