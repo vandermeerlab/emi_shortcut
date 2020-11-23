@@ -1453,6 +1453,8 @@ def plot_group_swr_rate_bysubphase(infos, group_name, *, swr_rate_bysubphase, sa
     )
     plt.ylabel("SWR rate (events/min)", fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+    if group_name not in ["all", "combined"]:
+        plt.ylim(0, 38)
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

@@ -2159,7 +2159,8 @@ def fig_tuning_curves_byrat(panels, savepath):
     panels={
         "A": ("grp-all", "behavior", "behavior_barriers.svg"),
         "B": ("grp-day7_beh", "behavior", "behavior_barriers.svg"),
-        "C": ("grp-all", "behavior", "barrier_scatter.svg"),
+        "C": ("grp-all", "behavior", "barrier_time_bytrial_first_n.svg"),
+        "D": ("grp-all", "behavior", "barrier_scatter.svg"),
     },
     savepath=("figures", "barriers.svg"),
     copy_to="barriers.pdf",
@@ -2177,7 +2178,10 @@ def fig_barriers(panels, savepath):
         el("B", panels["B"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("C", panels["C"], 330 + padding, 500 + padding, offset=(-padding / 3, 0))
+        el("C", panels["C"], 20 + padding, 500 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("D", panels["D"], 630 + padding, 500 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -2202,6 +2206,126 @@ def fig_barriers(panels, savepath):
 )
 def fig_swr_rate_bysubphase_details(panels, savepath):
     day_rat_details(panels, savepath)
+
+
+@task(
+    panels={
+        "A": ("ind-R063d6", "behavior", "speed_overtime.svg"),
+        "B": ("ind-R066d6", "behavior", "speed_overtime.svg"),
+        "C": ("ind-R067d4", "behavior", "speed_overtime.svg"),
+        "D": ("ind-R068d7", "behavior", "speed_overtime.svg"),
+    },
+    savepath=("figures", "speed_overtime.svg"),
+    copy_to="speed_overtime.pdf",
+)
+def fig_speed_overtime(panels, savepath):
+    padding = 20
+    full_width = 1800 + padding
+    full_height = 650 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("R063", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("R066", panels["B"], 900 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("R067", panels["C"], 20 + padding, 350 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("R068", panels["D"], 900 + padding, 350 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "day1": ("grp-day1", "behavior", "stop_rate.svg"),
+        "day2": ("grp-day2", "behavior", "stop_rate.svg"),
+        "day3": ("grp-day3", "behavior", "stop_rate.svg"),
+        "day4": ("grp-day4_beh", "behavior", "stop_rate.svg"),
+        "day5": ("grp-day5_beh", "behavior", "stop_rate.svg"),
+        "day6": ("grp-day6_beh", "behavior", "stop_rate.svg"),
+        "day7": ("grp-day7_beh", "behavior", "stop_rate.svg"),
+        "day8": ("grp-day8", "behavior", "stop_rate.svg"),
+        "rat1": ("grp-r063", "behavior", "stop_rate.svg"),
+        "rat2": ("grp-r066", "behavior", "stop_rate.svg"),
+        "rat3": ("grp-r067beh", "behavior", "stop_rate.svg"),
+        "rat4": ("grp-r068", "behavior", "stop_rate.svg"),
+    },
+    savepath=("figures", "stop_rate.svg"),
+    copy_to="stop_rate.pdf",
+)
+def fig_stop_rate(panels, savepath):
+    day_rat_details(panels, savepath)
+
+
+@task(
+    panels={
+        "day1": ("grp-day1", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "day2": ("grp-day2", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "day3": ("grp-day3", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "day4": ("grp-day4_beh", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "day5": ("grp-day5_beh", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "day6": ("grp-day6_beh", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "day7": ("grp-day7_beh", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "day8": ("grp-day8", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "rat1": ("grp-r063", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "rat2": ("grp-r066", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "rat3": ("grp-r067beh", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "rat4": ("grp-r068", "behavior", "trial_durations_bytrial_first_n.svg"),
+    },
+    savepath=("figures", "trial_durations_bytrial_first_n.svg"),
+    copy_to="trial_durations_bytrial_first_n.pdf",
+)
+def fig_trial_durations_bytrial_first_n(panels, savepath):
+    day_rat_details(panels, savepath)
+
+
+@task(
+    panels={
+        "day1": ("grp-day1", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "day2": ("grp-day2", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "day3": ("grp-day3", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "day4": ("grp-day4_beh", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "day5": ("grp-day5_beh", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "day6": ("grp-day6_beh", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "day7": ("grp-day7_beh", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "day8": ("grp-day8", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "rat1": ("grp-r063", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "rat2": ("grp-r066", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "rat3": ("grp-r067beh", "behavior", "shortcut_time_bytrial_first_n.svg"),
+        "rat4": ("grp-r068", "behavior", "shortcut_time_bytrial_first_n.svg"),
+    },
+    savepath=("figures", "shortcut_time_bytrial_first_n.svg"),
+    copy_to="shortcut_time_bytrial_first_n.pdf",
+)
+def fig_shortcut_time_bytrial_first_n(panels, savepath):
+    day_rat_details(panels, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-all", "behavior", "trial_durations_bytrial_first_n.svg"),
+        "B": ("grp-all", "behavior", "shortcut_time_bytrial_first_n.svg"),
+    },
+    savepath=("figures", "beh_bytrial.svg"),
+    copy_to="beh_bytrial.pdf",
+)
+def fig_beh_bytrial(panels, savepath):
+    padding = 20
+    full_width = 1280 + padding
+    full_height = 450 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("B", panels["B"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
 
 
 def task_combine_tex():

@@ -191,7 +191,7 @@ def plot_speed_overtime(info, *, task_times, speed_overtime, savepath):
         time = speed.time - speed.time[0] + t
         xticks.append((time[-1] + time[0]) / 2)
         plt.plot(time, speed.data, c="k")
-        plt.axvspan(time[0], time[-1], color="#737373", alpha=0.2)
+        plt.axvspan(time[0], time[-1], color=meta.colors["rest"], alpha=0.2)
         t = time[-1] + gap
 
     plt.text(
@@ -225,7 +225,11 @@ def plot_stop_rate(infos, group_name, *, stop_rate, savepath):
     plot_bar_mean_byphase(
         stop_rate,
         ylabel="Stop rate (stops / min)",
+        ylim=5.5 if group_name not in ["all", "combined"] else None,
         n_sessions=len(infos),
+        title=f"{meta.title_labels[group_name]}\n n = {len(infos)} sessions"
+        if group_name not in ["all", "combined"]
+        else None,
         savepath=savepath,
     )
 

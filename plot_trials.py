@@ -238,6 +238,7 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
         len(infos),
         ylabel="Proportion of sessions",
         labels=meta.trajectories_labels,
+        ylim=1.05,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else "Phase 3",
@@ -254,6 +255,7 @@ def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savep
         len(infos),
         ylabel="Proportion of sessions",
         labels=meta.trajectories_labels,
+        ylim=1.05,
         n_trials=meta.first_n_trials,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
@@ -280,6 +282,7 @@ def plot_behavior_bytrial_consecutive(
         len(infos),
         ylabel="Proportion of sessions",
         labels=meta.trajectories_labels,
+        ylim=1.05,
         n_trials=meta.first_n_trials_consecutive,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
@@ -326,6 +329,7 @@ def plot_trial_durations_bytrial(
         len(infos),
         ylabel="Mean duration (s)",
         labels=meta.trajectories_labels,
+        ylim=47,
         n_trials=40,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]

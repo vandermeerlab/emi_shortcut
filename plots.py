@@ -207,7 +207,13 @@ def plot_raster(
 
 
 def plot_bar_mean_byphase(
-    y_byphase, ylabel, n_byphase=None, n_sessions=None, savepath=None
+    y_byphase,
+    ylabel,
+    ylim=None,
+    n_byphase=None,
+    n_sessions=None,
+    title=None,
+    savepath=None,
 ):
     n_phases = len(y_byphase)
     x = np.arange(n_phases)
@@ -250,7 +256,9 @@ def plot_bar_mean_byphase(
                 fontsize=meta.fontsize_small,
             )
 
-    if n_sessions is not None:
+    if title is not None:
+        plt.title(title, fontsize=meta.fontsize)
+    if n_sessions is not None and title is None:
         plt.text(
             0.8,
             1.05,
@@ -309,6 +317,8 @@ def plot_bar_mean_byphase(
         fontsize=meta.fontsize,
         rotation=meta.xtickrotation if n_phases > 4 else None,
     )
+    if ylim is not None:
+        plt.ylim(0, ylim)
     plt.ylabel(ylabel, fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
 
@@ -740,6 +750,7 @@ def plot_bytrial(
     n_sessions,
     ylabel,
     labels,
+    ylim=None,
     n_trials=None,
     title=None,
     legend_loc=None,
@@ -802,8 +813,8 @@ def plot_bytrial(
         xticks[0] = 1
     ax.set_xticks(xticks)
 
-    if ylabel.startswith("Proportion"):
-        plt.ylim(0, 1.05)
+    if ylim is not None:
+        plt.ylim(0, ylim)
 
     if n_sessions == 1:
         txt = "Example session"
