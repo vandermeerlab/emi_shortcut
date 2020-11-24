@@ -329,7 +329,7 @@ def plot_trial_durations_bytrial(
         len(infos),
         ylabel="Mean duration (s)",
         labels=meta.trajectories_labels,
-        ylim=47 if group_name not in ["all", "combined", "r063", "day1"] else None,
+        ylim=47 if group_name not in ["all", "combined"] else None,
         n_trials=40,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]

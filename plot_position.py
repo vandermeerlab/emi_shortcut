@@ -301,6 +301,7 @@ def plot_shortcut_time_bytrial(infos, group_name, *, shortcut_time_bytrial, save
         ylabel="Mean time in novel shortcut (s)",
         n_trials=20,
         labels=meta.trajectories_labels,
+        ylim=21 if group_name not in ["all", "combined"] else None,
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else "Phase 3",
