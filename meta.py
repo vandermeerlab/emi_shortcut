@@ -318,6 +318,9 @@ mostly_n_trials = 5
 # 2D tc plot
 n_bins = 100
 
+# replay participation
+replay_participation_min_spikes = 1
+
 # trials
 trial_min_prop = 0.75
 novel_min_duration = 8.0

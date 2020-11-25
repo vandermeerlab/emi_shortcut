@@ -118,3 +118,93 @@ def save_replay_prop_byphase_pval(infos, group_name, *, replay_prop_byphase, sav
             file=fp,
         )
         print("% ---------", file=fp)
+
+
+@task(infos=meta_session.analysis_infos, cache_saves="replay_participation")
+def cache_replay_participation(info, *, replays_byphase, spikes):
+    participation = []
+
+    for replay in replays_byphase["full_shortcut"]["phase3"]:
+        assert replay.n_epochs == 1
+        replay_spikes = [
+            spiketrain.time_slice(replay.start, replay.stop) for spiketrain in spikes
+        ]
+        participation.append(
+            [
+                spiketrain.n_spikes >= meta.replay_participation_min_spikes
+                for spiketrain in replay_spikes
+            ]
+        )
+
+    return np.vstack(participation)
+
+
+@task(infos=meta_session.analysis_infos, cache_saves="full_replay_participation_rate")
+def cache_full_replay_participation_rate(info, *, replay_participation):
+    return np.mean(replay_participation, axis=0)
+
+
+@task(infos=meta_session.analysis_infos, cache_saves="replay_participation_rate")
+def cache_replay_participation_rate(
+    info, *, full_replay_participation_rate, tc_order, tc_order_unique_ph3
+):
+    return {
+        "unique": full_replay_participation_rate[tc_order_unique_ph3],
+        "nonunique": full_replay_participation_rate[
+            [ix for ix in tc_order["full_shortcut"] if ix not in tc_order_unique_ph3]
+        ],
+        "nofield": full_replay_participation_rate[
+            [
+                ix
+                for ix in range(full_replay_participation_rate.size)
+                if ix not in tc_order["full_shortcut"]
+            ]
+        ],
+    }
+
+
+@task(groups=meta_session.groups, cache_saves="replay_participation_rate")
+def cache_combined_replay_participation_rate(
+    infos, group_name, *, all_replay_participation_rate
+):
+    return {
+        key: np.hstack([rate[key] for rate in all_replay_participation_rate])
+        for key in all_replay_participation_rate[0]
+    }
+
+
+@task(infos=meta_session.analysis_infos, cache_saves="replay_any_unique_participation")
+def cache_replay_any_unique_participation(
+    info, *, tc_order_unique_ph3, replays_byphase, spikes
+):
+    participation = []
+
+    for replay in replays_byphase["full_shortcut"]["phase3"]:
+        assert replay.n_epochs == 1
+        replay_spikes = [
+            spiketrain.time_slice(replay.start, replay.stop) for spiketrain in spikes
+        ]
+        for ix in tc_order_unique_ph3:
+            if replay_spikes[ix].n_spikes >= meta.replay_participation_min_spikes:
+                participation.append(True)
+                break
+        else:
+            participation.append(False)
+
+    assert len(participation) == replays_byphase["full_shortcut"]["phase3"].n_epochs
+    return np.array(participation)
+
+
+@task(
+    infos=meta_session.analysis_infos,
+    cache_saves="replay_any_unique_participation_rate",
+)
+def cache_replay_any_unique_participation_rate(info, *, replay_unique_participation):
+    return np.mean(replay_unique_participation)
+
+
+@task(groups=meta_session.groups, cache_saves="replay_any_unique_participation_rate")
+def cache_combined_any_replay_unique_participation_rate(
+    infos, group_name, *, all_replay_unique_participation_rate
+):
+    return np.hstack([rate for rate in all_replay_unique_participation_rate])

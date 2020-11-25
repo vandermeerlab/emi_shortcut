@@ -402,3 +402,42 @@ def _plot_replay_metric(
 
     plt.savefig(savepath, bbox_inches="tight", transparent=True)
     plt.close(fig)
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("replays", "replay_participation_rate.svg"),
+)
+def plot_replay_participation_rate(
+    infos, group_name, *, replay_participation_rate, savepath
+):
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    x = np.arange(3)
+    means = np.array([np.mean(val) for val in replay_participation_rate.values()])
+    sems = np.array(
+        [scipy.stats.sem(val) for val in replay_participation_rate.values()]
+    )
+    heights = means + sems
+    rects = ax.bar(
+        x,
+        means,
+        width=0.65,
+        color=meta.colors["rest"],
+        yerr=sems,
+        ecolor="k",
+    )
+
+    plt.xticks(x, ["Unique", "Non-unique", "No place field"], fontsize=meta.fontsize)
+    plt.ylabel("Proportion of participating replays", fontsize=meta.fontsize)
+    plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.yaxis.set_ticks_position("left")
+    ax.xaxis.set_ticks_position("bottom")
+
+    plt.tight_layout(h_pad=0.003)
+
+    plt.savefig(savepath, bbox_inches="tight", transparent=True)
+    plt.close(fig)

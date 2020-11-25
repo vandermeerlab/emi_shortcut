@@ -333,6 +333,117 @@ def cache_tc_spikes(info, *, spikes, tc_order):
 
 @task(
     infos=meta_session.all_infos,
+    cache_saves=["full_tuning_spikes_ph12", "tc_linear_restricted_ph12"],
+)
+def cache_full_tuning_spikes_ph12(info, *, task_times, tc_linear, spikes, trials):
+    linear, tuning_spikes = restrict_linear_and_spikes(
+        linear=tc_linear["u"],
+        spikes=spikes,
+        maze_times=task_times["phase1"].join(task_times["phase2"]),
+        trials=trials["u"],
+        speed_limit=meta.std_speed_limit,
+        t_smooth=meta.std_t_smooth,
+    )
+    return {
+        "full_tuning_spikes_ph12": tuning_spikes,
+        "tc_linear_restricted_ph12": linear,
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="full_tuning_curves_ph12",
+)
+def cache_full_tuning_curves_ph12(
+    info, *, tc_linear_restricted_ph12, full_tuning_spikes_ph12
+):
+    tcs, _ = nept.tuning_curve_1d(
+        tc_linear_restricted_ph12,
+        full_tuning_spikes_ph12,
+        edges=meta.tc_linear_bin_edges,
+        gaussian_std=meta.std_gaussian_std,
+        min_occupancy=meta.std_min_occupancy,
+    )
+    tcs = tcs[:, meta.tc_extra_bins_before : -meta.tc_extra_bins_after]
+    if not info.full_standard_maze:
+        tcs[:, meta.linear_bin_centers < meta.short_standard_points["feeder1"]] = np.nan
+    return tcs
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_order_ph12")
+def cache_tc_order_ph12(info, *, full_tuning_curves_ph12, full_tuning_spikes_ph12):
+    return filter_and_sort(
+        tuning_curves=full_tuning_curves_ph12, spikes=full_tuning_spikes_ph12
+    )
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves=["full_tuning_spikes_ph3", "tc_linear_restricted_ph3"],
+)
+def cache_full_tuning_spikes_ph3(info, *, task_times, tc_linear, spikes, trials):
+    linear = {}
+    tuning_spikes = {}
+    for trajectory in meta.trajectories:
+        linear[trajectory], tuning_spikes[trajectory] = restrict_linear_and_spikes(
+            linear=tc_linear[trajectory],
+            spikes=spikes,
+            maze_times=task_times["phase3"],
+            trials=trials[trajectory],
+            speed_limit=meta.std_speed_limit,
+            t_smooth=meta.std_t_smooth,
+        )
+    return {
+        "full_tuning_spikes_ph3": tuning_spikes,
+        "tc_linear_restricted_ph3": linear,
+    }
+
+
+@task(
+    infos=meta_session.all_infos,
+    cache_saves="full_tuning_curves_ph3",
+)
+def cache_full_tuning_curves_ph3(
+    info, *, tc_linear_restricted_ph3, full_tuning_spikes_ph3
+):
+    tcs = {}
+    for trajectory in meta.trajectories:
+        tcs[trajectory], _ = nept.tuning_curve_1d(
+            tc_linear_restricted_ph3[trajectory],
+            full_tuning_spikes_ph3[trajectory],
+            edges=meta.tc_linear_bin_edges,
+            gaussian_std=meta.std_gaussian_std,
+            min_occupancy=meta.std_min_occupancy,
+        )
+        tcs[trajectory] = tcs[trajectory][
+            :, meta.tc_extra_bins_before : -meta.tc_extra_bins_after
+        ]
+        if not info.full_standard_maze:
+            tcs[trajectory][
+                :, meta.linear_bin_centers < meta.short_standard_points["feeder1"]
+            ] = np.nan
+    return tcs
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_order_ph3")
+def cache_tc_order_ph3(info, *, full_tuning_curves_ph3, full_tuning_spikes_ph3):
+    return {
+        trajectory: filter_and_sort(
+            tuning_curves=full_tuning_curves_ph3[trajectory],
+            spikes=full_tuning_spikes_ph3[trajectory],
+        )
+        for trajectory in meta.trajectories
+    }
+
+
+@task(infos=meta_session.all_infos, cache_saves="tc_order_unique_ph3")
+def cache_tc_order_unique_ph3(info, *, tc_order_ph12, tc_order_ph3):
+    all_u = set(tc_order_ph12) | set(tc_order_ph3["u"])
+    return [i for i in tc_order_ph3["full_shortcut"] if i not in all_u]
+
+
+@task(
+    infos=meta_session.all_infos,
     cache_saves=["full_matched_tuning_spikes", "tc_matched_linear_restricted"],
 )
 def cache_full_matched_tuning_spikes(
