@@ -9,7 +9,7 @@ import statsmodels.api as sm
 import meta
 import meta_session
 from tasks import task
-from utils import latex_float, ranksum_test, save_ttest_results
+from utils import latex_float, ranksum_test
 
 
 @task(infos=meta_session.all_infos, cache_saves="raw_trials")
@@ -162,30 +162,6 @@ def cache_trial_proportions(info, *, n_trials_ph3):
     }
 
 
-@task(groups=meta_session.all_grouped, cache_saves="trial_proportions_df")
-def cache_trial_proportions_df(infos, group_name, *, all_trial_proportions):
-    trial_proportions_df = []
-    for info, trial_proportion in zip(infos, all_trial_proportions):
-        trial_proportions_df.extend(
-            {
-                "proportions": trial_proportion[trajectory],
-                "trajectory": trajectory,
-                "rat_id": info.session_id[:4],
-                "session": info.session_id[-1],
-            }
-            for trajectory in meta.trial_types
-        )
-    return pd.DataFrame.from_dict(trial_proportions_df)
-
-
-@task(
-    groups=meta_session.all_grouped,
-    savepath=("behavior", "stats_trial_proportions.tex"),
-)
-def save_trial_proportion_stats(infos, group_name, *, trial_proportions_df, savepath):
-    save_ttest_results(trial_proportions_df, "proportions", savepath)
-
-
 @task(groups=meta_session.groups, cache_saves="n_trials_ph3")
 def cache_combined_n_trials_ph3(infos, group_name, *, all_n_trials_ph3):
     return {
@@ -216,33 +192,6 @@ def cache_trial_durations(info, *, task_times, trials):
             for trajectory in meta.trial_types
         }
     return durations
-
-
-@task(groups=meta_session.all_grouped, cache_saves="trial_durations_df")
-def cache_trial_durations_df(infos, group_name, *, all_trial_durations):
-    trial_durations_df = []
-    for info, trial_durations in zip(infos, all_trial_durations):
-        for phase in meta.run_times:
-            for trajectory in meta.trial_types:
-                trial_durations_df.extend(
-                    {
-                        "durations": trial,
-                        "phase": phase,
-                        "trajectory": trajectory,
-                        "rat_id": info.session_id[:4],
-                        "session": info.session_id[-1],
-                    }
-                    for trial in trial_durations[phase][trajectory]
-                )
-    return pd.DataFrame.from_dict(trial_durations_df)
-
-
-@task(
-    groups=meta_session.all_grouped,
-    savepath=("behavior", "stats_trial_durations.tex"),
-)
-def save_trial_durations_stats(infos, group_name, *, trial_durations_df, savepath):
-    save_ttest_results(trial_durations_df, "durations", savepath)
 
 
 @task(groups=meta_session.groups, cache_saves="trial_durations")

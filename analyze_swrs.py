@@ -1,9 +1,7 @@
 import nept
 import numpy as np
-import pandas as pd
 import scipy.io
 import scipy.stats
-import statsmodels.formula.api as smf
 from shapely.geometry import Point
 
 import aggregate
@@ -345,24 +343,6 @@ def cache_replays_byphase(info, *, task_times, replays):
         }
         for trajectory in replays
     }
-
-
-@task(groups=meta_session.analysis_grouped, cache_saves="replays_byphase_df")
-def cache_replays_byphase_df(infos, group_name, *, all_replays_byphase):
-    replays_df = []
-    for info, replays_byphase in zip(infos, all_replays_byphase):
-        for trajectory in meta.trajectories:
-            replays_df.extend(
-                {
-                    "n_replays": replays_byphase[trajectory][phase].n_epochs,
-                    "trajectory": trajectory,
-                    "phase": phase,
-                    "rat_id": info.session_id[:4],
-                    "session": info.session_id[-1],
-                }
-                for phase in meta.task_times
-            )
-    return pd.DataFrame.from_dict(replays_df)
 
 
 @task(groups=meta_session.analysis_grouped, savepath=("swrs", "n_swrs_byphase.table"))
@@ -1076,7 +1056,7 @@ def save_replays_percents(
                 shortcut_replays = replays_byphase["full_shortcut"][phase].n_epochs
 
                 percent_replays = (
-                    f"{u_replays / swrs_byphase[phase].n_epochs * 100:.0f} $\mid$ "
+                    f"{u_replays / swrs_byphase[phase].n_epochs * 100:.0f} $\\mid$ "
                     + f"{shortcut_replays / swrs_byphase[phase].n_epochs * 100:.0f}"
                     if swrs_byphase[phase].n_epochs > 0
                     else "-"
@@ -1359,43 +1339,6 @@ def cache_combined_replay_proportions_byphase_pval(
     infos, group_name, *, swr_n_byphase, replay_n_byphase
 ):
     return get_replay_proportions_byphase_pval(swr_n_byphase, replay_n_byphase)
-
-
-@task(groups=meta_session.analysis_grouped, cache_saves="replay_proportions_byphase_df")
-def cache_replay_proportions_byphase_df(
-    infos, group_name, *, replay_proportions_byphase
-):
-    replay_proportions_byphase_df = []
-    for trajectory in meta.trajectories:
-        replay_proportions_byphase_df.extend(
-            {
-                "proportions": replay_proportions_byphase[trajectory][phase],
-                "phase": phase,
-                "trajectory": trajectory,
-            }
-            for phase in meta.task_times
-        )
-    return pd.DataFrame.from_dict(replay_proportions_byphase_df)
-
-
-@task(
-    groups=meta_session.analysis_grouped,
-    savepath=("replays", "stats_replay_proportions_byphase.tex"),
-)
-def save_replay_proportions_byphase_statsmodel(
-    infos, group_name, *, replay_proportions_byphase_df, savepath
-):
-    model = smf.mixedlm(
-        "proportions ~ trajectory",
-        replay_proportions_byphase_df,
-        groups=replay_proportions_byphase_df["phase"],
-    )
-    modelfit = model.fit()
-    summary = str(modelfit.summary()).split("\n")
-    with open(savepath, "w") as fp:
-        print("% Stats replay_proportions_byphase\n", file=fp)
-        for output in summary:
-            print(f"% {output}", file=fp)
 
 
 @task(groups=meta_session.groups, cache_saves="replay_proportions_normalized_byphase")
