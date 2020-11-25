@@ -1420,6 +1420,7 @@ def plot_group_swr_rate_bysubphase(infos, group_name, *, swr_rate_bysubphase, sa
             color=meta.colors[subphase],
             yerr=sems,
             ecolor="k",
+            label=meta.subphases_labels[subphase],
         )
         for i, (mean, sem) in enumerate(zip(means, sems)):
             heights[i].append(mean + sem)
@@ -1440,6 +1441,8 @@ def plot_group_swr_rate_bysubphase(infos, group_name, *, swr_rate_bysubphase, sa
                     swr_rate_bysubphase[phase][left], swr_rate_bysubphase[phase][right]
                 ),
             )
+    if group_name in ["all", "combined", "day1", "r063"]:
+        plt.legend(fontsize=meta.fontsize_small)
 
     if group_name not in ["all", "combined"]:
         plt.title(

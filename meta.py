@@ -36,6 +36,7 @@ phases_corr_labels = {
     "phases23": "Phases 2-3",
 }
 subphases = {"start": 90, "middle": 90, "end": 90}
+subphases_labels = {"start": "Start", "middle": "Middle", "end": "End"}
 experiences = [
     "familiar_phase12",
     "first_shortcut",
