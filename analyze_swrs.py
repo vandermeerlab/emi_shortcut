@@ -241,7 +241,7 @@ def cache_combined_swr_correlations_shuffled(
         trajectory: np.vstack(
             [correlations[trajectory] for correlations in all_swr_correlations_shuffled]
         )
-        for trajectory in all_swr_correlations_shuffled
+        for trajectory in all_swr_correlations_shuffled[0]
     }
 
 
@@ -419,25 +419,45 @@ def save_n_swrs(infos, group_name, *, all_swrs, savepath):
 @task(
     groups=meta_session.analysis_grouped, cache_saves=["n_swrs_byday", "swr_rate_byday"]
 )
-def cache_swr_rate_byday(infos, group_name, *, all_swrs, all_task_times):
+def cache_swr_rate_byday(infos, group_name, *, all_swrs, all_task_times, all_position):
     n_swrs = [[] for _ in range(8)]
     swr_rate = [[] for _ in range(8)]
 
-    for info, swrs, task_times in zip(infos, all_swrs, all_task_times):
+    for info, swrs, task_times, position in zip(
+        infos, all_swrs, all_task_times, all_position
+    ):
         day = int(info.session_id[-1]) - 1
-        swrs = swrs.intersect(task_times["all"])
+        rest = nept.rest_threshold(
+            position, thresh=meta.std_rest_limit, t_smooth=meta.t_smooth
+        )
+        epoch = task_times["all"].intersect(rest)
+        swrs = swrs.intersect(epoch)
         n_swrs[day].append(swrs.n_epochs)
-        swr_rate[day].append((swrs.n_epochs / np.sum(task_times["all"].durations)) * 60)
+        swr_rate[day].append((swrs.n_epochs / np.sum(epoch.durations)) * 60)
 
     return {"n_swrs_byday": n_swrs, "swr_rate_byday": swr_rate}
 
 
-@task(groups=meta_session.analysis_grouped, savepath=("swrs", "swr_rate_byday.tex"))
-def save_swr_rate_byday(infos, group_name, *, swr_rate_byday, savepath):
+@task(groups=meta_session.analysis_grouped, cache_saves="swr_rate_byday_pval")
+def cache_swr_rate_byday_pval(infos, group_name, *, swr_rate_byday):
+    return {
+        (i, j): mannwhitneyu(swr_rate_byday[i], swr_rate_byday[j])
+        for i, j in zip(range(7), range(1, 8))
+    }
+
+
+@task(
+    groups=meta_session.analysis_grouped, savepath=("swrs", "swr_rate_byday_pval.tex")
+)
+def save_swr_rate_byday_pval(infos, group_name, *, swr_rate_byday_pval, savepath):
     with open(savepath, "w") as fp:
         print("% SWR events by day", file=fp)
-
-        # print(
+        for (i, j), pval in swr_rate_byday_pval.items():
+            print(
+                fr"\def \swrrateday{meta.tex_ids[i+1]}{meta.tex_ids[j+1]}pval/"
+                fr"{{{latex_float(pval)}}}",
+                file=fp,
+            )
 
 
 @task(groups=meta_session.analysis_grouped, cache_saves="swrs_durations")
@@ -1140,7 +1160,7 @@ def save_replays_byphase(
             for phase in meta.task_times:
                 print(
                     f"% {phase}: {total_n_replays[trajectory][phase]} / {total_n_swrs[phase]} "
-                    f"({(total_n_replays[trajectory][phase] / total_n_swrs[phase]) * 100:.1f})",
+                    f"({(total_n_replays[trajectory][phase] / total_n_swrs[phase]) * 100:.2f})",
                     file=fp,
                 )
             allphases_replays = [
@@ -1151,7 +1171,7 @@ def save_replays_byphase(
                 file=fp,
             )
             print(
-                fr"\def \all{traj}replaypercent/{{{(sum(allphases_replays) / sum(allphases_swrs)) * 100:.1f}}}",
+                fr"\def \all{traj}replaypercent/{{{(sum(allphases_replays) / sum(allphases_swrs)) * 100:.2f}}}",
                 file=fp,
             )
             pedestal_replays = [
@@ -1163,7 +1183,7 @@ def save_replays_byphase(
                 file=fp,
             )
             print(
-                fr"\def \pedestal{traj}replaypercent/{{{(sum(pedestal_replays) / sum(pedestal_swrs)) * 100:.1f}}}",
+                fr"\def \pedestal{traj}replaypercent/{{{(sum(pedestal_replays) / sum(pedestal_swrs)) * 100:.2f}}}",
                 file=fp,
             )
             maze_replays = [
@@ -1174,7 +1194,7 @@ def save_replays_byphase(
                 file=fp,
             )
             print(
-                fr"\def \maze{traj}replaypercent/{{{(sum(maze_replays) / sum(maze_swrs)) * 100:.1f}}}",
+                fr"\def \maze{traj}replaypercent/{{{(sum(maze_replays) / sum(maze_swrs)) * 100:.2f}}}",
                 file=fp,
             )
         print(
@@ -1182,9 +1202,34 @@ def save_replays_byphase(
             file=fp,
         )
         print(
-            fr"\def \bothreplaypercent/{{{(sum(both_replays) / sum(allphases_swrs)) * 100:.1f}}}",
+            fr"\def \bothreplaypercent/{{{(sum(both_replays) / sum(allphases_swrs)) * 100:.2f}}}",
             file=fp,
         )
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("replays", "shuffled_replays.tex"),
+)
+def save_shuffled_replays(infos, group_name, *, swr_shuffled_percentiles, savepath):
+    with open(savepath, "w") as fp:
+        print("% Shuffled replays byphase\n", file=fp)
+        total_n_swrs = swr_shuffled_percentiles["u"].size
+        total_n_replays = {
+            trajectory: np.sum(
+                (swr_shuffled_percentiles[trajectory] <= meta.significant)
+                | (swr_shuffled_percentiles[trajectory] >= 100 - meta.significant)
+            )
+            for trajectory in meta.trajectories
+        }
+
+        for trajectory in meta.trajectories:
+            traj = trajectory.replace("_", "")
+            print(
+                fr"\def \all{traj}shufflereplaypercent/"
+                fr"{{{total_n_replays[trajectory] * 100 / total_n_swrs:.2f}}}",
+                file=fp,
+            )
 
 
 @task(groups=meta_session.groups, savepath=("replays", "n_replays.tex"))

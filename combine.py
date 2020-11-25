@@ -299,7 +299,7 @@ def fig_maze(panels, savepath):
         "A": ("grp-all", "behavior", "behavior_choice.svg"),
         "B": ("grp-all", "behavior", "behavior_duration.svg"),
         "C": ("grp-all", "behavior", "behavior_bytrial_first_n.svg"),
-        "D": ("grp-all", "pos", "speed_byphase_full.svg"),
+        "D": ("grp-all", "behavior", "speed_byphase_full.svg"),
     },
     savepath=("figures", "behavior.svg"),
     copy_to="behavior.pdf",
@@ -745,16 +745,14 @@ def fig_tuning_curves_bylandmarks(panels, savepath):
         "B": ("ind-R068d1", "swrs", "swrs_overtime.svg"),
         "C": ("grp-combined", "swrs", "swr_by_std_rate_full.svg"),
         "D": ("grp-combined", "swrs", "swr_durations_histogram.svg"),
-        "E": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
-        "F": ("grp-combined", "swrs", "swr_rate_bysubphase.svg"),
     },
     savepath=("figures", "swr.svg"),
     copy_to="swr.pdf",
 )
 def fig_swr(panels, savepath):
     padding = 50
-    full_width = 1400 + padding
-    full_height = 1350 + padding
+    full_width = 1350 + padding
+    full_height = 830 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
@@ -775,11 +773,32 @@ def fig_swr(panels, savepath):
     fig.append(
         el("D", panels["D"], 900 + padding, 380 + padding, offset=(-padding / 3, 0))
     )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
+        "B": ("grp-combined", "swrs", "swr_rate_bysubphase.svg"),
+        "C": ("grp-combined", "swrs", "swr_rate_byday.svg"),
+    },
+    savepath=("figures", "swr_rate.svg"),
+    copy_to="swr_rate.pdf",
+)
+def fig_swr_rate(panels, savepath):
+    padding = 50
+    full_width = 1850 + padding
+    full_height = 480 + padding
+
+    fig = svgfig(full_width, full_height)
     fig.append(
-        el("E", panels["E"], 20 + padding, 860 + padding, offset=(-padding / 3, 0))
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("F", panels["F"], 700 + padding, 860 + padding, offset=(-padding / 3, 0))
+        el("B", panels["B"], 650 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("C", panels["C"], 1250 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -809,12 +828,29 @@ def fig_swrs_in_position(panels, savepath):
     savefig(fig, savepath)
 
 
+def fig_shuffle_corr(panels, savepath):
+    padding = 20
+    full_width = 1200 + padding
+    full_height = 420 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("B", panels["B"], 600 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
 @task(
     panels={
         "A": ("ind-R068d1", "replays", "replays_overtime-u.svg"),
         "B": ("ind-R068d1", "replays", "replays_overtime-full_shortcut.svg"),
         "C": ("grp-combined", "swrs", "correlation_hist-u.svg"),
         "D": ("grp-combined", "swrs", "correlation_hist-full_shortcut.svg"),
+        "E": ("grp-combined", "swrs", "shuffle_correlation_hist-u.svg"),
+        "F": ("grp-combined", "swrs", "shuffle_correlation_hist-full_shortcut.svg"),
     },
     savepath=("figures", "replay.svg"),
     copy_to="replay.pdf",
@@ -822,14 +858,14 @@ def fig_swrs_in_position(panels, savepath):
 def fig_replay(panels, savepath):
     padding = 50
     full_width = 1200 + padding
-    full_height = 1100 + padding
+    full_height = 1500 + padding
 
     fig = svgfig(full_width, full_height)
     fig.append(
         el(
             "A",
             panels["A"],
-            180 + padding,
+            150 + padding,
             20 + padding,
             offset=(-padding / 3, 0),
         )
@@ -838,16 +874,22 @@ def fig_replay(panels, savepath):
         el(
             None,
             panels["B"],
-            180 + padding,
+            150 + padding,
             320 + padding,
             offset=(-padding / 3, 0),
         )
     )
     fig.append(
-        el("B", panels["C"], 20 + padding, 700 + padding, offset=(-padding / 3, 0))
+        el("B", panels["C"], 20 + padding, 650 + padding, offset=(-padding / 3, 0))
     )
     fig.append(
-        el("C", panels["D"], 660 + padding, 700 + padding, offset=(-padding / 3, 0))
+        el(None, panels["D"], 600 + padding, 650 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("C", panels["E"], 20 + padding, 1100 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el(None, panels["F"], 600 + padding, 1100 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 
@@ -2324,29 +2366,6 @@ def fig_beh_bytrial(panels, savepath):
     )
     fig.append(
         el("B", panels["B"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
-    )
-    savefig(fig, savepath)
-
-
-@task(
-    panels={
-        "A": ("grp-combined", "swrs", "shuffle_correlation_hist-u.svg"),
-        "B": ("grp-combined", "swrs", "shuffle_correlation_hist-full_shortcut.svg"),
-    },
-    savepath=("figures", "shuffle_corr.svg"),
-    copy_to="shuffle_corr.pdf",
-)
-def fig_shuffle_corr(panels, savepath):
-    padding = 20
-    full_width = 1200 + padding
-    full_height = 420 + padding
-
-    fig = svgfig(full_width, full_height)
-    fig.append(
-        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
-    )
-    fig.append(
-        el("B", panels["B"], 600 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
 

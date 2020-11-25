@@ -1,7 +1,7 @@
 import numpy as np
 
 _printvals = False
-seed = 34
+seed = 35
 
 rest_times = ["prerecord", "pauseA", "pauseB", "postrecord"]
 run_times = ["phase1", "phase2", "phase3"]
@@ -229,6 +229,15 @@ tex_ids = {
     "pauseB": "pauseB",
     "phase3": "phasethree",
     "postrecord": "postrecord",
+    1: "one",
+    2: "two",
+    3: "three",
+    4: "four",
+    5: "five",
+    6: "six",
+    7: "seven",
+    8: "eight",
+    9: "nine",
 }
 rasterize_dpi = 300
 # --- Variables

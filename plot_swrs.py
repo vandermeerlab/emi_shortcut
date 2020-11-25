@@ -1129,7 +1129,7 @@ def _plot_swr_correlation_histogram(
             width=width,
             color="r",
             label=f"Significant\n"
-            f"({len(correlations[replays])/len(correlations)*100:.2f} %)",
+            f"({np.sum(replays) * 100 / percentiles.size:.2f} %)",
         )
     plt.locator_params(axis="y", nbins=6)
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
@@ -1226,7 +1226,9 @@ def plot_group_swr_rate_bysubphase(infos, group_name, *, swr_rate_bysubphase, sa
 
 
 @task(groups=meta_session.analysis_grouped, savepath=("swrs", "swr_rate_byday.svg"))
-def plot_swr_rate_byday(infos, group_name, *, n_swrs_byday, swr_rate_byday, savepath):
+def plot_swr_rate_byday(
+    infos, group_name, *, swr_rate_byday, swr_rate_byday_pval, savepath
+):
     fig, ax = plt.subplots(figsize=(8, 6))
 
     x = np.arange(8) + 1
@@ -1242,60 +1244,24 @@ def plot_swr_rate_byday(infos, group_name, *, n_swrs_byday, swr_rate_byday, save
         ecolor="k",
     )
 
-    # for n_swrs, rect in zip(n_swrs_byday, rects):
-    #     ax.annotate(
-    #         f"{np.sum(n_swrs)}",
-    #         xy=(rect.get_x() + rect.get_width() / 2, 0),
-    #         xytext=(0, 3),  # 3 points vertical offset
-    #         textcoords="offset points",
-    #         ha="center",
-    #         va="bottom",
-    #         fontsize=meta.fontsize_small,
-    #     )
+    for n_swrs, rect in zip(swr_rate_byday, rects):
+        ax.annotate(
+            f"{len(n_swrs)}",
+            xy=(rect.get_x() + rect.get_width() / 2, 0),
+            xytext=(0, 3),  # 3 points vertical offset
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=meta.fontsize_small,
+        )
 
-    # if n_phases == 7:
-    #     used_heights = []
-    #     tol = (plt.ylim()[1] - plt.ylim()[0]) * 0.06
-    #     for left, right in zip(
-    #         meta.rest_times[:-1] + meta.run_times[:-1],
-    #         meta.rest_times[1:] + meta.run_times[1:],
-    #     ):
-    #         pval = mannwhitneyu(y_byphase[left], y_byphase[right])
-    #         start = meta.task_times.index(left)
-    #         end = meta.task_times.index(right)
-    #         height = max(
-    #             heights[start : end + 1].tolist() + [0],
-    #         )
-    #         while any(abs(height - used) < tol for used in used_heights):
-    #             height += tol
-    #         if pval < 0.05:
-    #             significance_bar(
-    #                 start=start,
-    #                 end=end,
-    #                 height=height,
-    #                 pval=pval,
-    #             )
-    #             used_heights.append(height)
-
-    # elif n_phases == 3:
-    #     for left, right in [
-    #         ("phase1", "phase2"),
-    #         ("phase1", "phase3"),
-    #         ("phase2", "phase3"),
-    #     ]:
-    #         pval = mannwhitneyu(y_byphase[left], y_byphase[right])
-    #         start = meta.run_times.index(left)
-    #         end = meta.run_times.index(right)
-    #         significance_bar(
-    #             start=start,
-    #             end=end,
-    #             height=max(
-    #                 heights[start : end + 1].tolist() + [0],
-    #             ),
-    #             pval=pval,
-    #         )
+    for (i, j), pval in swr_rate_byday_pval.items():
+        significance_bar(
+            start=i + 1, end=j + 1, height=max(heights[i : j + 1]), pval=pval
+        )
 
     plt.xticks(x, fontsize=meta.fontsize)
+    plt.xlabel("Day", fontsize=meta.fontsize)
     plt.ylabel("Mean SWR rate (events / min)", fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
 
