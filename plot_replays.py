@@ -19,7 +19,6 @@ from utils import mannwhitneyu
             "exclusive_ph2",
             "difference",
             "difference_ph2",
-            "contrast",
         ]
     },
 )
@@ -55,13 +54,6 @@ def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, sa
         ylabel="Replay proportion\nfor shortcut - familiar",
         color_byvalue=True,
         savepath=savepath["difference_ph2"],
-    )
-    _plot_replay_metric(
-        replay_prop_byphase,
-        ["contrast"],
-        ylabel="Replay proportion contrast\nfor shortcut vs familiar",
-        color_byvalue=True,
-        savepath=savepath["contrast"],
     )
 
 
@@ -100,7 +92,7 @@ def plot_replay_prop_normalized_byphase(
     groups=meta_session.groups,
     savepath={
         key: ("replays-session", f"{key}_replay_prop_byexperience_bytrial.svg")
-        for key in ["overlapping", "exclusive", "difference", "contrast"]
+        for key in ["overlapping", "exclusive", "difference"]
     },
 )
 def plot_group_replay_prop_byexperience(
@@ -138,23 +130,13 @@ def plot_group_replay_prop_byexperience(
         else None,
         savepath=savepath["difference"],
     )
-    _plot_replay_metric(
-        replay_prop_byexperience_bytrial,
-        ["contrast"],
-        ylabel="Replay proportion contrast\nfor shortcut vs familiar",
-        color_byvalue=True,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["contrast"],
-    )
 
 
 @task(
     groups=meta_session.groups,
     savepath={
         key: ("replays-session", f"{key}_replay_prop_byexperience_nofeeder_bytrial.svg")
-        for key in ["overlapping", "exclusive", "difference", "contrast"]
+        for key in ["overlapping", "exclusive", "difference"]
     },
 )
 def plot_group_replay_prop_byexperience_nofeeder_bytrial(
@@ -192,16 +174,6 @@ def plot_group_replay_prop_byexperience_nofeeder_bytrial(
         else None,
         savepath=savepath["difference"],
     )
-    _plot_replay_metric(
-        replay_prop_byexperience_nofeeder_bytrial,
-        ["contrast"],
-        ylabel="Path replay proportion contrast\nfor shortcut vs familiar",
-        color_byvalue=True,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["contrast"],
-    )
 
 
 @task(
@@ -211,7 +183,7 @@ def plot_group_replay_prop_byexperience_nofeeder_bytrial(
             "replays-session",
             f"{key}_replay_prop_byexperience_feederonly.svg",
         )
-        for key in ["overlapping", "exclusive", "difference", "contrast"]
+        for key in ["overlapping", "exclusive", "difference"]
     },
 )
 def plot_group_replay_prop_byexperience_feederonly(
@@ -257,18 +229,6 @@ def plot_group_replay_prop_byexperience_feederonly(
         original_xlabels=original_xlabels,
         labels=labels,
         savepath=savepath["difference"],
-    )
-    _plot_replay_metric(
-        replay_prop_byexperience_feederonly,
-        ["contrast"],
-        ylabel="Feeder replay proportion contrast\nfor shortcut vs familiar",
-        color_byvalue=True,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        original_xlabels=original_xlabels,
-        labels=labels,
-        savepath=savepath["contrast"],
     )
 
 
@@ -337,9 +297,7 @@ def _plot_replay_metric(
                 ),
                 pval=pval[xlabel],
             )
-    elif len(trajectories) == 1 and any(
-        trajectories[0].startswith(key) for key in ["difference", "contrast"]
-    ):
+    elif len(trajectories) == 1 and trajectories[0].startswith("difference"):
         prefix = "only_" if trajectories[0].startswith("difference") else ""
         suffix = "_ph2" if trajectories[0].endswith("_ph2") else ""
         pval = {

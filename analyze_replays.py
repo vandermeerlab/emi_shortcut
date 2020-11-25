@@ -26,7 +26,7 @@ def cache_combined_replay_prop_byphase(
 def cache_replay_prop_normalized_byphase(infos, group_name, *, replay_prop_byphase):
     normalized = {}
     for trajectory in replay_prop_byphase:
-        if trajectory in ["difference", "contrast", "difference_ph2", "contrast_ph2"]:
+        if trajectory in ["difference", "difference_ph2"]:
             continue
         prop = np.array(list(replay_prop_byphase[trajectory].values()))
         prop /= np.mean(prop)

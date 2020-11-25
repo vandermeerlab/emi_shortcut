@@ -663,8 +663,10 @@ def _plot_tc_correlations_histogram(tc_correlations, savepath):
         )
         mean = np.mean(tc_correlations[phases])
         sem = scipy.stats.sem(tc_correlations[phases])
-        ax.axvline(mean, lw=1, c=meta.colors["contrast"])
-        ax.axvspan(mean - sem, mean + sem, facecolor=meta.colors["contrast"], alpha=0.5)
+        ax.axvline(mean, lw=1, c=meta.colors["difference"])
+        ax.axvspan(
+            mean - sem, mean + sem, facecolor=meta.colors["difference"], alpha=0.5
+        )
 
         ax.set_title(f"Phases {phases[-2]}-{phases[-1]}", fontsize=meta.fontsize)
 
@@ -718,8 +720,10 @@ def _plot_tc_correlations_histogram_without13(tc_correlations, savepath):
         )
         mean = np.mean(tc_correlations[phases])
         sem = scipy.stats.sem(tc_correlations[phases])
-        ax.axvline(mean, lw=1, c=meta.colors["contrast"])
-        ax.axvspan(mean - sem, mean + sem, facecolor=meta.colors["contrast"], alpha=0.5)
+        ax.axvline(mean, lw=1, c=meta.colors["difference"])
+        ax.axvspan(
+            mean - sem, mean + sem, facecolor=meta.colors["difference"], alpha=0.5
+        )
 
         ax.set_title(f"Phases {phases[-2]}-{phases[-1]}", fontsize=meta.fontsize)
 
@@ -867,7 +871,7 @@ def _plot_tc_field_remapping(tc_fields_appear, tc_fields_disappear, savepath):
         x + width,
         [prop_disappear["phases12"], prop_disappear["phases23"]],
         width=width,
-        color=meta.colors["contrast"],
+        color=meta.colors["difference"],
         label="Disappear",
     )
     for i, phases in enumerate(["phases12", "phases23"]):

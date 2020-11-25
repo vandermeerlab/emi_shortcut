@@ -1265,18 +1265,6 @@ def get_replay_proportions_byphase(swr_n_byphase, replay_n_byphase):
             - replay_proportion[f"only_u{suffix}"][phase]
             for phase in meta.task_times
         }
-        exclusive_sum = {
-            phase: replay_proportion[f"only_full_shortcut{suffix}"][phase]
-            + replay_proportion[f"only_u{suffix}"][phase]
-            for phase in meta.task_times
-        }
-        replay_proportion[f"contrast{suffix}"] = {
-            phase: replay_proportion[f"difference{suffix}"][phase]
-            / exclusive_sum[phase]
-            if exclusive_sum[phase] > 0
-            else 0
-            for phase in meta.task_times
-        }
 
     return replay_proportion
 
@@ -1347,7 +1335,7 @@ def cache_replay_proportions_normalized_byphase(
 ):
     normalized = {}
     for trajectory in replay_proportions_byphase:
-        if trajectory in ["difference", "contrast"]:
+        if trajectory == "difference":
             continue
         proportions = np.array(list(replay_proportions_byphase[trajectory].values()))
         proportions /= np.mean(proportions)
@@ -1522,16 +1510,6 @@ def get_replay_proportions_byexperience_bytrial(replay_n, swr_n):
         experience: prop["only_full_shortcut"][experience] - prop["only_u"][experience]
         for experience in meta.experiences
     }
-    exclusive_sum = {
-        experience: prop["only_full_shortcut"][experience] + prop["only_u"][experience]
-        for experience in meta.experiences
-    }
-    prop["contrast"] = {
-        experience: prop["difference"][experience] / exclusive_sum[experience]
-        if exclusive_sum[experience] > 0
-        else 0
-        for experience in meta.experiences
-    }
     return prop
 
 
@@ -1547,16 +1525,6 @@ def get_replay_proportions_byexperience(replay_n, swr_n):
     }
     prop["difference"] = {
         experience: prop["only_full_shortcut"][experience] - prop["only_u"][experience]
-        for experience in meta.on_task
-    }
-    exclusive_sum = {
-        experience: prop["only_full_shortcut"][experience] + prop["only_u"][experience]
-        for experience in meta.on_task
-    }
-    prop["contrast"] = {
-        experience: prop["difference"][experience] / exclusive_sum[experience]
-        if exclusive_sum[experience] > 0
-        else 0
         for experience in meta.on_task
     }
     return prop

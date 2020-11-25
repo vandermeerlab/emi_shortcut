@@ -121,7 +121,7 @@ def plot_std_distortion(infos, group_name, *, all_lines, savepath):
         y = np.arange(len(infos))
         for i in range(edges.shape[0] - 1):
             if i == 0 or i == edges.shape[0] - 2:
-                color = meta.colors["contrast"]
+                color = meta.colors["difference"]
             elif trajectory == "u" and i == 2:
                 color = meta.colors["light_u"]
             else:

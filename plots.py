@@ -644,7 +644,7 @@ def plot_replay_metric(
                     ),
                     pval=pval[key][xlabel],
                 )
-        if len(trajectories) == 1 and trajectories[0] in ["difference", "contrast"]:
+        if len(trajectories) == 1 and trajectories[0].startswith("difference"):
             for i, xlabel in enumerate(orig_xlabels):
                 height = max(replay_metric[trajectories[0]][xlabel], 0)
                 significance_text(
@@ -652,7 +652,7 @@ def plot_replay_metric(
                     height=height,
                     pval=pval[trajectories[0]][xlabel],
                 )
-        if len(trajectories) == 1 and trajectories[0] not in ["difference", "contrast"]:
+        if len(trajectories) == 1 and not trajectories[0].startswith("difference"):
             for (left, right), pp in pval[trajectories[0]].items():
                 start = meta.task_times.index(left)
                 end = meta.task_times.index(right)
