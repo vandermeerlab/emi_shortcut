@@ -442,24 +442,8 @@ def plot_swr_rate_bybin(
     )
 
 
-@task(
-    groups=meta_session.groups,
-    savepath={
-        key: ("replays", f"{key}_replays_bybin.svg")
-        for key in ["overlapping", "exclusive"]
-    },
-)
+@task(groups=meta_session.groups, savepath=("replays", "exclusive_replays_bybin.svg"))
 def plot_replays_bybin(infos, group_name, *, replays_bybin, savepath):
-    plot_both_by_standard_position(
-        replays_bybin,
-        ylabel="Replay counts",
-        std_axvlines=True,
-        title={
-            trajectory: meta.trajectories_labels[trajectory]
-            for trajectory in meta.trajectories
-        },
-        savepath=savepath["overlapping"],
-    )
     plot_both_by_standard_position(
         replays_bybin,
         ylabel="Replay counts",
@@ -471,31 +455,18 @@ def plot_replays_bybin(infos, group_name, *, replays_bybin, savepath):
             trajectory: meta.trajectories_labels[trajectory]
             for trajectory in ["only_u", "only_full_shortcut"]
         },
-        savepath=savepath["exclusive"],
+        savepath=savepath,
     )
 
 
 @task(
     groups=meta_session.groups,
-    savepath={
-        key: ("replays", f"{key}_matched_replays_bybin.svg")
-        for key in ["overlapping", "exclusive"]
-    },
+    savepath=("replays", "exclusive_matched_replays_bybin.svg"),
 )
 def plot_matched_replays_bybin(infos, group_name, *, matched_replays_bybin, savepath):
     plot_both_by_standard_position(
         matched_replays_bybin,
         ylabel="Replay counts",
-        std_axvlines=True,
-        title={
-            trajectory: meta.trajectories_labels[trajectory]
-            for trajectory in meta.trajectories
-        },
-        savepath=savepath["overlapping"],
-    )
-    plot_both_by_standard_position(
-        matched_replays_bybin,
-        ylabel="Replay counts",
         # ylim=150,
         left="only_u",
         right="only_full_shortcut",
@@ -503,16 +474,12 @@ def plot_matched_replays_bybin(infos, group_name, *, matched_replays_bybin, save
             trajectory: meta.trajectories_labels[trajectory]
             for trajectory in ["only_u", "only_full_shortcut"]
         },
-        savepath=savepath["exclusive"],
+        savepath=savepath,
     )
 
 
 @task(
-    groups=meta_session.groups,
-    savepath={
-        key: ("replays", f"{key}_replay_rate_bybin.svg")
-        for key in ["overlapping", "exclusive"]
-    },
+    groups=meta_session.groups, savepath=("replays", "exclusive_replay_rate_bybin.svg")
 )
 def plot_replay_rate_bybin(infos, group_name, *, replay_rate_bybin, savepath):
     replay_rate_bybin = {
@@ -523,14 +490,9 @@ def plot_replay_rate_bybin(infos, group_name, *, replay_rate_bybin, savepath):
     plot_both_by_standard_position(
         replay_rate_bybin,
         ylabel="Replay rate (events/min)",
-        savepath=savepath["overlapping"],
-    )
-    plot_both_by_standard_position(
-        replay_rate_bybin,
-        ylabel="Replay rate (events/min)",
         left="only_u",
         right="only_full_shortcut",
-        savepath=savepath["exclusive"],
+        savepath=savepath,
     )
 
 
@@ -687,21 +649,9 @@ def plot_swrs_in_position(info, *, task_times, swr_in_position, position, savepa
 
 @task(
     groups=meta_session.analysis_grouped,
-    savepath={
-        key: ("replays", f"{key}_replay_n_byphase.svg")
-        for key in ["overlapping", "exclusive"]
-    },
+    savepath=("replays", "exclusive_replay_n_byphase.svg"),
 )
 def plot_group_replay_n_byphase(infos, group_name, *, replay_n_byphase, savepath):
-    plot_replay_metric(
-        replay_n_byphase,
-        ["u", "full_shortcut"],
-        ylabel="Number of replays",
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_n_byphase,
         ["both", "only_u", "only_full_shortcut"],
@@ -709,7 +659,7 @@ def plot_group_replay_n_byphase(infos, group_name, *, replay_n_byphase, savepath
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else None,
-        savepath=savepath["exclusive"],
+        savepath=savepath,
     )
 
 
@@ -717,7 +667,7 @@ def plot_group_replay_n_byphase(infos, group_name, *, replay_n_byphase, savepath
     groups=meta_session.groups,
     savepath={
         key: ("replays", f"{key}_replay_proportions_byphase.svg")
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_group_replay_proportions_byphase(
@@ -728,16 +678,6 @@ def plot_group_replay_proportions_byphase(
     replay_proportions_byphase_pval,
     savepath,
 ):
-    plot_replay_metric(
-        replay_proportions_byphase,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of SWRs\nthat are replays",
-        pval=replay_proportions_byphase_pval,
-        title=f"{meta.title_labels[group_name]}\n n = {len(infos)} sessions"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byphase,
         ["only_u", "only_full_shortcut"],
@@ -766,19 +706,12 @@ def plot_group_replay_proportions_byphase(
     infos=meta_session.all_infos,
     savepath={
         key: ("replays", f"{key}_replay_proportions_byphase.svg")
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_replay_proportions_byphase(
     info, *, replay_proportions_byphase, replay_proportions_byphase_pval, savepath
 ):
-    plot_replay_metric(
-        replay_proportions_byphase,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of SWRs\nthat are replays",
-        pval=replay_proportions_byphase_pval,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byphase,
         ["only_u", "only_full_shortcut"],
@@ -797,36 +730,25 @@ def plot_replay_proportions_byphase(
 
 
 @task(
-    infos=meta_session.all_infos,
-    savepath={
-        key: ("replays", f"{key}_replay_n_byphase.svg")
-        for key in ["overlapping", "exclusive"]
-    },
+    infos=meta_session.all_infos, savepath=("replays", "exclusive_replay_n_byphase.svg")
 )
 def plot_replay_n_byphase(info, *, replay_n_byphase, savepath):
     plot_replay_metric(
         replay_n_byphase,
-        ["u", "full_shortcut"],
-        ylabel="Number of replays",
-        savepath=savepath["overlapping"],
-    )
-    plot_replay_metric(
-        replay_n_byphase,
         ["both", "only_u", "only_full_shortcut"],
         ylabel="Number of replays",
-        savepath=savepath["exclusive"],
+        savepath=savepath,
     )
 
 
 @task(
     groups=meta_session.groups,
     savepath={
-        f"{key}-{trajectory}": (
+        f"exclusive-{trajectory}": (
             "replays",
-            f"{key}_replay_proportions_normalized_byphase_{trajectory}.svg",
+            f"exclusive_replay_proportions_normalized_byphase_{trajectory}.svg",
         )
         for trajectory in meta.trajectories
-        for key in ["overlapping", "exclusive"]
     },
 )
 def plot_replay_proportions_normalized_byphase(
@@ -838,38 +760,25 @@ def plot_replay_proportions_normalized_byphase(
     savepath,
 ):
     for trajectory in meta.trajectories:
-        for key in ["overlapping", "exclusive"]:
-            plot_replay_metric(
-                replay_proportions_normalized_byphase,
-                [f"{'only_' if key == 'exclusive' else ''}{trajectory}"],
-                ylabel="Replay proportion /\nmean replay proportion",
-                pval=replay_proportions_byphase_pval,
-                title=f"{meta.title_labels[group_name]}"
-                if group_name not in ["all", "combined"]
-                else None,
-                savepath=savepath[f"{key}-{trajectory}"],
-            )
+        plot_replay_metric(
+            replay_proportions_normalized_byphase,
+            [f"only_{trajectory}"],
+            ylabel="Replay proportion /\nmean replay proportion",
+            pval=replay_proportions_byphase_pval,
+            title=f"{meta.title_labels[group_name]}"
+            if group_name not in ["all", "combined"]
+            else None,
+            savepath=savepath[f"exclusive-{trajectory}"],
+        )
 
 
 @task(
     groups=meta_session.groups,
-    savepath={
-        key: ("replays", f"{key}_replay_n_byexperience.svg")
-        for key in ["overlapping", "exclusive"]
-    },
+    savepath=("replays", "exclusive_replay_n_byexperience.svg"),
 )
 def plot_group_replay_n_byexperience(
     infos, group_name, *, replay_n_byexperience, savepath
 ):
-    plot_replay_metric(
-        replay_n_byexperience,
-        ["u", "full_shortcut"],
-        ylabel="Number of replays",
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_n_byexperience,
         ["both", "only_u", "only_full_shortcut"],
@@ -877,7 +786,7 @@ def plot_group_replay_n_byexperience(
         title=f"{meta.title_labels[group_name]}"
         if group_name not in ["all", "combined"]
         else None,
-        savepath=savepath["exclusive"],
+        savepath=savepath,
     )
 
 
@@ -885,7 +794,7 @@ def plot_group_replay_n_byexperience(
     groups=meta_session.groups,
     savepath={
         key: ("replays", f"{key}_replay_proportions_byexperience_bytrial.svg")
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_group_replay_proportions_byexperience(
@@ -896,16 +805,6 @@ def plot_group_replay_proportions_byexperience(
     replay_proportions_byexperience_bytrial_pval,
     savepath,
 ):
-    plot_replay_metric(
-        replay_proportions_byexperience_bytrial,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of SWRs\nthat are replays",
-        pval=replay_proportions_byexperience_bytrial_pval,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byexperience_bytrial,
         ["only_u", "only_full_shortcut"],
@@ -936,7 +835,7 @@ def plot_group_replay_proportions_byexperience(
             "replays",
             f"{key}_replay_proportions_byexperience_feederonly_bytrial.svg",
         )
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_group_replay_proportions_byexperience_feederonly_bytrial(
@@ -947,16 +846,6 @@ def plot_group_replay_proportions_byexperience_feederonly_bytrial(
     replay_proportions_byexperience_feederonly_bytrial_pval,
     savepath,
 ):
-    plot_replay_metric(
-        replay_proportions_byexperience_feederonly_bytrial,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of feeder SWRs\nthat are replays",
-        pval=replay_proportions_byexperience_feederonly_bytrial_pval,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byexperience_feederonly_bytrial,
         ["only_u", "only_full_shortcut"],
@@ -984,7 +873,7 @@ def plot_group_replay_proportions_byexperience_feederonly_bytrial(
     groups=meta_session.groups,
     savepath={
         key: ("replays", f"{key}_replay_proportions_byexperience_nofeeder_bytrial.svg")
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_group_replay_proportions_byexperience_nofeeder_bytrial(
@@ -995,16 +884,6 @@ def plot_group_replay_proportions_byexperience_nofeeder_bytrial(
     replay_proportions_byexperience_nofeeder_bytrial_pval,
     savepath,
 ):
-    plot_replay_metric(
-        replay_proportions_byexperience_nofeeder_bytrial,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of path SWRs\nthat are replays",
-        pval=replay_proportions_byexperience_nofeeder_bytrial_pval,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byexperience_nofeeder_bytrial,
         ["only_u", "only_full_shortcut"],
@@ -1035,7 +914,7 @@ def plot_group_replay_proportions_byexperience_nofeeder_bytrial(
             "replays",
             f"{key}_replay_proportions_byexperience_feederonly.svg",
         )
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_group_replay_proportions_byexperience_feederonly(
@@ -1049,18 +928,6 @@ def plot_group_replay_proportions_byexperience_feederonly(
     original_xlabels = meta.on_task
     labels = meta.on_task_labels
 
-    plot_replay_metric(
-        replay_proportions_byexperience_feederonly,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of feeder SWRs\nthat are replays",
-        pval=replay_proportions_byexperience_feederonly_pval,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        original_xlabels=original_xlabels,
-        labels=labels,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byexperience_feederonly,
         ["only_u", "only_full_shortcut"],
@@ -1095,7 +962,7 @@ def plot_group_replay_proportions_byexperience_feederonly(
             "replays",
             f"{key}_replay_proportions_byexperience_nofeeder.svg",
         )
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_group_replay_proportions_byexperience_nofeeder(
@@ -1109,18 +976,6 @@ def plot_group_replay_proportions_byexperience_nofeeder(
     original_xlabels = meta.on_task
     labels = meta.on_task_labels
 
-    plot_replay_metric(
-        replay_proportions_byexperience_nofeeder,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of path SWRs\nthat are replays",
-        pval=replay_proportions_byexperience_nofeeder_pval,
-        title=f"{meta.title_labels[group_name]}"
-        if group_name not in ["all", "combined"]
-        else None,
-        original_xlabels=original_xlabels,
-        labels=labels,
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byexperience_nofeeder,
         ["only_u", "only_full_shortcut"],
@@ -1152,18 +1007,12 @@ def plot_group_replay_proportions_byexperience_nofeeder(
     infos=meta_session.all_infos,
     savepath={
         key: ("replays", f"{key}_replay_proportions_byexperience.svg")
-        for key in ["overlapping", "exclusive", "difference"]
+        for key in ["exclusive", "difference"]
     },
 )
 def plot_replay_proportions_byexperience(
     info, *, replay_proportions_byexperience, savepath
 ):
-    plot_replay_metric(
-        replay_proportions_byexperience,
-        ["u", "full_shortcut"],
-        ylabel="Proportion of SWRs\nthat are replays",
-        savepath=savepath["overlapping"],
-    )
     plot_replay_metric(
         replay_proportions_byexperience,
         ["only_u", "only_full_shortcut"],
@@ -1181,23 +1030,14 @@ def plot_replay_proportions_byexperience(
 
 @task(
     infos=meta_session.all_infos,
-    savepath={
-        key: ("replays", f"{key}_replay_n_byexperience.svg")
-        for key in ["overlapping", "exclusive"]
-    },
+    savepath=("replays", "exclusive_replay_n_byexperience.svg"),
 )
 def plot_replay_n_byexperience(info, *, replay_n_byexperience, savepath):
     plot_replay_metric(
         replay_n_byexperience,
-        ["u", "full_shortcut"],
-        ylabel="Number of replays",
-        savepath=savepath["overlapping"],
-    )
-    plot_replay_metric(
-        replay_n_byexperience,
         ["both", "only_u", "only_full_shortcut"],
         ylabel="Number of replays",
-        savepath=savepath["exclusive"],
+        savepath=savepath,
     )
 
 

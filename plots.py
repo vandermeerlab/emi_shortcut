@@ -632,7 +632,6 @@ def plot_replay_metric(
     # Add significance bars
     if pval is not None:
         if len(trajectories) == 2 and trajectories[0].endswith("u"):
-            key = "exclusive" if trajectories[0].startswith("only_") else "overlapping"
             for i, xlabel in enumerate(orig_xlabels):
                 significance_bar(
                     start=i - 0.05,
@@ -642,7 +641,7 @@ def plot_replay_metric(
                         replay_metric[trajectories[1]][xlabel],
                         0,
                     ),
-                    pval=pval[key][xlabel],
+                    pval=pval["exclusive"][xlabel],
                 )
         if len(trajectories) == 1 and trajectories[0].startswith("difference"):
             for i, xlabel in enumerate(orig_xlabels):

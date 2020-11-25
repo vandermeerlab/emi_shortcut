@@ -1300,19 +1300,17 @@ def get_replay_proportions_byphase_pval(swr_n_byphase, replay_n_byphase):
                 else 1.0
             )
 
-    for key in ["overlapping", "exclusive"]:
-        prefix = "only_" if key == "exclusive" else ""
-        pval[key] = {
-            task_time: ranksum_test(
-                xtotal=swr_n_byphase[task_time],
-                xn=replay_n_byphase[f"{prefix}u"][task_time],
-                ytotal=swr_n_byphase[task_time],
-                yn=replay_n_byphase[f"{prefix}full_shortcut"][task_time],
-            )
-            if swr_n_byphase[task_time] > 0
-            else 1.0
-            for task_time in meta.task_times
-        }
+    pval["exclusive"] = {
+        task_time: ranksum_test(
+            xtotal=swr_n_byphase[task_time],
+            xn=replay_n_byphase["only_u"][task_time],
+            ytotal=swr_n_byphase[task_time],
+            yn=replay_n_byphase["only_full_shortcut"][task_time],
+        )
+        if swr_n_byphase[task_time] > 0
+        else 1.0
+        for task_time in meta.task_times
+    }
 
     return pval
 
@@ -1552,39 +1550,33 @@ def cache_combined_replay_proportions_byexperience_bytrial(
 
 def get_replay_proportions_byexperience_pval(replay_n, swr_n):
     return {
-        key: {
+        "exclusive": {
             task_time: ranksum_test(
                 xtotal=swr_n[task_time],
-                xn=replay_n[f"{'only_' if key == 'exclusive' else ''}u"][task_time],
+                xn=replay_n["only_u"][task_time],
                 ytotal=swr_n[task_time],
-                yn=replay_n[f"{'only_' if key == 'exclusive' else ''}full_shortcut"][
-                    task_time
-                ],
+                yn=replay_n["only_full_shortcut"][task_time],
             )
             if swr_n[task_time] > 0
             else 1.0
             for task_time in meta.on_task
         }
-        for key in ["overlapping", "exclusive"]
     }
 
 
 def get_replay_proportions_byexperience_bytrial_pval(replay_n, swr_n):
     return {
-        key: {
+        "exclusive": {
             task_time: ranksum_test(
                 xtotal=swr_n[task_time],
-                xn=replay_n[f"{'only_' if key == 'exclusive' else ''}u"][task_time],
+                xn=replay_n["only_u"][task_time],
                 ytotal=swr_n[task_time],
-                yn=replay_n[f"{'only_' if key == 'exclusive' else ''}full_shortcut"][
-                    task_time
-                ],
+                yn=replay_n["only_full_shortcut"][task_time],
             )
             if swr_n[task_time] > 0
             else 1.0
             for task_time in meta.experiences
         }
-        for key in ["overlapping", "exclusive"]
     }
 
 
