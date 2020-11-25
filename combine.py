@@ -2328,6 +2328,29 @@ def fig_beh_bytrial(panels, savepath):
     savefig(fig, savepath)
 
 
+@task(
+    panels={
+        "A": ("grp-combined", "swrs", "shuffle_correlation_hist-u.svg"),
+        "B": ("grp-combined", "swrs", "shuffle_correlation_hist-full_shortcut.svg"),
+    },
+    savepath=("figures", "shuffle_corr.svg"),
+    copy_to="shuffle_corr.pdf",
+)
+def fig_shuffle_corr(panels, savepath):
+    padding = 20
+    full_width = 1200 + padding
+    full_height = 420 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el("A", panels["A"], 20 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    fig.append(
+        el("B", panels["B"], 600 + padding, 20 + padding, offset=(-padding / 3, 0))
+    )
+    savefig(fig, savepath)
+
+
 def task_combine_tex():
     def combine_tex_files(tex_files, savepath):
         with open(savepath, "w") as outfile:
