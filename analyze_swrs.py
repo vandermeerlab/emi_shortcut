@@ -436,6 +436,30 @@ def save_n_swrs(infos, group_name, *, all_swrs, savepath):
         )
 
 
+@task(
+    groups=meta_session.analysis_grouped, cache_saves=["n_swrs_byday", "swr_rate_byday"]
+)
+def cache_swr_rate_byday(infos, group_name, *, all_swrs, all_task_times):
+    n_swrs = [[] for _ in range(8)]
+    swr_rate = [[] for _ in range(8)]
+
+    for info, swrs, task_times in zip(infos, all_swrs, all_task_times):
+        day = int(info.session_id[-1]) - 1
+        swrs = swrs.intersect(task_times["all"])
+        n_swrs[day].append(swrs.n_epochs)
+        swr_rate[day].append((swrs.n_epochs / np.sum(task_times["all"].durations)) * 60)
+
+    return {"n_swrs_byday": n_swrs, "swr_rate_byday": swr_rate}
+
+
+@task(groups=meta_session.analysis_grouped, savepath=("swrs", "swr_rate_byday.tex"))
+def save_swr_rate_byday(infos, group_name, *, swr_rate_byday, savepath):
+    with open(savepath, "w") as fp:
+        print("% SWR events by day", file=fp)
+
+        # print(
+
+
 @task(groups=meta_session.analysis_grouped, cache_saves="swrs_durations")
 def cache_combined_swr_durations(infos, group_name, *, all_swrs):
     durations = []
