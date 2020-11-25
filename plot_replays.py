@@ -13,7 +13,14 @@ from utils import mannwhitneyu
     groups=meta_session.groups,
     savepath={
         key: ("replays-session", f"{key}_replay_prop_byphase.svg")
-        for key in ["overlapping", "exclusive", "difference", "contrast"]
+        for key in [
+            "overlapping",
+            "exclusive",
+            "exclusive_ph2",
+            "difference",
+            "difference_ph2",
+            "contrast",
+        ]
     },
 )
 def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, savepath):
@@ -31,10 +38,23 @@ def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, sa
     )
     _plot_replay_metric(
         replay_prop_byphase,
+        ["only_u_ph2", "only_full_shortcut_ph2"],
+        ylabel="Proportion of SWRs\nthat are replays",
+        savepath=savepath["exclusive_ph2"],
+    )
+    _plot_replay_metric(
+        replay_prop_byphase,
         ["difference"],
         ylabel="Replay proportion\nfor shortcut - familiar",
         color_byvalue=True,
         savepath=savepath["difference"],
+    )
+    _plot_replay_metric(
+        replay_prop_byphase,
+        ["difference_ph2"],
+        ylabel="Replay proportion\nfor shortcut - familiar",
+        color_byvalue=True,
+        savepath=savepath["difference_ph2"],
     )
     _plot_replay_metric(
         replay_prop_byphase,
@@ -298,7 +318,7 @@ def _plot_replay_metric(
         )
         heights[trajectory] = means + sems
 
-    if len(trajectories) == 2 and trajectories[0].endswith("u"):
+    if len(trajectories) == 2 and "full_shortcut" in trajectories[1]:
         pval = {
             xlabel: mannwhitneyu(
                 replay_metric[trajectories[0]][xlabel],
@@ -317,12 +337,15 @@ def _plot_replay_metric(
                 ),
                 pval=pval[xlabel],
             )
-    elif len(trajectories) == 1 and trajectories[0] in ["difference", "contrast"]:
-        prefix = "only_" if trajectories[0] == "difference" else ""
+    elif len(trajectories) == 1 and any(
+        trajectories[0].startswith(key) for key in ["difference", "contrast"]
+    ):
+        prefix = "only_" if trajectories[0].startswith("difference") else ""
+        suffix = "_ph2" if trajectories[0].endswith("_ph2") else ""
         pval = {
             xlabel: mannwhitneyu(
-                replay_metric[f"{prefix}u"][xlabel],
-                replay_metric[f"{prefix}full_shortcut"][xlabel],
+                replay_metric[f"{prefix}u{suffix}"][xlabel],
+                replay_metric[f"{prefix}full_shortcut{suffix}"][xlabel],
             )
             for xlabel in orig_xlabels
         }
@@ -333,7 +356,8 @@ def _plot_replay_metric(
                 height=max(heights[trajectories[0]][i], 0),
                 pval=pval[xlabel],
             )
-    elif len(trajectories) == 1 and trajectories[0] not in ["difference", "contrast"]:
+    else:
+        # trajectories == ["u"] or ["full_shortcut"], for normalized plots
         for left, right in zip(
             meta.rest_times[:-1] + meta.run_times[:-1],
             meta.rest_times[1:] + meta.run_times[1:],

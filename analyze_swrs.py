@@ -169,7 +169,7 @@ def cache_swr_correlations(info, *, swrs, matched_tc_spikes):
     swr_correlations_shuffled_p = {}
     rng = np.random.RandomState(meta.seed)
 
-    for trajectory in meta.trajectories:
+    for trajectory in matched_tc_spikes:
         correlations = []
         correlations_p = []
         shuffled = []
@@ -207,7 +207,7 @@ def cache_combined_swr_correlations(infos, group_name, *, all_swr_correlations):
         trajectory: np.hstack(
             [correlations[trajectory] for correlations in all_swr_correlations]
         )
-        for trajectory in meta.trajectories
+        for trajectory in all_swr_correlations[0]
     }
 
 
@@ -219,7 +219,7 @@ def cache_combined_swr_correlation_percentiles(
         trajectory: np.hstack(
             [percentiles[trajectory] for percentiles in all_swr_correlation_percentiles]
         )
-        for trajectory in meta.trajectories
+        for trajectory in all_swr_correlation_percentiles[0]
     }
 
 
@@ -231,7 +231,7 @@ def cache_combined_swr_shuffled_percentiles(
         trajectory: np.hstack(
             [percentiles[trajectory] for percentiles in all_swr_shuffled_percentiles]
         )
-        for trajectory in meta.trajectories
+        for trajectory in all_swr_shuffled_percentiles[0]
     }
 
 
@@ -243,7 +243,7 @@ def cache_combined_swr_correlations_shuffled(
         trajectory: np.vstack(
             [correlations[trajectory] for correlations in all_swr_correlations_shuffled]
         )
-        for trajectory in meta.trajectories
+        for trajectory in all_swr_correlations_shuffled
     }
 
 
@@ -262,7 +262,7 @@ def cache_replays(info, *, swrs, swr_correlations, swr_correlations_shuffled):
     percentiles = {}
     s_percentiles = {}
 
-    for trajectory in meta.trajectories:
+    for trajectory in swr_correlations:
         traj_replays = nept.Epoch([], [])
         traj_replays_idx = []
         traj_percentiles = []
@@ -293,20 +293,25 @@ def cache_replays(info, *, swrs, swr_correlations, swr_correlations_shuffled):
         percentiles[trajectory] = np.array(traj_percentiles)
         s_percentiles[trajectory] = np.array(traj_s_percentiles)
 
-    for trajectory in meta.exclusive_trajectories:
+    for trajectory in meta.exclusive_trajectories + meta.exclusive_trajectories_ph2:
         replays[trajectory] = nept.Epoch([], [])
         replays_idx[trajectory] = []
 
-    for i in range(swrs.n_epochs):
-        if i in replays_idx["u"] and i in replays_idx["full_shortcut"]:
-            replays["both"] = replays["both"].join(swrs[i])
-            replays_idx["both"].append(i)
-        elif i in replays_idx["u"]:
-            replays["only_u"] = replays["only_u"].join(swrs[i])
-            replays_idx["only_u"].append(i)
-        elif i in replays_idx["full_shortcut"]:
-            replays["only_full_shortcut"] = replays["only_full_shortcut"].join(swrs[i])
-            replays_idx["only_full_shortcut"].append(i)
+    for suffix in ["", "_ph2"]:
+        u = f"u{suffix}"
+        both = f"both{suffix}"
+        only_u = f"only_u{suffix}"
+        only_full_shortcut = f"only_full_shortcut{suffix}"
+        for i in range(swrs.n_epochs):
+            if i in replays_idx[u] and i in replays_idx["full_shortcut"]:
+                replays[both] = replays[both].join(swrs[i])
+                replays_idx[both].append(i)
+            elif i in replays_idx[u]:
+                replays[only_u] = replays[only_u].join(swrs[i])
+                replays_idx[only_u].append(i)
+            elif i in replays_idx["full_shortcut"]:
+                replays[only_full_shortcut] = replays[only_full_shortcut].join(swrs[i])
+                replays_idx[only_full_shortcut].append(i)
 
     return {
         "replays": replays,
@@ -338,7 +343,7 @@ def cache_replays_byphase(info, *, task_times, replays):
             )
             for phase in meta.task_times
         }
-        for trajectory in meta.trajectories + meta.exclusive_trajectories
+        for trajectory in replays
     }
 
 
@@ -572,7 +577,7 @@ def cache_swr_rate_byphase(info, *, task_times, swrs_byphase, position):
 def cache_replay_rate_byphase(info, *, task_times, replays_byphase, position):
     rates = {}
     n = {}
-    for trajectory in meta.trajectories + meta.exclusive_trajectories:
+    for trajectory in replays_byphase:
         rates[trajectory], n[trajectory] = get_swr_rate_byphase(
             task_times, replays_byphase[trajectory], position, restonly=False
         )
@@ -660,7 +665,7 @@ def cache_combined_replay_n_byphase(infos, group_name, *, all_replay_n_byphase):
         trajectory: aggregate.combine_with_sum(
             [replay_n_byphase[trajectory] for replay_n_byphase in all_replay_n_byphase]
         )
-        for trajectory in meta.trajectories + meta.exclusive_trajectories
+        for trajectory in all_replay_n_byphase[0]
     }
 
 
@@ -1249,22 +1254,25 @@ def get_replay_proportions_byphase(swr_n_byphase, replay_n_byphase):
                 if swr_n_byphase[phase] > 0
                 else 0
             )
-    replay_proportion["difference"] = {
-        phase: replay_proportion["only_full_shortcut"][phase]
-        - replay_proportion["only_u"][phase]
-        for phase in meta.task_times
-    }
-    exclusive_sum = {
-        phase: replay_proportion["only_full_shortcut"][phase]
-        + replay_proportion["only_u"][phase]
-        for phase in meta.task_times
-    }
-    replay_proportion["contrast"] = {
-        phase: replay_proportion["difference"][phase] / exclusive_sum[phase]
-        if exclusive_sum[phase] > 0
-        else 0
-        for phase in meta.task_times
-    }
+
+    for suffix in ["", "_ph2"]:
+        replay_proportion[f"difference{suffix}"] = {
+            phase: replay_proportion[f"only_full_shortcut{suffix}"][phase]
+            - replay_proportion[f"only_u{suffix}"][phase]
+            for phase in meta.task_times
+        }
+        exclusive_sum = {
+            phase: replay_proportion[f"only_full_shortcut{suffix}"][phase]
+            + replay_proportion[f"only_u{suffix}"][phase]
+            for phase in meta.task_times
+        }
+        replay_proportion[f"contrast{suffix}"] = {
+            phase: replay_proportion[f"difference{suffix}"][phase]
+            / exclusive_sum[phase]
+            if exclusive_sum[phase] > 0
+            else 0
+            for phase in meta.task_times
+        }
 
     return replay_proportion
 
@@ -1327,30 +1335,6 @@ def cache_combined_replay_proportions_byphase_pval(
     infos, group_name, *, swr_n_byphase, replay_n_byphase
 ):
     return get_replay_proportions_byphase_pval(swr_n_byphase, replay_n_byphase)
-
-
-@task(
-    groups=meta_session.analysis_grouped,
-    savepath=("replays", "replay_proportions_byphase_pval.tex"),
-)
-def save_replay_proportions_byphase_pval(
-    infos,
-    group_name,
-    *,
-    replay_proportions_byphase_pval,
-    savepath,
-):
-    key = "exclusive"
-    phase = "phase3"
-    with open(savepath, "w") as fp:
-        print("% replay proportions byphase pval", file=fp)
-        pval = latex_float(replay_proportions_byphase_pval[key][phase])
-        phase = "phasethree" if phase == "phase3" else phase
-        print(
-            fr"\def \replayprop{phase}pval/{{{pval}}}",
-            file=fp,
-        )
-        print("% ---------", file=fp)
 
 
 @task(groups=meta_session.analysis_grouped, cache_saves="replay_proportions_byphase_df")

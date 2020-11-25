@@ -26,7 +26,7 @@ def cache_combined_replay_prop_byphase(
 def cache_replay_prop_normalized_byphase(infos, group_name, *, replay_prop_byphase):
     normalized = {}
     for trajectory in replay_prop_byphase:
-        if trajectory in ["difference", "contrast"]:
+        if trajectory in ["difference", "contrast", "difference_ph2", "contrast_ph2"]:
             continue
         prop = np.array(list(replay_prop_byphase[trajectory].values()))
         prop /= np.mean(prop)
@@ -95,6 +95,26 @@ def save_replay_prop_normalized_byphase_pval(
         pval = latex_float(pval)
         print(
             fr"\def \replaynormalizedfullshortcuttwothreepval/{{{pval}}}",
+            file=fp,
+        )
+        print("% ---------", file=fp)
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("replays", "replay_prop_byphase_pval.tex"),
+)
+def save_replay_prop_byphase_pval(infos, group_name, *, replay_prop_byphase, savepath):
+    phase = "phase3"
+    with open(savepath, "w") as fp:
+        print("% replay proportions byphase pval", file=fp)
+        pval = mannwhitneyu(
+            replay_prop_byphase["only_u"][phase],
+            replay_prop_byphase["only_full_shortcut"][phase],
+        )
+        phase = "phasethree" if phase == "phase3" else phase
+        print(
+            fr"\def \replayprop{phase}pval/{{{latex_float(pval)}}}",
             file=fp,
         )
         print("% ---------", file=fp)

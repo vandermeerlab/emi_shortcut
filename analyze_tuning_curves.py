@@ -349,6 +349,14 @@ def cache_full_matched_tuning_spikes(
             speed_limit=meta.std_speed_limit,
             t_smooth=meta.std_t_smooth,
         )
+    linear["u_ph2"], tuning_spikes["u_ph2"] = restrict_linear_and_spikes(
+        linear=tc_matched_linear["u"],
+        spikes=spikes,
+        maze_times=task_times["phase2"],
+        trials=trials["u"],
+        speed_limit=meta.std_speed_limit,
+        t_smooth=meta.std_t_smooth,
+    )
     return {
         "full_matched_tuning_spikes": tuning_spikes,
         "tc_matched_linear_restricted": linear,
@@ -364,7 +372,7 @@ def cache_full_matched_tuning_curves(
 ):
     tcs = {}
     occ = {}
-    for trajectory in meta.trajectories:
+    for trajectory in full_matched_tuning_spikes:
         tcs[trajectory], occ[trajectory] = nept.tuning_curve_1d(
             tc_matched_linear_restricted[trajectory],
             full_matched_tuning_spikes[trajectory],
@@ -387,7 +395,7 @@ def cache_matched_tc_order(
             tuning_curves=full_matched_tuning_curves[trajectory],
             spikes=full_matched_tuning_spikes[trajectory],
         )
-        for trajectory in meta.trajectories
+        for trajectory in full_matched_tuning_curves
     }
 
 
@@ -395,7 +403,7 @@ def cache_matched_tc_order(
 def cache_matched_tuning_curves(info, *, full_matched_tuning_curves, matched_tc_order):
     return {
         trajectory: full_matched_tuning_curves[trajectory][matched_tc_order[trajectory]]
-        for trajectory in meta.trajectories
+        for trajectory in full_matched_tuning_curves
     }
 
 
@@ -406,7 +414,7 @@ def cache_matched_tuning_spikes(info, *, full_matched_tuning_spikes, matched_tc_
             full_matched_tuning_spikes[trajectory][i]
             for i in matched_tc_order[trajectory]
         ]
-        for trajectory in meta.trajectories
+        for trajectory in full_matched_tuning_spikes
     }
 
 
@@ -414,7 +422,7 @@ def cache_matched_tuning_spikes(info, *, full_matched_tuning_spikes, matched_tc_
 def cache_matched_tc_spikes(info, *, spikes, matched_tc_order):
     return {
         trajectory: [spikes[i] for i in matched_tc_order[trajectory]]
-        for trajectory in meta.trajectories
+        for trajectory in matched_tc_order
     }
 
 
