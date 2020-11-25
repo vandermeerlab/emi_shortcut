@@ -121,8 +121,7 @@ def cache_combined_swr_n_byzone_restonly(
     return aggregate.combine_with_sum(all_swr_n_byzone_restonly)
 
 
-def get_swr_correlation(swr_spikes):
-    rng = np.random.RandomState(meta.seed)
+def get_swr_correlation(swr_spikes, rng):
     active = [len(spikes.time) > 0 for spikes in swr_spikes]
     if np.sum(active) < meta.min_n_active:
         return (
@@ -168,6 +167,7 @@ def cache_swr_correlations(info, *, swrs, matched_tc_spikes):
     swr_correlations_p = {}
     swr_correlations_shuffled = {}
     swr_correlations_shuffled_p = {}
+    rng = np.random.RandomState(meta.seed)
 
     for trajectory in meta.trajectories:
         correlations = []
@@ -180,7 +180,8 @@ def cache_swr_correlations(info, *, swrs, matched_tc_spikes):
                 swr_spikes=[
                     spiketrain.time_slice(swr.start, swr.stop)
                     for spiketrain in matched_tc_spikes[trajectory]
-                ]
+                ],
+                rng=rng,
             )
             correlations.append(correlation)
             correlations_p.append(correlation_p)
