@@ -409,8 +409,9 @@ def _plot_decoding_preference(
     if ylim is not None:
         plt.ylim(ylim)
 
+    h_adjust = (plt.ylim()[1] - plt.ylim()[0]) * 0.02
     for i, phase_preference in enumerate(mean_preference):
-        significance_text(x[i], phase_preference, pvals[i])
+        significance_text(x[i], phase_preference + h_adjust, pvals[i])
 
     plt.locator_params(axis="y", nbins=6)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)

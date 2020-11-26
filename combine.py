@@ -1187,6 +1187,49 @@ def fig_replay_summary_byphase_ppt(panels, savepath):
         "A": (
             "grp-combined",
             "replays-session",
+            "exclusive_ph2_replay_prop_byphase.svg",
+        ),
+        "B": (
+            "grp-combined",
+            "replays-session",
+            "difference_ph2_replay_prop_byphase.svg",
+        ),
+    },
+    savepath=("figures", "replay_summary_byphase_ph2.svg"),
+    copy_to="replay_summary_byphase_ph2.pdf",
+)
+def fig_replay_summary_byphase_ph2(panels, savepath):
+    padding = 50
+    full_width = 1300 + padding
+    full_height = 500 + padding
+
+    fig = svgfig(full_width, full_height)
+    fig.append(
+        el(
+            "A",
+            panels["A"],
+            20 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    fig.append(
+        el(
+            "B",
+            panels["B"],
+            650 + padding,
+            20 + padding,
+            offset=(-padding / 3, 0),
+        )
+    )
+    savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": (
+            "grp-combined",
+            "replays-session",
             "exclusive_replay_prop_byexperience_bytrial.svg",
         ),
         "B": (
@@ -2368,6 +2411,17 @@ def fig_beh_bytrial(panels, savepath):
         el("B", panels["B"], 630 + padding, 20 + padding, offset=(-padding / 3, 0))
     )
     savefig(fig, savepath)
+
+
+@task(
+    panels={
+        "A": ("grp-combined", "replays", "replay_participation_rate.svg"),
+    },
+    savepath=("figures", "replay_participation_rate.svg"),
+    copy_to="replay_participation_rate.pdf",
+)
+def fig_replay_participation_rate(panels, savepath):
+    shutil.copyfile(panels["A"], savepath)
 
 
 def task_combine_tex():

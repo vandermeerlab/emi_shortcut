@@ -32,6 +32,7 @@ def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, sa
         replay_prop_byphase,
         ["only_u_ph2", "only_full_shortcut_ph2"],
         ylabel="Proportion of SWRs\nthat are replays",
+        title="Phase 2 familiar tuning curves",
         savepath=savepath["exclusive_ph2"],
     )
     _plot_replay_metric(
@@ -45,6 +46,7 @@ def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, sa
         replay_prop_byphase,
         ["difference_ph2"],
         ylabel="Replay proportion\nfor shortcut - familiar",
+        title="Phase 2 familiar tuning curves",
         color_byvalue=True,
         savepath=savepath["difference_ph2"],
     )
@@ -329,27 +331,70 @@ def _plot_replay_metric(
     savepath=("replays", "replay_participation_rate.svg"),
 )
 def plot_replay_participation_rate(
-    infos, group_name, *, replay_participation_rate, savepath
+    infos,
+    group_name,
+    *,
+    replay_participation_rate,
+    replay_participation_rate_pval,
+    # replay_participation_sessions,
+    savepath,
 ):
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(16, 6))
 
-    x = np.arange(3)
-    means = np.array([np.mean(val) for val in replay_participation_rate.values()])
-    sems = np.array(
-        [scipy.stats.sem(val) for val in replay_participation_rate.values()]
-    )
-    heights = means + sems
-    rects = ax.bar(
-        x,
-        means,
-        width=0.65,
-        color=meta.colors["rest"],
-        yerr=sems,
-        ecolor="k",
-    )
+    width = 0.8 / len(replay_participation_rate)
+    x = np.arange(len(replay_participation_rate["prerecord"]))
 
-    plt.xticks(x, ["Unique", "Non-unique", "No place field"], fontsize=meta.fontsize)
-    plt.ylabel("Proportion of participating replays", fontsize=meta.fontsize)
+    heights = [[], [], []]
+    for i, phase in enumerate(meta.task_times):
+        means = np.array(
+            [np.mean(val) for val in replay_participation_rate[phase].values()]
+        )
+        sems = np.array(
+            [scipy.stats.sem(val) for val in replay_participation_rate[phase].values()]
+        )
+        for ix, height in enumerate(means + sems):
+            heights[ix].append(height)
+        rects = ax.bar(
+            x + (i * width),
+            means,
+            width=width,
+            color=f"{((7 - i) / 7) * 0.6 + 0.1:f}",
+            yerr=sems,
+            ecolor="k",
+            label=meta.task_times_labels[phase],
+        )
+
+        for val, rect in zip(replay_participation_rate[phase].values(), rects):
+            ax.annotate(
+                f"{len(val)}",
+                xy=(rect.get_x() + rect.get_width() / 2, 0),
+                xytext=(0, 3),  # 3 points vertical offset
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                color="w",
+                fontsize=meta.fontsize_small,
+            )
+
+    gap = 0.005
+    for i, (left, right) in enumerate(zip(meta.task_times[:-1], meta.task_times[1:])):
+        for j, pval in enumerate(
+            replay_participation_rate_pval[(left, right)].values()
+        ):
+            significance_bar(
+                start=i * width + j + gap,
+                end=((i + 1) * width) + j - gap,
+                height=max(heights[j][i : i + 2]),
+                pval=pval,
+            )
+
+    plt.legend(fontsize=meta.fontsize_small)
+    plt.xticks(
+        x + width * 3,
+        ["Unique", "Non-unique", "No place field"],
+        fontsize=meta.fontsize,
+    )
+    plt.ylabel("Proportion of replay participation", fontsize=meta.fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
 
     ax.spines["right"].set_visible(False)

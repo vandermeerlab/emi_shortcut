@@ -322,6 +322,9 @@ first_n_trials_consecutive = 80
 mostly_thresh = 0.6
 mostly_n_trials = 5
 
+# replay_participation
+min_replays_per_phase = 4
+
 # 2D tc plot
 n_bins = 100
 
