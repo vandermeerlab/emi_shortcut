@@ -336,7 +336,6 @@ def plot_replay_participation_rate(
     *,
     replay_participation_rate,
     replay_participation_rate_pval,
-    # replay_participation_sessions,
     savepath,
 ):
     fig, ax = plt.subplots(figsize=(16, 6))

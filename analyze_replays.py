@@ -240,6 +240,33 @@ def cache_replay_participation_rate_pval(
     }
 
 
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath=("replays", "replay_participation_rate_pval.tex"),
+)
+def save_replay_participation_rate_pval(
+    infos, group_name, *, replay_participation_rate, savepath
+):
+    with open(savepath, "w") as fp:
+        print("% Replay participation rate, Phase 3", file=fp)
+
+        pval = mannwhitneyu(
+            replay_participation_rate["phase3"]["unique"],
+            replay_participation_rate["phase3"]["nonunique"],
+        )
+        print(
+            fr"\def \replaypartrateuniquenonuniquepval/{{{latex_float(pval)}}}", file=fp
+        )
+
+        pval = mannwhitneyu(
+            replay_participation_rate["phase3"]["unique"],
+            replay_participation_rate["phase3"]["nofield"],
+        )
+        print(
+            fr"\def \replaypartrateuniquenofieldpval/{{{latex_float(pval)}}}", file=fp
+        )
+
+
 @task(infos=meta_session.analysis_infos, cache_saves="replay_any_unique_participation")
 def cache_replay_any_unique_participation(
     info, *, tc_order_unique_ph3, replays_byphase, spikes
