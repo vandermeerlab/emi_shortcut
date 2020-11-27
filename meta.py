@@ -287,7 +287,7 @@ tc_linear_bin_centers = (
 
 # analyze_swrs
 n_shuffles = 1000
-n_likelihood_shuffles = 250
+n_likelihood_shuffles = 1000
 min_n_active = 4
 significant = 5.0
 
