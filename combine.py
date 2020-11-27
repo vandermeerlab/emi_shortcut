@@ -1602,7 +1602,7 @@ def task_copy_figures():
     for svg, pdf, png in figure_files:
         yield {
             "name": os.path.basename(svg)[:-4],
-            "actions": [svg_to_pdf(svg, pdf), svg_to_png(svg, png)],
+            "actions": [svg_to_pdf(svg, pdf)],
             "file_dep": [svg],
-            "targets": [pdf, png],
+            "targets": [pdf],
         }
