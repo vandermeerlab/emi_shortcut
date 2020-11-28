@@ -229,7 +229,6 @@ def _plot_boxplot(y, n_sessions, ylabel, title=None, savepath=None):
     savepath={
         "all": ("behavior", "behavior_bytrial_all.svg"),
         "first_n": ("behavior", "behavior_bytrial_first_n.svg"),
-        "first_consecutive": ("behavior", "behavior_bytrial_first_consecutive.svg"),
     },
 )
 def plot_behavior_bytrial(infos, group_name, *, trial_proportions_bytrial, savepath):

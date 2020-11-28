@@ -353,6 +353,55 @@ def save_n_trials(infos, group_name, *, all_directional_trials, savepath):
         print(r"\end{tabular}", file=fp)
 
 
+@task(
+    groups=meta_session.all_grouped,
+    savepath=("behavior", "directional_preference_pval.tex"),
+)
+def save_directional_preference_pval(
+    infos, group_name, *, all_directional_trials, savepath
+):
+    with open(savepath, "w") as fp:
+        days_observed = [[] for _ in range(8)]
+        days_expected = [[] for _ in range(8)]
+        rats_observed = [[] for _ in range(4)]
+        rats_expected = [[] for _ in range(4)]
+
+        rats = {"R063_EI": 0, "R066_EI": 1, "R067_EI": 2, "R068_EI": 3}
+
+        for info, directional_trials in zip(infos, all_directional_trials):
+            day = int(info.session_id[-1]) - 1
+            rat = rats[info.rat_id]
+            feeder1 = directional_trials["full_shortcut"]["feeder1"].n_epochs
+            feeder2 = directional_trials["full_shortcut"]["feeder2"].n_epochs
+            observed = feeder1
+            expected = (feeder1 + feeder2) / 2
+            days_observed[day].append(observed)
+            days_expected[day].append(expected)
+            rats_observed[rat].append(observed)
+            rats_expected[rat].append(expected)
+
+        for day in range(8):
+            chisq, pval = scipy.stats.chisquare(days_observed[day], days_expected[day])
+            print(
+                fr"\def \directionalday{meta.tex_ids[day + 1]}chisq/{{{chisq:.2f}}}",
+                file=fp,
+            )
+            print(
+                fr"\def \directionalday{meta.tex_ids[day + 1]}pval/{{{latex_float(pval)}}}",
+                file=fp,
+            )
+        for rat in range(4):
+            chisq, pval = scipy.stats.chisquare(rats_observed[rat], rats_expected[rat])
+            print(
+                fr"\def \directionalrat{meta.tex_ids[rat + 1]}chisq/{{{chisq:.2f}}}",
+                file=fp,
+            )
+            print(
+                fr"\def \directionalrat{meta.tex_ids[rat + 1]}pval/{{{latex_float(pval)}}}",
+                file=fp,
+            )
+
+
 @task(groups=meta_session.all_grouped, savepath=("behavior", "n_trials_phase3.table"))
 def save_n_trials_phase3(infos, group_name, *, all_directional_trials, savepath):
     with open(savepath, "w") as fp:

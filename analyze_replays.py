@@ -245,10 +245,27 @@ def cache_replay_participation_rate_pval(
     savepath=("replays", "replay_participation_rate_pval.tex"),
 )
 def save_replay_participation_rate_pval(
-    infos, group_name, *, replay_participation_rate, savepath
+    infos,
+    group_name,
+    *,
+    replay_participation_rate,
+    replay_participation_rate_pval,
+    savepath,
 ):
     with open(savepath, "w") as fp:
         print("% Replay participation rate, Phase 3", file=fp)
+
+        pval = replay_participation_rate_pval[("pauseB", "phase3")]["unique"]
+        print(
+            fr"\def \replaypartrateuniquephasethreepval/{{{latex_float(pval)}}}",
+            file=fp,
+        )
+
+        pval = replay_participation_rate_pval[("pauseB", "phase3")]["nonunique"]
+        print(
+            fr"\def \replaypartratenonuniquephasethreepval/{{{latex_float(pval)}}}",
+            file=fp,
+        )
 
         pval = mannwhitneyu(
             replay_participation_rate["phase3"]["unique"],
