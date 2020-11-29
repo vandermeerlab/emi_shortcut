@@ -535,8 +535,8 @@ def fig_swr(panels, savepath):
 @task(
     panels={
         "A": ("grp-combined", "swrs", "swr_rate_byphase_rest.svg"),
-        "B": ("grp-combined", "swrs", "swr_rate_bysubphase.svg"),
-        "C": ("grp-combined", "swrs", "swr_rate_byday.svg"),
+        "B": ("grp-combined", "swrs", "swr_rate_byday.svg"),
+        "C": ("grp-combined", "swrs", "swr_rate_bysubphase.svg"),
     },
     savepath=("figures", "swr_rate.svg"),
     copy_to="swr_rate.pdf",
