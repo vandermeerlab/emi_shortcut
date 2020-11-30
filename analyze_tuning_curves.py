@@ -8,7 +8,7 @@ import meta
 import meta_session
 import paths
 from tasks import task
-from utils import latex_float, ranksum_test
+from utils import dist_to_landmark, dist_to_shortcut, latex_float, ranksum_test
 
 
 def has_field(tuning_curve):
@@ -1048,25 +1048,13 @@ def cache_combined_tc_correlations_bybin(infos, group_name, *, all_u_tcs_byphase
     groups=meta_session.analysis_grouped, savepath=("tcs", "tc_correlations_bybin.tex")
 )
 def save_tc_correlations_bybin(infos, group_name, *, tc_correlations_bybin, savepath):
-    dist_to_landmark = np.tile(np.hstack([np.arange(10), np.arange(9, -1, -1)]), 5)
-    left = np.hstack([np.arange(20, -1, -1), np.arange(1, 31)])
-    dist_to_shortcut = np.hstack([left, left[-2:0:-1]])
-
     with open(savepath, "w") as fp:
         for ph, text in zip(["12", "23"], ["onetwo", "twothree"]):
-            nan_idx = np.isnan(tc_correlations_bybin[f"phases{ph}"])
-
-            corr, pval = scipy.stats.pearsonr(
-                tc_correlations_bybin[f"phases{ph}"][~nan_idx],
-                dist_to_landmark[~nan_idx],
-            )
+            corr, pval = dist_to_landmark(tc_correlations_bybin[f"phases{ph}"])
             pval = latex_float(pval)
             print(fr"\def \phase{text}bybinlandmarkcorr/{{{corr:.2f}}}", file=fp)
             print(fr"\def \phase{text}bybinlandmarkpval/{{{pval}}}", file=fp)
-            corr, pval = scipy.stats.pearsonr(
-                tc_correlations_bybin[f"phases{ph}"][~nan_idx],
-                dist_to_shortcut[~nan_idx],
-            )
+            corr, pval = dist_to_shortcut(tc_correlations_bybin[f"phases{ph}"])
             pval = latex_float(pval)
             print(fr"\def \phase{text}bybinshortcutcorr/{{{corr:.2f}}}", file=fp)
             print(fr"\def \phase{text}bybinshortcutpval/{{{pval}}}", file=fp)

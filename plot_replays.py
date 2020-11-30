@@ -26,6 +26,10 @@ def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, sa
         replay_prop_byphase,
         ["only_u", "only_full_shortcut"],
         ylabel="Proportion of SWRs\nthat are replays",
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        ylim=0.45 if group_name not in ["all", "combined"] else None,
         savepath=savepath["exclusive"],
     )
     _plot_replay_metric(
@@ -39,6 +43,10 @@ def plot_group_replay_prop_byphase(infos, group_name, *, replay_prop_byphase, sa
         replay_prop_byphase,
         ["difference"],
         ylabel="Replay proportion\nfor shortcut - familiar",
+        title=f"{meta.title_labels[group_name]}"
+        if group_name not in ["all", "combined"]
+        else None,
+        ylim=0.45 if group_name not in ["all", "combined"] else None,
         color_byvalue=True,
         savepath=savepath["difference"],
     )

@@ -18,6 +18,7 @@ def plot_error_boxplot(infos, group_name, *, decoding_error, savepath):
     fig, ax = plt.subplots(figsize=(7, 6))
     bp = ax.boxplot(
         [decoding_error["u"], decoding_error["full_shortcut"]],
+        whis=(5, 95),
         patch_artist=True,
         showfliers=False,
     )
@@ -52,19 +53,8 @@ def plot_error_boxplot(infos, group_name, *, decoding_error, savepath):
         flier.set(marker=".", color="#bdbdbd", alpha=0.5, rasterized=True)
 
     ax.set_xticklabels(["Familiar", "Shortcut"], fontsize=meta.fontsize)
-    ax.set_yticklabels(np.arange(-20, 101, 20), fontsize=meta.fontsize)
+    plt.setp(ax.get_yticklabels(), fontsize=meta.fontsize)
     ax.set_ylabel("Error (std unit)", fontsize=meta.fontsize)
-
-    s = f"n = {len(infos)} sessions" if len(infos) > 1 else "Example session"
-    plt.text(
-        0.86,
-        1.04,
-        s=s,
-        fontsize=meta.fontsize_small,
-        horizontalalignment="center",
-        verticalalignment="center",
-        transform=ax.transAxes,
-    )
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

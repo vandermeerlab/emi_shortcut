@@ -40,3 +40,16 @@ def latex_float(f):
         return fr"{float(base):.1f} \times 10^{{{int(exponent)}}}"
     else:
         return float_str
+
+
+def dist_to_landmark(val_bybin):
+    to_landmark = np.tile(np.hstack([np.arange(10), np.arange(9, -1, -1)]), 5)
+    nan_idx = np.isnan(val_bybin)
+    return scipy.stats.pearsonr(val_bybin[~nan_idx], to_landmark[~nan_idx])
+
+
+def dist_to_shortcut(val_bybin):
+    left = np.hstack([np.arange(20, -1, -1), np.arange(1, 31)])
+    to_shortcut = np.hstack([left, left[-2:0:-1]])
+    nan_idx = np.isnan(val_bybin)
+    return scipy.stats.pearsonr(val_bybin[~nan_idx], to_shortcut[~nan_idx])

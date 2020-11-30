@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 import nept
 import numpy as np
 import scipy.interpolate
@@ -6,7 +8,7 @@ import statsmodels.api as sm
 import meta
 import meta_session
 from tasks import task
-from utils import latex_float
+from utils import dist_to_landmark, dist_to_shortcut, latex_float
 
 
 def get_decoded_position(task_times, tuning_curves, spikes, bin_centers):
@@ -768,3 +770,91 @@ def save_zscored_logodds_byphase_pval(
                 fr"{{{latex_float(pval)}}}",
                 file=fp,
             )
+
+
+@task(
+    groups=meta_session.analysis_grouped,
+    savepath={
+        traj: ("decoding", f"bylandmarks_pvals_{traj}.table")
+        for traj in meta.trajectories
+    },
+)
+def save_bylandmarks_pvals(
+    infos,
+    group_name,
+    *,
+    replay_decoding_bybin,
+    replay_likelihood_bybin,
+    replay_likelihood_bybin_byphase,
+    replays_bybin,
+    savepath,
+):
+    for trajectory in meta.trajectories:
+        with open(savepath[trajectory], "w") as fp:
+            print(
+                dedent(
+                    r"""
+                    \begin{tabular}{lcccc}
+                    \toprule
+                    & \multicolumn{2}{c}{\textbf{Familiar route}} \\
+                    \textbf{Condition}
+                    & \textbf{Distance to landmark}
+                    & \textbf{Distance to intersection} \\
+                    \midrule
+                    """
+                    if trajectory == "u"
+                    else r"""
+                    \begin{tabular}{lccc}
+                    \toprule
+                    & \textbf{Shortcut route} \\
+                    \textbf{Condition} & \textbf{Distance to intersection} \\
+                    \midrule
+                    """
+                ).strip(),
+                file=fp,
+            )
+
+            for val_bybin, text in [
+                (
+                    replay_decoding_bybin[trajectory],
+                    r"Figure~\ref{fig:decoding-bybin}A",
+                ),
+                (
+                    replay_likelihood_bybin[trajectory],
+                    r"Figure~\ref{fig:decoding-bybin}B",
+                ),
+                (
+                    replays_bybin[f"only_{trajectory}"],
+                    r"Figure~\ref{fig:decoding-bybin}C",
+                ),
+            ] + [
+                (
+                    replay_likelihood_bybin_byphase[phase][trajectory],
+                    r"Figure~\ref{fig:likelihood_bybin_details} "
+                    f"{meta.task_times_labels[phase]}",
+                )
+                for i, phase in enumerate(meta.task_times)
+            ]:
+
+                print(f"{text} &", file=fp)
+                cells = []
+                funcs = (
+                    [dist_to_landmark, dist_to_shortcut]
+                    if trajectory == "u"
+                    else [dist_to_shortcut]
+                )
+                for func in funcs:
+                    rval, pval = func(val_bybin)
+                    if pval < 0.05:
+                        style = r"\mathbf{", "}"
+                    else:
+                        style = "", ""
+
+                    cells.append(
+                        rf"${style[0]}r = {rval:.2f}, "
+                        rf"p = {latex_float(pval)}{style[1]}$"
+                    )
+                print(rf"{' & '.join(cells)} \\", file=fp)
+
+            print(r"\bottomrule", file=fp)
+            print(r"\end{tabular}", file=fp)

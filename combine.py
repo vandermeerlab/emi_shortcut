@@ -1235,7 +1235,7 @@ def fig_example_swrs(panels, savepath):
     fig = svgfig(full_width, full_height)
     fig.append(
         el(
-            None,
+            "R063",
             panels["r063"],
             0 + padding,
             20 + padding,
@@ -1244,7 +1244,7 @@ def fig_example_swrs(panels, savepath):
     )
     fig.append(
         el(
-            None,
+            "R066",
             panels["r066"],
             500 + padding,
             20 + padding,
@@ -1253,7 +1253,7 @@ def fig_example_swrs(panels, savepath):
     )
     fig.append(
         el(
-            None,
+            "R067",
             panels["r067"],
             1000 + padding,
             20 + padding,
@@ -1262,7 +1262,7 @@ def fig_example_swrs(panels, savepath):
     )
     fig.append(
         el(
-            None,
+            "R068",
             panels["r068"],
             1500 + padding,
             20 + padding,
@@ -1565,6 +1565,14 @@ def task_copy_tex():
         (("grp-combined", "swrs", "n_swrs_byphase.table"), "n_swrs_byphase.tex"),
         (("grp-combined", "replays", "n_replays.table"), "n_replays.tex"),
         (("grp-combined", "replays", "percent_replays.table"), "percent_replays.tex"),
+        (
+            ("grp-combined", "decoding", "bylandmarks_pvals_u.table"),
+            "bylandmarks_pvals_u.tex",
+        ),
+        (
+            ("grp-combined", "decoding", "bylandmarks_pvals_full_shortcut.table"),
+            "bylandmarks_pvals_full_shortcut.tex",
+        ),
     ]
     to_copy = [(paths.plot_file(*src), paths.thesis_tex(dst)) for src, dst in to_copy]
 

@@ -203,8 +203,8 @@ def plot_speed_overtime(info, *, task_times, speed_overtime, savepath):
         verticalalignment="center",
         transform=ax.transAxes,
     )
-
     plt.xticks(xticks, list(meta.run_times_labels.values()))
+    plt.ylim(top=35)
     plt.ylabel("Speed (cm / s)", fontsize=meta.fontsize)
 
     plt.setp(ax.get_xticklabels(), fontsize=meta.fontsize)
